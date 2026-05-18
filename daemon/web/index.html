@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClauLi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;700&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#050505;
+  --surface:#131311;
+  --surface2:#1c1c19;
+  --text:#faf9f5;
+  --dim:#8a887e;
+  --accent:#d97757;
+  --green:#8fa66e;
+  --amber:#d97757;
+  --red:#c4503a;
+  --track:#242421;
+  --radius:10px;
+}
+html,body{height:100%}
+body{
+  font-family:'Onest',system-ui,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:100vh;overflow:hidden;position:relative;
+}
+body::before{
+  content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse 60% 50% at 50% 45%,#0e0d0a 0%,#050505 70%);
+  pointer-events:none;z-index:0;
+}
+body::after{
+  content:'';position:fixed;inset:0;opacity:.035;pointer-events:none;z-index:1;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:128px 128px;
+}
+.shell{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:20px;padding:32px 24px;max-width:400px;width:100%}
+.title{font-family:'Azeret Mono',monospace;font-size:13px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--dim);opacity:0;animation:fadeSlide .6s .1s ease-out forwards}
+.gauge-wrap{position:relative;width:260px;height:260px;animation:fadeScale .8s .2s ease-out both}
+.gauge-svg{width:100%;height:100%;overflow:visible}
+.gauge-svg circle{fill:none}
+.glow-s,.glow-w{transition:stroke-dasharray .8s ease-out,stroke .3s ease;filter:blur(6px);opacity:.45}
+.glow-s{stroke-width:14px}.glow-w{stroke-width:10px}
+.track-s,.track-w{stroke:var(--track);stroke-linecap:round}
+.track-s{stroke-width:12px}.track-w{stroke-width:8px}
+.ind-s,.ind-w{stroke-linecap:round;transition:stroke-dasharray .8s ease-out,stroke .3s ease}
+.ind-s{stroke-width:12px}.ind-w{stroke-width:8px}
+.center-group{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
+.pct-main{font-family:'Azeret Mono',monospace;font-size:52px;font-weight:700;line-height:1;letter-spacing:-2px;transition:color .3s ease}
+.pct-sub{font-family:'Azeret Mono',monospace;font-size:18px;font-weight:400;color:var(--dim);margin-top:4px;transition:color .3s ease}
+.pct-sub span{font-size:13px;opacity:.5;margin-right:2px}
+@keyframes pulse{0%{transform:scale(1)}40%{transform:scale(1.025)}100%{transform:scale(1)}}
+.gauge-wrap.pulse{animation:pulse .4s ease-out}
+.resets{display:flex;flex-direction:column;align-items:center;gap:4px;opacity:0;animation:fadeSlide .6s .4s ease-out forwards}
+.reset-line{font-family:'Onest',sans-serif;font-size:12px;color:var(--dim);display:flex;align-items:center;gap:6px}
+.reset-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.status-row{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--dim);opacity:0;animation:fadeSlide .6s .5s ease-out forwards}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--red);flex-shrink:0}
+.status-dot.on{background:var(--green);animation:breathe 2.5s ease-in-out infinite}
+@keyframes breathe{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+.controls{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;opacity:0;animation:fadeSlide .6s .6s ease-out forwards}
+.btn{background:var(--surface);border:1px solid rgba(255,255,255,.06);border-radius:8px;color:var(--dim);padding:7px 14px;font-family:'Onest',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s ease;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.btn:hover{background:var(--surface2);color:var(--text);border-color:rgba(255,255,255,.1)}
+.btn:active{transform:scale(.96);color:var(--accent)}
+.btn.accent{background:var(--accent);border-color:transparent;color:#0a0a08;font-weight:600}
+.btn.accent:hover{opacity:.85}
+.footer{margin-top:8px;font-size:11px;color:rgba(255,255,255,.18);text-align:center;opacity:0;animation:fadeSlide .6s .7s ease-out forwards}
+@keyframes fadeSlide{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeScale{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+@media(max-width:420px){.gauge-wrap{width:220px;height:220px}.pct-main{font-size:42px}.pct-sub{font-size:15px}.shell{padding:20px 16px}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="title">ClauLi</div>
+  <div class="gauge-wrap" id="gauge">
+    <svg class="gauge-svg" viewBox="0 0 260 260">
+      <defs>
+        <linearGradient id="gs" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="var(--green)"/>
+          <stop offset="100%" stop-color="var(--accent)"/>
+        </linearGradient>
+        <linearGradient id="gw" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#6a7f52"/>
+          <stop offset="100%" stop-color="#a0885a"/>
+        </linearGradient>
+      </defs>
+      <circle class="glow-s" cx="130" cy="130" r="110" transform="rotate(135 130 130)" stroke="var(--green)"/>
+      <circle class="glow-w" cx="130" cy="130" r="85"  transform="rotate(135 130 130)" stroke="#6a7f52"/>
+      <circle class="track-s" cx="130" cy="130" r="110" transform="rotate(135 130 130)" stroke-dasharray="518.36 172.79"/>
+      <circle class="track-w" cx="130" cy="130" r="85"  transform="rotate(135 130 130)" stroke-dasharray="400.74 133.58"/>
+      <circle class="ind-s" id="ind-s" cx="130" cy="130" r="110" transform="rotate(135 130 130)" stroke="url(#gs)" stroke-dasharray="0 691.15"/>
+      <circle class="ind-w" id="ind-w" cx="130" cy="130" r="85"  transform="rotate(135 130 130)" stroke="url(#gw)" stroke-dasharray="0 534.32"/>
+    </svg>
+    <div class="center-group">
+      <div class="pct-main" id="s-num">--%</div>
+      <div class="pct-sub" id="w-num"><span id="w-pre">W</span> --%</div>
+    </div>
+  </div>
+  <div class="resets">
+    <div class="reset-line"><span class="reset-dot" id="dot-s"></span><span id="s-reset">---</span></div>
+    <div class="reset-line"><span class="reset-dot" id="dot-w"></span><span id="w-reset">---</span></div>
+  </div>
+  <div class="status-row">
+    <span class="status-dot" id="ble-dot"></span>
+    <span id="ble-status">Disconnected</span>
+  </div>
+  <div class="controls">
+    <button class="btn" data-i18n="usage" onclick="sendScreen('usage')">Usage</button>
+    <button class="btn" onclick="sendScreen('emo')">EMO</button>
+    <button class="btn" data-i18n="anim" onclick="sendScreen('splash')">Animation</button>
+    <button class="btn" onclick="sendScreen('bluetooth')">Bluetooth</button>
+    <button class="btn" data-i18n="cycle" onclick="sendScreen('cycle')">Cycle</button>
+    <button class="btn accent" data-i18n="refresh" onclick="sendRefresh()">↻ Refresh</button>
+  </div>
+  <div class="controls" style="margin-top:2px">
+    <button class="btn" id="lang-en" onclick="sendLang('en')">EN</button>
+    <button class="btn" id="lang-ru" onclick="sendLang('ru')">RU</button>
+  </div>
+  <div class="footer">Build by Sedek · <a href="https://github.com/MrSedek" target="_blank" rel="noopener" style="color:inherit">github.com/MrSedek</a> · <a href="https://t.me/sedek" target="_blank" rel="noopener" style="color:inherit">t.me/sedek</a></div>
+</div>
+<script>
+const SCREEN_MAP={usage:1,bluetooth:2,bt:2,splash:3,cycle:4,emo:6};
+const CIRC_S=2*Math.PI*110,CIRC_W=2*Math.PI*85;
+const ARC_FRAC=.75,ARC_S=CIRC_S*ARC_FRAC,ARC_W=CIRC_W*ARC_FRAC;
+let curS=0,curW=0,ws=null,reconnectTimer=null;
+let curLang='en',lastPayload=null,lastBLE={state:'disconnected',address:null};
+const I18N={
+  en:{usage:'Usage',anim:'Animation',cycle:'Cycle',refresh:'↻ Refresh',wpre:'W',
+      connected:'Connected',disconnected:'Disconnected',sess:'Session',week:'Week',
+      resetIn:'Reset in',um:'m',uh:'h',ud:'d',none:'---'},
+  ru:{usage:'Использование',anim:'Анимация',cycle:'Цикл',refresh:'↻ Обновить',wpre:'Н',
+      connected:'Подключено',disconnected:'Отключено',sess:'Сессия',week:'Неделя',
+      resetIn:'Сброс через',um:'м',uh:'ч',ud:'д',none:'---'}};
+function t(k){return (I18N[curLang]||I18N.en)[k]}
+function applyI18n(){document.querySelectorAll('[data-i18n]').forEach(el=>{el.textContent=t(el.dataset.i18n)});document.getElementById('w-pre').textContent=t('wpre');updateBLE(lastBLE.state,lastBLE.address);if(lastPayload)updateData(lastPayload)}
+function pctColor(p){return p>=80?'var(--red)':p>=50?'var(--amber)':'var(--green)'}
+function pctColorRaw(p){return p>=80?'#c4503a':p>=50?'#d97757':'#8fa66e'}
+function fmtReset(m){if(m<0)return t('none');if(m<60)return`${t('resetIn')} ${m}${t('um')}`;if(m<1440)return`${t('resetIn')} ${Math.floor(m/60)}${t('uh')} ${m%60}${t('um')}`;return`${t('resetIn')} ${Math.floor(m/1440)}${t('ud')} ${Math.floor((m%1440)/60)}${t('uh')}`}
+function setArc(id,circ,arcLen,pct){const f=arcLen*Math.min(pct,100)/100;document.getElementById(id).setAttribute('stroke-dasharray',`${f} ${circ-f}`)}
+function setGlow(cls,circ,arcLen,pct,color){const f=arcLen*Math.min(pct,100)/100;document.querySelectorAll('.'+cls).forEach(el=>{el.setAttribute('stroke-dasharray',`${f} ${circ-f}`);el.setAttribute('stroke',color)})}
+function animateNum(el,from,to,dur){const start=performance.now();const isS=el.id==='s-num';function tick(now){const p=Math.min((now-start)/dur,1);const e=1-Math.pow(1-p,3);const v=Math.round(from+(to-from)*e);if(isS)el.textContent=v+'%';else el.innerHTML='<span id="w-pre">'+t('wpre')+'</span> '+v+'%';if(p<1)requestAnimationFrame(tick)}requestAnimationFrame(tick)}
+function updateData(payload){if(!payload)return;lastPayload=payload;const s=payload.s||0,w=payload.w||0;const sc=pctColorRaw(s),wc=pctColorRaw(w);setArc('ind-s',CIRC_S,ARC_S,s);setArc('ind-w',CIRC_W,ARC_W,w);setGlow('glow-s',CIRC_S,ARC_S,s,sc);setGlow('glow-w',CIRC_W,ARC_W,w,wc);animateNum(document.getElementById('s-num'),curS,s,800);animateNum(document.getElementById('w-num'),curW,w,800);document.getElementById('s-num').style.color=pctColor(s);document.getElementById('w-num').style.color=pctColor(w);document.getElementById('dot-s').style.background=pctColorRaw(s);document.getElementById('dot-w').style.background=pctColorRaw(w);document.getElementById('s-reset').textContent=t('sess')+' · '+fmtReset(payload.sr);document.getElementById('w-reset').textContent=t('week')+' · '+fmtReset(payload.wr);const s1=document.querySelector('#gs stop:first-child'),s2=document.querySelector('#gs stop:last-child');if(s>=80){s1.setAttribute('stop-color','#c4503a');s2.setAttribute('stop-color','#e85535')}else if(s>=50){s1.setAttribute('stop-color','#d97757');s2.setAttribute('stop-color','#e8956a')}else{s1.setAttribute('stop-color','#8fa66e');s2.setAttribute('stop-color','#c4a462')}curS=s;curW=w;const g=document.getElementById('gauge');g.classList.remove('pulse');void g.offsetWidth;g.classList.add('pulse')}
+function updateBLE(state,address){lastBLE={state,address};const dot=document.getElementById('ble-dot'),txt=document.getElementById('ble-status');if(state==='connected'){dot.className='status-dot on';txt.textContent=address?t('connected')+' · '+address:t('connected')}else{dot.className='status-dot';txt.textContent=t('disconnected')}}
+function setLangUI(l){if(l!=='en'&&l!=='ru')l='en';curLang=l;const en=document.getElementById('lang-en'),ru=document.getElementById('lang-ru');en.classList.toggle('accent',l==='en');ru.classList.toggle('accent',l==='ru');applyI18n()}
+function connectWS(){const proto=location.protocol==='https:'?'wss:':'ws:';ws=new WebSocket(`${proto}//${location.host}/api/ws`);ws.onopen=()=>{clearTimeout(reconnectTimer)};ws.onmessage=e=>{try{const msg=JSON.parse(e.data);if(msg.type==='data')updateData(msg.payload);else if(msg.type==='ble')updateBLE(msg.state,msg.address);else if(msg.type==='lang')setLangUI(msg.lang)}catch{}};ws.onclose=()=>{reconnectTimer=setTimeout(connectWS,3000)};ws.onerror=()=>{ws.close()}}
+async function sendScreen(name){try{await fetch('/api/screen',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({screen:name})})}catch{}}
+async function sendRefresh(){try{await fetch('/api/refresh',{method:'POST'})}catch{}}
+async function sendLang(l){setLangUI(l);try{await fetch('/api/lang',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lang:l})})}catch{}}
+applyI18n();
+fetch('/api/status').then(r=>r.json()).then(d=>{updateBLE(d.ble_connected?'connected':'disconnected',d.ble_address);setLangUI(d.lang||'en');if(d.last_data)updateData(d.last_data)}).catch(()=>{});
+connectWS();
+</script>
+</body>
+</html>
