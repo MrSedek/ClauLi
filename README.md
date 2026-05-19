@@ -195,6 +195,11 @@ smooth color transition. It does not poll the daemon.
   re-reads the Keychain every poll and recovers **without a restart**
   (`AUTH: recovered` in the log). See `CLAUDE.md` → "OAuth token /
   re-issue" for the headless `CLAUDE_CODE_OAUTH_TOKEN` fallback.
+- **Daemon can't find ClauLi but macOS shows it "Connected"** — macOS
+  paired it as an HID keyboard and holds the link, so the ESP stops
+  advertising for the daemon. Fix: Forget ClauLi in System Settings →
+  Bluetooth and flash a build with `BLE_HID_ENABLED 0` in
+  `firmware/src/ble.cpp` (default; daemon-only, no bonding).
 - **Tofu boxes in text** — fonts must include the glyph; regenerate per the
   snippet in `CLAUDE.md` (it includes `-r 0x00B7` for the `·` separator).
 - **No `screenshot` command** — the firmware has no framebuffer dump; verify

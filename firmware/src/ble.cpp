@@ -1,7 +1,17 @@
 #include "ble.h"
 #include <Arduino.h>
 #include <NimBLEDevice.h>
+
+// Daemon-only mode: HID keyboard disabled so macOS never grabs ClauLi as
+// a bonded keyboard (that link kept the ESP from advertising for the
+// daemon). With HID off we also drop BLE bonding entirely, giving the
+// daemon a single, stable, pairing-free connection. Set to 1 to restore
+// the BLE HID keyboard (re-enables bonding).
+#define BLE_HID_ENABLED 0
+
+#if BLE_HID_ENABLED
 #include <NimBLEHIDDevice.h>
+#endif
 
 #define DEVICE_NAME "ClauLi"
 
@@ -14,6 +24,7 @@
 
 #define BLE_BUF_SIZE 512
 
+#if BLE_HID_ENABLED
 // HID keyboard report descriptor
 static const uint8_t HID_REPORT_MAP[] = {
     0x05, 0x01,  // Usage Page (Generic Desktop)
@@ -41,10 +52,13 @@ static const uint8_t HID_REPORT_MAP[] = {
     0x81, 0x00,  //   Input (Data, Array) - Key array (6 keys)
     0xC0,        // End Collection
 };
+#endif  // BLE_HID_ENABLED
 
 static NimBLEServer* server = nullptr;
+#if BLE_HID_ENABLED
 static NimBLEHIDDevice* hid_dev = nullptr;
-static NimBLECharacteristic* input_kbd = nullptr;
+#endif
+static NimBLECharacteristic* input_kbd = nullptr;  // null when HID disabled
 static NimBLECharacteristic* tx_char = nullptr;
 static NimBLECharacteristic* rx_char = nullptr;
 static NimBLECharacteristic* req_char = nullptr;
@@ -71,7 +85,9 @@ static bool start_advertising() {
     NimBLEAdvertising* adv = NimBLEDevice::getAdvertising();
     adv->reset();
     adv->addServiceUUID(SERVICE_UUID);
+#if BLE_HID_ENABLED
     adv->setAppearance(HID_KEYBOARD);
+#endif
     adv->enableScanResponse(true);
     adv->setName(DEVICE_NAME);
     bool ok = adv->start();
@@ -141,7 +157,14 @@ class CtrlCallbacks : public NimBLECharacteristicCallbacks {
 
 void ble_init(void) {
     NimBLEDevice::init(DEVICE_NAME);
+#if BLE_HID_ENABLED
     NimBLEDevice::setSecurityAuth(true, false, true);  // bonding, no MITM, SC
+#else
+    // No HID → no bonding. Pairing-free link; clear any stale bond left
+    // by a previous macOS pairing so the OS can't cling to it.
+    NimBLEDevice::setSecurityAuth(false, false, false);
+    NimBLEDevice::deleteAllBonds();
+#endif
 
     // Format MAC address
     NimBLEAddress addr = NimBLEDevice::getAddress();
@@ -154,6 +177,7 @@ void ble_init(void) {
     static ServerCallbacks serverCb;
     server->setCallbacks(&serverCb);
 
+#if BLE_HID_ENABLED
     // --- HID keyboard service ---
     hid_dev = new NimBLEHIDDevice(server);
     hid_dev->setReportMap((uint8_t*)HID_REPORT_MAP, sizeof(HID_REPORT_MAP));
@@ -162,6 +186,7 @@ void ble_init(void) {
     hid_dev->setHidInfo(0x00, 0x02);  // country=0, flags=normally connectable
     hid_dev->setBatteryLevel(100);
     input_kbd = hid_dev->getInputReport(1);  // report ID 1
+#endif
 
     // --- Custom data service ---
     NimBLEService* svc = server->createService(SERVICE_UUID);
