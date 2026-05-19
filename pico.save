@@ -1,0 +1,4 @@
+0d25160 Author: MrSedek <sedek.dev@gmail.com> upd ble reconnect --- 2f91ddc Author: Sedek <sedek.dev@gmail.com> upd ble reconnect --- 5b71cf9 Author: Sedek <sedek.dev@gmail.com> upd 
+ble reconnect --- bb020ec Author: MrSedek <sedek.dev@gmail.com> fix: drop inert NimBLE build flags causing redefined warnings The prebuilt Arduino framework sdkconfig.h 
+unconditionally defines the CONFIG_BT_NIMBLE_ROLE_*/MAX_CONNECTIONS macros, so the command-line -D flags never took effect and only produced "redefined" warnings on every TU that 
+pulled in sdkconfig.h. Behavior is unchanged. Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com> --- 22ad2ac Author: Sedek <sedek.dev@gmail.com> first commit ---

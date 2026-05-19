@@ -331,7 +331,10 @@ void loop() {
         case 0x06: ui_show_screen(SCREEN_EMO);        break;
         case 0x05: esp_restart();                     break;  // device reboot
         case 0x07: action_trigger_animation();        break;  // BOOT-click analog (cycle view)
-        case 0x08: emo_next_emotion();                break;  // next emotion/animation now
+        case 0x08:                                            // next animation now (screen-aware)
+            if (ui_get_current_screen() == SCREEN_SPLASH) splash_next();
+            else emo_next_emotion();
+            break;
         case 0x10: ble_request_refresh();             break;
         // 0x40/0x41: connect-time seed — ignored once the user has chosen.
         case 0x40: if (!g_lang_user_set) { i18n_set(LANG_EN); ui_relang(); } break;
