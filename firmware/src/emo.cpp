@@ -297,7 +297,10 @@ static void start_sleep_anim(void) {
 
     lv_anim_t b;
     lv_anim_init(&b);
-    lv_anim_set_var(&b, obj_eye_l);  // key only; cb scales both eyes
+    // obj_eye_l is just the anim key here (cb scales both eyes). Safe even
+    // if obj_eye_l has other anims: lv_anim_del() below matches on the
+    // (var, exec_cb) pair, so only this breathing anim is removed.
+    lv_anim_set_var(&b, obj_eye_l);
     lv_anim_set_exec_cb(&b, breath_anim_cb);
     lv_anim_set_values(&b, EYE_SCALE, EYE_SCALE + EYE_SCALE * 6 / 100);
     lv_anim_set_time(&b, 2200);

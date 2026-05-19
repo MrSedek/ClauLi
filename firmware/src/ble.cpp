@@ -64,14 +64,21 @@ static NimBLECharacteristic* rx_char = nullptr;
 static NimBLECharacteristic* req_char = nullptr;
 static NimBLECharacteristic* ctrl_char = nullptr;
 
-static ble_state_t state = BLE_STATE_INIT;
-static bool need_advertise = false;
+// Shared across the NimBLE host task (server/char callbacks) and the
+// Arduino loop task (ble_tick) — must be volatile like the other flags.
+static volatile ble_state_t state = BLE_STATE_INIT;
+static volatile bool need_advertise = false;
 // Liveness watchdog: recover even if onDisconnect never fires (macOS can
 // tear the link down without a clean LL terminate; the host stack then
 // stays "connected" forever and never re-advertises until a power cycle).
 static volatile uint32_t last_activity_ms = 0;
 static volatile uint16_t conn_handle = BLE_HS_CONN_HANDLE_NONE;
-#define LINK_DEAD_MS 90000UL  // daemon polls every 60s — 1.5 missed cycles
+// Backstop only: the 4s supervision timeout (set in onConnect) handles a
+// genuinely dropped link via onDisconnect. This watchdog covers the rare
+// "onDisconnect never fires" case. Kept long (5 min) so a healthy link
+// that is merely idle — e.g. the daemon is connected but its OAuth token
+// is broken, so no payload is sent — is NOT force-cycled every poll.
+#define LINK_DEAD_MS 300000UL
 static char rx_buf[BLE_BUF_SIZE];
 static volatile bool data_ready = false;
 static volatile bool has_received_data = false;
@@ -91,6 +98,9 @@ static bool start_advertising() {
     adv->enableScanResponse(true);
     adv->setName(DEVICE_NAME);
     bool ok = adv->start();
+    // start() can return false if advertising is already running — that's
+    // still the desired state, so don't demote to DISCONNECTED in that case.
+    if (!ok && adv->isAdvertising()) ok = true;
     state = ok ? BLE_STATE_ADVERTISING : BLE_STATE_DISCONNECTED;
     Serial.printf("BLE: advertising start=%s\n", ok ? "OK" : "FAILED");
     return ok;
@@ -141,9 +151,10 @@ class ReqCallbacks : public NimBLECharacteristicCallbacks {
     }
 };
 
-// CTRL command bytes (must match daemon)
-// 0x01=Usage 0x02=BT 0x03=Splash 0x04=Cycle 0x06=EMO 0x10=Refresh
-// 0x40=Lang EN 0x41=Lang RU
+// CTRL command bytes (must match daemon + main.cpp dispatch)
+// 0x01=Usage 0x02=BT 0x03=Splash 0x04=Cycle 0x05=Reboot 0x06=EMO
+// 0x07=CycleView 0x08=NextAnim 0x10=Refresh 0x40=Lang EN 0x41=Lang RU
+// 0x42=Lang EN(set) 0x43=Lang RU(set)
 class CtrlCallbacks : public NimBLECharacteristicCallbacks {
     void onWrite(NimBLECharacteristic* chr, NimBLEConnInfo& info) override {
         std::string val = chr->getValue();
@@ -220,7 +231,11 @@ void ble_init(void) {
 
     svc->start();
     server->start();
-    server->advertiseOnDisconnect(true);  // stack-level re-advertise on drop
+    // NOTE: deliberately NOT using server->advertiseOnDisconnect(true).
+    // Re-advertising is driven explicitly by onDisconnect → need_advertise
+    // → ble_tick (plus the isAdvertising watchdog). Enabling the stack's
+    // auto-restart too would race with start_advertising()'s adv->reset()
+    // and could tear down an already-running advertisement.
     start_advertising();
 
     Serial.printf("BLE: init complete, MAC=%s\n", mac_str);

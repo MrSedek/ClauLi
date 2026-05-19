@@ -421,7 +421,10 @@ async def connect_and_run(
                     if state.auth_error:
                         # Re-create the client forcing a Keychain re-read so a
                         # fresh `claude` login is picked up without a restart.
-                        state.api_client = _create_anthropic_client(force=True)
+                        # Runs Keychain subprocess + file I/O — keep it off
+                        # the event loop.
+                        state.api_client = await asyncio.to_thread(
+                            _create_anthropic_client, True)
                         if not was_auth_error:
                             await _broadcast_ws(state, {"type": "auth", "ok": False})
 
