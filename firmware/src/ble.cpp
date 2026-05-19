@@ -52,6 +52,12 @@ static NimBLECharacteristic* ctrl_char = nullptr;
 
 static ble_state_t state = BLE_STATE_INIT;
 static bool need_advertise = false;
+// Liveness watchdog: recover even if onDisconnect never fires (macOS can
+// tear the link down without a clean LL terminate; the host stack then
+// stays "connected" forever and never re-advertises until a power cycle).
+static volatile uint32_t last_activity_ms = 0;
+static volatile uint16_t conn_handle = BLE_HS_CONN_HANDLE_NONE;
+#define LINK_DEAD_MS 90000UL  // daemon polls every 60s — 1.5 missed cycles
 static char rx_buf[BLE_BUF_SIZE];
 static volatile bool data_ready = false;
 static volatile bool has_received_data = false;
@@ -61,7 +67,7 @@ static char mac_str[18];
 static volatile bool ctrl_ready = false;
 static volatile uint8_t ctrl_cmd = 0;
 
-static void start_advertising() {
+static bool start_advertising() {
     NimBLEAdvertising* adv = NimBLEDevice::getAdvertising();
     adv->reset();
     adv->addServiceUUID(SERVICE_UUID);
@@ -69,18 +75,26 @@ static void start_advertising() {
     adv->enableScanResponse(true);
     adv->setName(DEVICE_NAME);
     bool ok = adv->start();
-    state = BLE_STATE_ADVERTISING;
+    state = ok ? BLE_STATE_ADVERTISING : BLE_STATE_DISCONNECTED;
     Serial.printf("BLE: advertising start=%s\n", ok ? "OK" : "FAILED");
+    return ok;
 }
 
 class ServerCallbacks : public NimBLEServerCallbacks {
     void onConnect(NimBLEServer* s, NimBLEConnInfo& info) override {
         state = BLE_STATE_CONNECTED;
+        conn_handle = info.getConnHandle();
+        last_activity_ms = millis();
+        // Request a short supervision timeout (4.0s) so a dropped link is
+        // detected quickly and onDisconnect fires (macOS otherwise leaves
+        // the peripheral hung in CONNECTED). Interval 30–60ms, latency 0.
+        s->updateConnParams(conn_handle, 24, 48, 0, 400);
         Serial.printf("BLE: connected from %s\n", info.getAddress().toString().c_str());
     }
 
     void onDisconnect(NimBLEServer* s, NimBLEConnInfo& info, int reason) override {
         state = BLE_STATE_DISCONNECTED;
+        conn_handle = BLE_HS_CONN_HANDLE_NONE;
         need_advertise = true;
         Serial.printf("BLE: disconnected (reason=%d)\n", reason);
     }
@@ -96,6 +110,7 @@ class RxCallbacks : public NimBLECharacteristicCallbacks {
         rx_buf[len] = '\0';
         data_ready = true;
         has_received_data = true;
+        last_activity_ms = millis();
     }
 };
 
@@ -103,6 +118,7 @@ class RxCallbacks : public NimBLECharacteristicCallbacks {
 // if we have none yet.
 class ReqCallbacks : public NimBLECharacteristicCallbacks {
     void onSubscribe(NimBLECharacteristic* chr, NimBLEConnInfo& info, uint16_t subValue) override {
+        last_activity_ms = millis();
         if (subValue != 0 && !has_received_data) {
             ble_request_refresh();
         }
@@ -118,6 +134,7 @@ class CtrlCallbacks : public NimBLECharacteristicCallbacks {
         if (val.length() >= 1) {
             ctrl_cmd = (uint8_t)val[0];
             ctrl_ready = true;
+            last_activity_ms = millis();
         }
     }
 };
@@ -178,15 +195,51 @@ void ble_init(void) {
 
     svc->start();
     server->start();
+    server->advertiseOnDisconnect(true);  // stack-level re-advertise on drop
     start_advertising();
 
     Serial.printf("BLE: init complete, MAC=%s\n", mac_str);
 }
 
 void ble_tick(void) {
-    if (need_advertise) {
-        need_advertise = false;
-        start_advertising();
+    static uint32_t last_adv_ms = 0;
+    const uint32_t ADV_RETRY_MS = 1000;
+    uint32_t now = millis();
+
+    // Liveness watchdog: if the stack still thinks it's CONNECTED but no
+    // RX/CTRL/subscribe traffic has arrived for LINK_DEAD_MS, the link is
+    // dead (macOS tore it down without a clean terminate and onDisconnect
+    // never fired). Force the disconnect so we re-advertise. Trade-off:
+    // with a broken token the daemon stays connected but sends no payload,
+    // so the link is force-cycled ~every 90s — acceptable, self-heals once
+    // the token is fixed.
+    if (state == BLE_STATE_CONNECTED &&
+        (now - last_activity_ms) > LINK_DEAD_MS) {
+        Serial.println("BLE: link dead — forcing reconnect");
+        if (server && server->getConnectedCount() > 0 &&
+            conn_handle != BLE_HS_CONN_HANDLE_NONE) {
+            server->disconnect(conn_handle);
+        }
+        state = BLE_STATE_DISCONNECTED;
+        conn_handle = BLE_HS_CONN_HANDLE_NONE;
+        need_advertise = true;
+    }
+
+    // Self-healing watchdog: if we're not connected and the controller is
+    // not actually advertising, re-arm the restart (covers a lost flag or
+    // an onDisconnect that never fired).
+    if (state != BLE_STATE_CONNECTED && !need_advertise &&
+        (now - last_adv_ms) >= ADV_RETRY_MS &&
+        !NimBLEDevice::getAdvertising()->isAdvertising()) {
+        need_advertise = true;
+    }
+
+    if (need_advertise && (now - last_adv_ms) >= ADV_RETRY_MS) {
+        last_adv_ms = now;
+        // Keep the flag set until start() actually succeeds so a failed
+        // attempt is retried on the next tick instead of going dark until
+        // a power cycle.
+        if (start_advertising()) need_advertise = false;
     }
 }
 

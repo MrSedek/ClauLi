@@ -69,8 +69,13 @@ static lv_obj_t* obj_info_w    = nullptr;  // weekly line
 static lv_obj_t* obj_bar_s     = nullptr;  // session gradient bar
 static lv_obj_t* obj_bar_w     = nullptr;  // weekly gradient bar
 static lv_obj_t* obj_clock     = nullptr;  // top clock (HH:MM)
+static lv_obj_t* obj_zzz       = nullptr;  // "z z z" sleep overlay
 
 static bool      active        = false;
+static bool      sleeping      = false;    // limit exhausted → sleep mode
+static bool      connected     = false;    // BLE link up (false → "Reconnecting…")
+static uint8_t   recon_dots    = 0;        // animated trailing-dot phase
+static uint32_t  recon_last_ms = 0;
 static uint8_t   cur_mood      = EMO_NEUTRAL;
 static uint8_t   view_idx      = 0;        // 0..9 (see EMO_VIEW_COUNT)
 static UsageData last_data     = {};
@@ -164,8 +169,25 @@ static void update_clock(bool force) {
     lv_label_set_text_fmt(obj_clock, "%02d:%02d", mins / 60, mins % 60);
 }
 
+// ─── BLE-down message: "Reconnecting" + animated trailing dots ─────────────
+static void render_reconnecting(void) {
+    if (!obj_info_s || !obj_info_w) return;
+    char buf[40];
+    int n = recon_dots & 3;  // 0..3 dots
+    snprintf(buf, sizeof(buf), "%s%.*s", TR(STR_RECONNECT), n, "...");
+    lv_label_set_text(obj_info_s, buf);
+    lv_label_set_text(obj_info_w, "");
+}
+
 // ─── Refresh usage text + bars from last_data ──────────────────────────────
 static void refresh_usage(void) {
+    if (!connected) {
+        render_reconnecting();
+        lv_bar_set_value(obj_bar_s, 0, LV_ANIM_OFF);
+        lv_bar_set_value(obj_bar_w, 0, LV_ANIM_OFF);
+        return;
+    }
+
     bool compact = (VIEW_CONTENT == VIEW_COMPACT);
     const char* s_lbl = compact ? TR(STR_SESSION_SHORT) : TR(STR_SESSION);
     const char* w_lbl = compact ? TR(STR_WEEK_SHORT)    : TR(STR_WEEK);
@@ -190,10 +212,10 @@ static void refresh_usage(void) {
 
     lv_bar_set_value(obj_bar_s, s, LV_ANIM_ON);
     lv_bar_set_value(obj_bar_w, w, LV_ANIM_ON);
-    lv_obj_set_style_bg_grad_color(obj_bar_s, pct_color(last_data.session_pct),
-                                   LV_PART_INDICATOR);
-    lv_obj_set_style_bg_grad_color(obj_bar_w, pct_color(last_data.weekly_pct),
-                                   LV_PART_INDICATOR);
+    lv_obj_set_style_bg_color(obj_bar_s, pct_color(last_data.session_pct),
+                              LV_PART_INDICATOR);
+    lv_obj_set_style_bg_color(obj_bar_w, pct_color(last_data.weekly_pct),
+                              LV_PART_INDICATOR);
 }
 
 // ─── Position/show widgets for the active view mode ────────────────────────
@@ -247,6 +269,74 @@ static void apply_mood(uint8_t mood) {
     apply_tint();
 }
 
+// ─── Sleep mode (limit exhausted): Zzz float + eye "breathing" ─────────────
+static void zzz_anim_cb(void* var, int32_t v) {
+    lv_obj_t* o = (lv_obj_t*)var;
+    lv_obj_set_style_translate_y(o, -(v * 38 / 100), 0);
+    lv_opa_t op = (v < 70) ? LV_OPA_COVER
+                           : (lv_opa_t)(LV_OPA_COVER * (100 - v) / 30);
+    lv_obj_set_style_opa(o, op, 0);
+}
+
+static void breath_anim_cb(void* var, int32_t v) {
+    (void)var;  // used only as the animation key
+    if (obj_eye_l) lv_image_set_scale(obj_eye_l, v);
+    if (obj_eye_r) lv_image_set_scale(obj_eye_r, v);
+}
+
+static void start_sleep_anim(void) {
+    lv_anim_t a;
+    lv_anim_init(&a);
+    lv_anim_set_var(&a, obj_zzz);
+    lv_anim_set_exec_cb(&a, zzz_anim_cb);
+    lv_anim_set_values(&a, 0, 100);
+    lv_anim_set_time(&a, 1800);
+    lv_anim_set_repeat_count(&a, LV_ANIM_REPEAT_INFINITE);
+    lv_anim_set_repeat_delay(&a, 300);
+    lv_anim_start(&a);
+
+    lv_anim_t b;
+    lv_anim_init(&b);
+    lv_anim_set_var(&b, obj_eye_l);  // key only; cb scales both eyes
+    lv_anim_set_exec_cb(&b, breath_anim_cb);
+    lv_anim_set_values(&b, EYE_SCALE, EYE_SCALE + EYE_SCALE * 6 / 100);
+    lv_anim_set_time(&b, 2200);
+    lv_anim_set_playback_time(&b, 2200);
+    lv_anim_set_repeat_count(&b, LV_ANIM_REPEAT_INFINITE);
+    lv_anim_start(&b);
+}
+
+static void stop_sleep_anim(void) {
+    lv_anim_del(obj_zzz, zzz_anim_cb);
+    lv_anim_del(obj_eye_l, breath_anim_cb);
+    if (obj_eye_l) lv_image_set_scale(obj_eye_l, EYE_SCALE);
+    if (obj_eye_r) lv_image_set_scale(obj_eye_r, EYE_SCALE);
+    if (obj_zzz) {
+        lv_obj_set_style_translate_y(obj_zzz, 0, 0);
+        lv_obj_set_style_opa(obj_zzz, LV_OPA_COVER, 0);
+    }
+}
+
+// Enter/leave sleep when the session or weekly limit is exhausted.
+static void update_sleep_state(void) {
+    if (!connected) return;  // stale data while BLE is down — no sleep
+    bool ex = last_data.valid && (last_data.session_pct >= 100.0f ||
+                                  last_data.weekly_pct >= 100.0f);
+    if (ex && !sleeping) {
+        sleeping = true;
+        apply_mood(EMO_SLEEP);
+        if (obj_zzz) lv_obj_clear_flag(obj_zzz, LV_OBJ_FLAG_HIDDEN);
+        start_sleep_anim();
+    } else if (!ex && sleeping) {
+        sleeping = false;
+        stop_sleep_anim();
+        if (obj_zzz) lv_obj_add_flag(obj_zzz, LV_OBJ_FLAG_HIDDEN);
+        apply_mood(EMO_NEUTRAL);
+        blink_closed = false;
+        schedule_next_mood();
+    }
+}
+
 static lv_obj_t* make_eye(lv_obj_t* parent, int cx, int cy) {
     lv_obj_t* img = lv_image_create(parent);
     lv_image_set_src(img, emo_eye_frames[EMO_NEUTRAL][0]);
@@ -283,8 +373,6 @@ static lv_obj_t* make_bar(lv_obj_t* parent, int y) {
     lv_obj_set_style_border_width(b, 0, LV_PART_MAIN);
     lv_obj_set_style_radius(b, BAR_H / 2, LV_PART_INDICATOR);
     lv_obj_set_style_bg_color(b, EMO_GREEN, LV_PART_INDICATOR);
-    lv_obj_set_style_bg_grad_color(b, EMO_RED, LV_PART_INDICATOR);
-    lv_obj_set_style_bg_grad_dir(b, LV_GRAD_DIR_HOR, LV_PART_INDICATOR);
     lv_obj_set_style_bg_opa(b, LV_OPA_COVER, LV_PART_INDICATOR);
     lv_obj_clear_flag(b, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_clear_flag(b, LV_OBJ_FLAG_CLICKABLE);
@@ -320,6 +408,15 @@ void emo_init(void) {
     lv_obj_clear_flag(obj_clock, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_add_flag(obj_clock, LV_OBJ_FLAG_HIDDEN);
 
+    obj_zzz = lv_label_create(emo_container);
+    lv_label_set_text(obj_zzz, "z z z");
+    lv_obj_set_style_text_font(obj_zzz, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_color(obj_zzz, THEME_TEXT, 0);
+    lv_obj_align(obj_zzz, LV_ALIGN_TOP_LEFT, 188, 34);
+    lv_obj_clear_flag(obj_zzz, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_clear_flag(obj_zzz, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_add_flag(obj_zzz, LV_OBJ_FLAG_HIDDEN);
+
     apply_mood(cur_mood);
     refresh_usage();
     apply_view();
@@ -338,6 +435,13 @@ void emo_show(void) {
     apply_view();
     blink_next_ms = millis() + 2000 + (esp_random() % 4000);
     schedule_next_mood();
+    if (sleeping) {              // re-shown while limit still exhausted
+        apply_mood(EMO_SLEEP);
+        if (obj_zzz) lv_obj_clear_flag(obj_zzz, LV_OBJ_FLAG_HIDDEN);
+        start_sleep_anim();
+    } else {
+        update_sleep_state();    // may enter sleep if data arrived hidden
+    }
 }
 
 void emo_hide(void) {
@@ -366,6 +470,7 @@ uint8_t emo_get_view(void) {
 }
 
 void emo_next_emotion(void) {
+    if (sleeping) return;  // don't override sleep via button
     apply_mood(pick_random_mood());
     blink_closed = false;
     schedule_next_mood();
@@ -373,14 +478,31 @@ void emo_next_emotion(void) {
 
 void emo_set_usage(const UsageData* data) {
     if (data) last_data = *data;
+    connected = true;  // fresh data implies the BLE link is up
     if (data && data->epoch) {
         clock_base = data->epoch + (uint32_t)data->tz_off;
         clock_base_ms = millis();
         update_clock(true);
     }
+    update_sleep_state();
     if (!active) return;
     apply_tint();
     refresh_usage();
+}
+
+void emo_set_connected(bool c) {
+    if (c == connected) return;
+    connected = c;
+    if (!c) {
+        recon_dots = 0;
+        recon_last_ms = millis();
+        if (sleeping) {  // stale usage — drop the sleep visuals
+            sleeping = false;
+            stop_sleep_anim();
+            if (obj_zzz) lv_obj_add_flag(obj_zzz, LV_OBJ_FLAG_HIDDEN);
+        }
+    }
+    if (active) refresh_usage();
 }
 
 void emo_relang(void) {
@@ -398,6 +520,17 @@ void emo_tick(void) {
     uint32_t now = millis();
 
     if (VIEW_CLOCK) update_clock(false);
+
+    if (!connected) {  // BLE down: animate the "Reconnecting…" dots only
+        if (now - recon_last_ms >= 450) {
+            recon_last_ms = now;
+            recon_dots++;
+            render_reconnecting();
+        }
+        return;
+    }
+
+    if (sleeping) return;  // limit exhausted: no mood change / blink
 
     // Random auto mood change (20 s … 10 min).
     if (now >= mood_next_ms) {

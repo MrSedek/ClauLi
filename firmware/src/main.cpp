@@ -11,6 +11,7 @@
 #include "i18n.h"
 #include "emo.h"
 #include <Preferences.h>
+#include <esp_system.h>
 
 // ─── Hardware objects (allocated in setup() — C6 crashes on global new) ────
 Arduino_DataBus *bus = nullptr;
@@ -274,6 +275,7 @@ void loop() {
     if (bs != last_ble_state) {
         last_ble_state = bs;
         ui_update_ble_status(bs, ble_get_device_name(), ble_get_mac_address());
+        emo_set_connected(bs == BLE_STATE_CONNECTED);
     }
 
 #ifdef EMO_SELFTEST
@@ -327,6 +329,9 @@ void loop() {
         case 0x03: ui_show_screen(SCREEN_SPLASH);     break;
         case 0x04: ui_cycle_screen();                 break;
         case 0x06: ui_show_screen(SCREEN_EMO);        break;
+        case 0x05: esp_restart();                     break;  // device reboot
+        case 0x07: action_trigger_animation();        break;  // BOOT-click analog (cycle view)
+        case 0x08: emo_next_emotion();                break;  // next emotion/animation now
         case 0x10: ble_request_refresh();             break;
         // 0x40/0x41: connect-time seed — ignored once the user has chosen.
         case 0x40: if (!g_lang_user_set) { i18n_set(LANG_EN); ui_relang(); } break;

@@ -24,6 +24,7 @@ static const char* const S[STR_COUNT][2] = {
     /* STR_BT_DEVICE     */ { "Device:",         "Устройство:" },
     /* STR_BT_ADDR       */ { "Address:",        "Адрес:" },
     /* STR_BT_RESET      */ { "Reset Bluetooth", "Сброс Bluetooth" },
+    /* STR_RECONNECT */ { "Reconnecting", "Переподключение" },
 };
 
 const char* TR(str_id id) { return S[id][g_lang]; }

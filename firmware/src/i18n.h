@@ -23,6 +23,7 @@ enum str_id {
     STR_BT_DEVICE,      // "Device:" / "Устройство:"
     STR_BT_ADDR,        // "Address:" / "Адрес:"
     STR_BT_RESET,       // "Reset Bluetooth" / "Сброс Bluetooth"
+    STR_RECONNECT,      // "Reconnecting" / "Переподключение"
     STR_COUNT
 };
 

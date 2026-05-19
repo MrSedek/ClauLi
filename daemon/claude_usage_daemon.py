@@ -47,6 +47,9 @@ CTRL_SCREEN_BT = 0x02
 CTRL_SCREEN_SPLASH = 0x03
 CTRL_SCREEN_CYCLE = 0x04
 CTRL_SCREEN_EMO = 0x06
+CTRL_REBOOT = 0x05         # reboot the ESP32
+CTRL_CYCLE_VIEW = 0x07     # BOOT-click analog (cycle the current screen's view)
+CTRL_NEXT_ANIM = 0x08      # advance emotion/animation now (skip the timer)
 CTRL_REFRESH = 0x10
 CTRL_LANG_EN = 0x40        # connect-time seed (firmware ignores if user set)
 CTRL_LANG_RU = 0x41
@@ -64,6 +67,12 @@ SCREEN_MAP = {
 
 LANG_MAP = {"en": CTRL_LANG_EN, "ru": CTRL_LANG_RU}
 LANG_SET_MAP = {"en": CTRL_LANG_EN_SET, "ru": CTRL_LANG_RU_SET}
+
+ACTION_MAP = {
+    "reboot": CTRL_REBOOT,
+    "view": CTRL_CYCLE_VIEW,
+    "anim": CTRL_NEXT_ANIM,
+}
 
 POLL_INTERVAL = 60
 TICK = 5
@@ -115,17 +124,22 @@ class DaemonState:
     ctrl_queue: asyncio.Queue = field(default_factory=asyncio.Queue)
     ws_clients: set = field(default_factory=set)
     api_client: Optional[Anthropic] = None
+    auth_error: bool = False
 
 
 # ---------------------------------------------------------------------------
 # SDK-backed credential provider
 # ---------------------------------------------------------------------------
 
-def _sync_keychain_to_sdk_credentials() -> bool:
+def _sync_keychain_to_sdk_credentials(force: bool = False) -> bool:
     creds_path = SDK_CREDENTIALS_DIR / "credentials" / "default.json"
     config_path = SDK_CREDENTIALS_DIR / "configs" / "default.json"
 
-    if creds_path.exists():
+    # `force` bypasses the freshness short-circuit: after an invalid_grant the
+    # access token may still look unexpired by clock yet be revoked server-side.
+    # Re-reading the Keychain unconditionally lets the daemon auto-recover the
+    # moment the user re-authenticates via the Claude Code app/CLI.
+    if not force and creds_path.exists():
         try:
             data = json.loads(creds_path.read_text())
             expires_at = data.get("expires_at", 0)
@@ -189,8 +203,8 @@ def _sync_keychain_to_sdk_credentials() -> bool:
     return True
 
 
-def _create_anthropic_client() -> Optional[Anthropic]:
-    if _sync_keychain_to_sdk_credentials():
+def _create_anthropic_client(force: bool = False) -> Optional[Anthropic]:
+    if _sync_keychain_to_sdk_credentials(force=force):
         try:
             provider = CredentialsFile()
             return Anthropic(credentials=provider)
@@ -210,12 +224,24 @@ def _create_anthropic_client() -> Optional[Anthropic]:
 # API polling
 # ---------------------------------------------------------------------------
 
-async def poll_api(client: Anthropic) -> Optional[dict]:
+async def poll_api(client: Anthropic, state: DaemonState) -> Optional[dict]:
     try:
         token = await asyncio.to_thread(client._token_cache.get_token)
     except Exception as e:
-        log(f"Token acquisition failed: {e}")
+        msg = str(e)
+        if not state.auth_error:  # log the actionable hint once per outage
+            if "invalid_grant" in msg:
+                log("AUTH: refresh token invalid/expired. Re-authenticate in "
+                    "the Claude Code app or run `claude` in a terminal — the "
+                    "daemon re-reads the Keychain every poll and auto-recovers "
+                    "once new credentials appear (no restart needed).")
+            else:
+                log(f"Token acquisition failed: {e}")
+        state.auth_error = True
         return None
+    if state.auth_error:
+        state.auth_error = False
+        log("AUTH: recovered — fresh credentials picked up")
 
     headers = dict(API_HEADERS_TEMPLATE)
     headers["Authorization"] = f"Bearer {token}"
@@ -377,7 +403,8 @@ async def connect_and_run(
             elapsed = now - last_poll
             if session.refresh_requested.is_set() or elapsed >= state.poll_interval:
                 session.refresh_requested.clear()
-                payload = await poll_api(state.api_client)
+                was_auth_error = state.auth_error
+                payload = await poll_api(state.api_client, state)
                 if payload is not None:
                     if await session.write_payload(payload):
                         last_poll = time.time()
@@ -387,8 +414,16 @@ async def connect_and_run(
                         await _broadcast_ws(state, {"type": "data", "payload": payload})
                     else:
                         last_poll = time.time()
+                    if was_auth_error:  # cleared inside poll_api on success
+                        await _broadcast_ws(state, {"type": "auth", "ok": True})
                 else:
                     last_poll = time.time()
+                    if state.auth_error:
+                        # Re-create the client forcing a Keychain re-read so a
+                        # fresh `claude` login is picked up without a restart.
+                        state.api_client = _create_anthropic_client(force=True)
+                        if not was_auth_error:
+                            await _broadcast_ws(state, {"type": "auth", "ok": False})
 
             try:
                 await asyncio.wait_for(session.refresh_requested.wait(), timeout=TICK)
@@ -444,6 +479,7 @@ async def _handle_status(request: web.Request) -> web.Response:
         "poll_interval": state.poll_interval,
         "uptime": int(time.time() - state.start_time),
         "lang": state.firmware_lang,
+        "auth_error": state.auth_error,
     })
 
 
@@ -476,6 +512,29 @@ async def _handle_refresh(request: web.Request) -> web.Response:
 
     await state.ctrl_queue.put(CTRL_REFRESH)
     return web.json_response({"ok": True, "action": "refresh"})
+
+
+async def _handle_action(request: web.Request) -> web.Response:
+    """POST /api/action  body: {"action": "reboot"|"view"|"anim"}."""
+    state: DaemonState = request.app["state"]
+    try:
+        body = await request.json()
+    except Exception:
+        return web.json_response({"error": "invalid JSON"}, status=400)
+
+    action = str(body.get("action", "")).lower()
+    cmd = ACTION_MAP.get(action)
+    if cmd is None:
+        return web.json_response(
+            {"error": f"unknown action '{action}', valid: {list(ACTION_MAP.keys())}"},
+            status=400,
+        )
+
+    if not state.ble_connected:
+        return web.json_response({"error": "BLE not connected"}, status=503)
+
+    await state.ctrl_queue.put(cmd)
+    return web.json_response({"ok": True, "action": action, "cmd": cmd})
 
 
 def save_lang(lang: str) -> None:
@@ -521,6 +580,7 @@ async def _handle_ws(request: web.Request) -> web.WebSocketResponse:
         "address": state.ble_address,
     }))
     await ws.send_str(json.dumps({"type": "lang", "lang": state.firmware_lang}))
+    await ws.send_str(json.dumps({"type": "auth", "ok": not state.auth_error}))
 
     try:
         async for msg in ws:
@@ -534,6 +594,8 @@ async def _handle_ws(request: web.Request) -> web.WebSocketResponse:
                             await state.ctrl_queue.put(cmd)
                     elif action == "refresh":
                         await state.ctrl_queue.put(CTRL_REFRESH)
+                    elif action in ACTION_MAP:
+                        await state.ctrl_queue.put(ACTION_MAP[action])
                 except json.JSONDecodeError:
                     pass
     finally:
@@ -550,6 +612,7 @@ def create_http_app(state: DaemonState) -> web.Application:
     app.router.add_get("/api/status", _handle_status)
     app.router.add_post("/api/screen", _handle_screen)
     app.router.add_post("/api/refresh", _handle_refresh)
+    app.router.add_post("/api/action", _handle_action)
     app.router.add_post("/api/lang", _handle_lang)
     app.router.add_get("/api/ws", _handle_ws)
 
@@ -608,6 +671,22 @@ async def cli_mode(args: argparse.Namespace) -> None:
                 result = resp.json()
                 if result.get("ok"):
                     print("Sent: refresh")
+                else:
+                    print(f"Error: {result.get('error', 'unknown')}", file=sys.stderr)
+            except httpx.ConnectError:
+                print(f"Daemon not running on port {port}", file=sys.stderr)
+                sys.exit(1)
+
+        elif args.action:
+            action = args.action.lower()
+            if action not in ACTION_MAP:
+                print(f"Unknown action '{action}'. Valid: {list(ACTION_MAP.keys())}", file=sys.stderr)
+                sys.exit(1)
+            try:
+                resp = await http.post(f"{base}/api/action", json={"action": action})
+                result = resp.json()
+                if result.get("ok"):
+                    print(f"Sent: action → {action}")
                 else:
                     print(f"Error: {result.get('error', 'unknown')}", file=sys.stderr)
             except httpx.ConnectError:
@@ -707,6 +786,8 @@ def main() -> None:
                         help="Switch ESP32 screen: usage, bt, splash, cycle, emo")
     parser.add_argument("--refresh", action="store_true",
                         help="Force data refresh on ESP32")
+    parser.add_argument("--action", metavar="NAME",
+                        help="Device action: reboot, view, anim")
     parser.add_argument("--status", action="store_true",
                         help="Show current daemon status")
     parser.add_argument("--ui", action="store_true",
@@ -718,7 +799,7 @@ def main() -> None:
     args = parser.parse_args()
 
     # CLI mode — talk to running daemon
-    if args.screen or args.refresh or args.status or args.ui:
+    if args.screen or args.refresh or args.action or args.status or args.ui:
         asyncio.run(cli_mode(args))
         return
 

@@ -111,6 +111,10 @@ body::after{
     <span class="status-dot" id="ble-dot"></span>
     <span id="ble-status">Disconnected</span>
   </div>
+  <div class="status-row" id="auth-row" style="display:none">
+    <span class="status-dot"></span>
+    <span data-i18n="authmsg" id="auth-msg">Auth: re-login required</span>
+  </div>
   <div class="controls">
     <button class="btn" data-i18n="usage" onclick="sendScreen('usage')">Usage</button>
     <button class="btn" onclick="sendScreen('emo')">EMO</button>
@@ -118,6 +122,11 @@ body::after{
     <button class="btn" onclick="sendScreen('bluetooth')">Bluetooth</button>
     <button class="btn" data-i18n="cycle" onclick="sendScreen('cycle')">Cycle</button>
     <button class="btn accent" data-i18n="refresh" onclick="sendRefresh()">↻ Refresh</button>
+  </div>
+  <div class="controls" style="margin-top:2px">
+    <button class="btn" data-i18n="nextview" onclick="sendAction('view')">Next view</button>
+    <button class="btn" data-i18n="nextanim" onclick="sendAction('anim')">Next anim</button>
+    <button class="btn" data-i18n="reboot" onclick="sendAction('reboot')">Reboot</button>
   </div>
   <div class="controls" style="margin-top:2px">
     <button class="btn" id="lang-en" onclick="sendLang('en')">EN</button>
@@ -133,11 +142,15 @@ let curS=0,curW=0,ws=null,reconnectTimer=null;
 let curLang='en',lastPayload=null,lastBLE={state:'disconnected',address:null};
 const I18N={
   en:{usage:'Usage',anim:'Animation',cycle:'Cycle',refresh:'↻ Refresh',wpre:'W',
+      nextview:'Next view',nextanim:'Next anim',reboot:'Reboot',
       connected:'Connected',disconnected:'Disconnected',sess:'Session',week:'Week',
-      resetIn:'Reset in',um:'m',uh:'h',ud:'d',none:'---'},
+      resetIn:'Reset in',um:'m',uh:'h',ud:'d',none:'---',
+      authmsg:'Auth: re-login required (run `claude`)'},
   ru:{usage:'Использование',anim:'Анимация',cycle:'Цикл',refresh:'↻ Обновить',wpre:'Н',
+      nextview:'Сменить вид',nextanim:'Сменить анимацию',reboot:'Перезагрузка',
       connected:'Подключено',disconnected:'Отключено',sess:'Сессия',week:'Неделя',
-      resetIn:'Сброс через',um:'м',uh:'ч',ud:'д',none:'---'}};
+      resetIn:'Сброс через',um:'м',uh:'ч',ud:'д',none:'---',
+      authmsg:'Авторизация: нужен повторный вход (запустите `claude`)'}};
 function t(k){return (I18N[curLang]||I18N.en)[k]}
 function applyI18n(){document.querySelectorAll('[data-i18n]').forEach(el=>{el.textContent=t(el.dataset.i18n)});document.getElementById('w-pre').textContent=t('wpre');updateBLE(lastBLE.state,lastBLE.address);if(lastPayload)updateData(lastPayload)}
 function pctColor(p){return p>=80?'var(--red)':p>=50?'var(--amber)':'var(--green)'}
@@ -148,13 +161,15 @@ function setGlow(cls,circ,arcLen,pct,color){const f=arcLen*Math.min(pct,100)/100
 function animateNum(el,from,to,dur){const start=performance.now();const isS=el.id==='s-num';function tick(now){const p=Math.min((now-start)/dur,1);const e=1-Math.pow(1-p,3);const v=Math.round(from+(to-from)*e);if(isS)el.textContent=v+'%';else el.innerHTML='<span id="w-pre">'+t('wpre')+'</span> '+v+'%';if(p<1)requestAnimationFrame(tick)}requestAnimationFrame(tick)}
 function updateData(payload){if(!payload)return;lastPayload=payload;const s=payload.s||0,w=payload.w||0;const sc=pctColorRaw(s),wc=pctColorRaw(w);setArc('ind-s',CIRC_S,ARC_S,s);setArc('ind-w',CIRC_W,ARC_W,w);setGlow('glow-s',CIRC_S,ARC_S,s,sc);setGlow('glow-w',CIRC_W,ARC_W,w,wc);animateNum(document.getElementById('s-num'),curS,s,800);animateNum(document.getElementById('w-num'),curW,w,800);document.getElementById('s-num').style.color=pctColor(s);document.getElementById('w-num').style.color=pctColor(w);document.getElementById('dot-s').style.background=pctColorRaw(s);document.getElementById('dot-w').style.background=pctColorRaw(w);document.getElementById('s-reset').textContent=t('sess')+' · '+fmtReset(payload.sr);document.getElementById('w-reset').textContent=t('week')+' · '+fmtReset(payload.wr);const s1=document.querySelector('#gs stop:first-child'),s2=document.querySelector('#gs stop:last-child');if(s>=80){s1.setAttribute('stop-color','#c4503a');s2.setAttribute('stop-color','#e85535')}else if(s>=50){s1.setAttribute('stop-color','#d97757');s2.setAttribute('stop-color','#e8956a')}else{s1.setAttribute('stop-color','#8fa66e');s2.setAttribute('stop-color','#c4a462')}curS=s;curW=w;const g=document.getElementById('gauge');g.classList.remove('pulse');void g.offsetWidth;g.classList.add('pulse')}
 function updateBLE(state,address){lastBLE={state,address};const dot=document.getElementById('ble-dot'),txt=document.getElementById('ble-status');if(state==='connected'){dot.className='status-dot on';txt.textContent=address?t('connected')+' · '+address:t('connected')}else{dot.className='status-dot';txt.textContent=t('disconnected')}}
+function updateAuth(ok){document.getElementById('auth-row').style.display=ok?'none':'flex'}
 function setLangUI(l){if(l!=='en'&&l!=='ru')l='en';curLang=l;const en=document.getElementById('lang-en'),ru=document.getElementById('lang-ru');en.classList.toggle('accent',l==='en');ru.classList.toggle('accent',l==='ru');applyI18n()}
-function connectWS(){const proto=location.protocol==='https:'?'wss:':'ws:';ws=new WebSocket(`${proto}//${location.host}/api/ws`);ws.onopen=()=>{clearTimeout(reconnectTimer)};ws.onmessage=e=>{try{const msg=JSON.parse(e.data);if(msg.type==='data')updateData(msg.payload);else if(msg.type==='ble')updateBLE(msg.state,msg.address);else if(msg.type==='lang')setLangUI(msg.lang)}catch{}};ws.onclose=()=>{reconnectTimer=setTimeout(connectWS,3000)};ws.onerror=()=>{ws.close()}}
+function connectWS(){const proto=location.protocol==='https:'?'wss:':'ws:';ws=new WebSocket(`${proto}//${location.host}/api/ws`);ws.onopen=()=>{clearTimeout(reconnectTimer)};ws.onmessage=e=>{try{const msg=JSON.parse(e.data);if(msg.type==='data')updateData(msg.payload);else if(msg.type==='ble')updateBLE(msg.state,msg.address);else if(msg.type==='lang')setLangUI(msg.lang);else if(msg.type==='auth')updateAuth(msg.ok)}catch{}};ws.onclose=()=>{reconnectTimer=setTimeout(connectWS,3000)};ws.onerror=()=>{ws.close()}}
 async function sendScreen(name){try{await fetch('/api/screen',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({screen:name})})}catch{}}
 async function sendRefresh(){try{await fetch('/api/refresh',{method:'POST'})}catch{}}
+async function sendAction(a){try{await fetch('/api/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:a})})}catch{}}
 async function sendLang(l){setLangUI(l);try{await fetch('/api/lang',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lang:l})})}catch{}}
 applyI18n();
-fetch('/api/status').then(r=>r.json()).then(d=>{updateBLE(d.ble_connected?'connected':'disconnected',d.ble_address);setLangUI(d.lang||'en');if(d.last_data)updateData(d.last_data)}).catch(()=>{});
+fetch('/api/status').then(r=>r.json()).then(d=>{updateBLE(d.ble_connected?'connected':'disconnected',d.ble_address);setLangUI(d.lang||'en');updateAuth(!d.auth_error);if(d.last_data)updateData(d.last_data)}).catch(()=>{});
 connectWS();
 </script>
 </body>

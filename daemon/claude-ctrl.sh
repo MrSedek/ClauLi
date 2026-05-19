@@ -15,6 +15,9 @@ Commands:
   bt         Switch ESP32 to Bluetooth screen
   splash     Switch ESP32 to Splash screen
   cycle      Cycle ESP32 screens
+  view       Cycle the current screen's view (BOOT-click analog)
+  anim       Switch to the next animation/emotion now
+  reboot     Reboot the ESP32
   refresh    Force data refresh on ESP32
   status     Show current daemon status
   ui         Open Web UI in browser
@@ -28,6 +31,9 @@ EOF
 case "${1:-help}" in
   usage|emo|bt|splash|cycle)
     python3 "$DAEMON_SCRIPT" --screen "$1" --port "$PORT"
+    ;;
+  view|anim|reboot)
+    python3 "$DAEMON_SCRIPT" --action "$1" --port "$PORT"
     ;;
   refresh)
     python3 "$DAEMON_SCRIPT" --refresh --port "$PORT"

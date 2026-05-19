@@ -189,6 +189,12 @@ smooth color transition. It does not poll the daemon.
   Claude Code OAuth client to `~/.config/anthropic/configs/default.json`.
   Restart the daemon after updating; re-login with Claude Code if the
   Keychain token is missing.
+- **`invalid_grant: Refresh token not found or invalid`** — the refresh
+  token was revoked/rotated; it can't refresh silently. Re-authenticate
+  in the Claude Code app (or `claude` in a terminal) — the daemon
+  re-reads the Keychain every poll and recovers **without a restart**
+  (`AUTH: recovered` in the log). See `CLAUDE.md` → "OAuth token /
+  re-issue" for the headless `CLAUDE_CODE_OAUTH_TOKEN` fallback.
 - **Tofu boxes in text** — fonts must include the glyph; regenerate per the
   snippet in `CLAUDE.md` (it includes `-r 0x00B7` for the `·` separator).
 - **No `screenshot` command** — the firmware has no framebuffer dump; verify
