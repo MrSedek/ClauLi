@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>ClauLi · EMO 2.0 — % layout candidates</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;700&family=Onest:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#050505;--surface:#0e0e0e;--surface2:#181818;
+  --text:#f5f5f5;--dim:#8a8a8a;
+  --cyan:#3DE0E0;--amber:#FFB02E;--red:#FF4D4D;
+  --line:rgba(255,255,255,.07);
+}
+html,body{background:var(--bg);color:var(--text);font-family:'Onest',system-ui,sans-serif;line-height:1.55}
+.shell{max-width:1280px;margin:0 auto;padding:0 24px}
+header{padding:48px 0 24px;text-align:center;border-bottom:1px solid var(--line)}
+.tag{display:inline-block;font-family:'Azeret Mono';font-size:10px;letter-spacing:3px;color:var(--cyan);text-transform:uppercase;padding:5px 11px;border:1px solid rgba(61,224,224,.3);border-radius:100px;margin-bottom:18px}
+h1{font-size:clamp(32px,4.6vw,52px);font-weight:600;letter-spacing:-1.2px;margin-bottom:14px}
+h1 .accent{color:var(--cyan)}
+.lead{color:var(--dim);font-size:16px;max-width:680px;margin:0 auto}
+.legend{display:flex;justify-content:center;gap:24px;margin-top:18px;font-family:'Azeret Mono';font-size:11px;color:var(--dim)}
+.legend .swatch{display:inline-flex;align-items:center;gap:6px}
+.legend .dot{width:10px;height:10px;border-radius:50%}
+.toolbar{position:sticky;top:0;background:rgba(5,5,5,.85);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line);z-index:50;padding:14px 0}
+.toolbar .row{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.count{font-family:'Azeret Mono';font-size:12px;color:var(--dim)}
+.count strong{color:var(--cyan);font-weight:700}
+.live{font-family:'Azeret Mono';font-size:11px;color:var(--dim);display:flex;gap:14px;align-items:center}
+.live .v{color:var(--text);font-weight:700}
+.btn{padding:10px 18px;border-radius:7px;font-family:'Onest';font-weight:500;font-size:13px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--text);transition:all .15s}
+.btn:hover{background:var(--surface2)}
+.btn.primary{background:var(--cyan);color:#000;border-color:transparent;font-weight:600}
+
+.family{margin:36px 0 8px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.family h2{font-size:14px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--cyan);font-family:'Azeret Mono'}
+.family p{font-size:13px;color:var(--dim);margin-top:4px}
+
+.grid{padding:18px 0 0;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;transition:all .2s;display:flex;flex-direction:column}
+.card.picked{border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan),0 14px 30px rgba(61,224,224,.10)}
+.card.hash-highlight{border-color:var(--cyan);box-shadow:0 0 0 2px var(--cyan),0 0 60px rgba(61,224,224,.45);animation:hash-pulse 2s ease-out 1}
+@keyframes hash-pulse{
+  0%{box-shadow:0 0 0 4px var(--cyan),0 0 80px rgba(61,224,224,.7)}
+  100%{box-shadow:0 0 0 2px var(--cyan),0 0 60px rgba(61,224,224,.45)}
+}
+.card h3{font-size:15px;font-weight:600;margin-bottom:4px}
+.card .desc{font-size:12px;color:var(--dim);line-height:1.5;min-height:44px;margin-bottom:12px}
+.card canvas{width:100%;aspect-ratio:6/7;display:block;border-radius:10px;background:#000;margin-bottom:8px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.04)}
+.card .enc{font-family:'Azeret Mono';font-size:10px;color:var(--dim);margin-bottom:10px;line-height:1.55}
+.card .enc .k{color:var(--cyan)}
+.card .ftr{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;color:var(--dim)}
+.card .ftr label{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
+.card .ftr input{appearance:none;width:18px;height:18px;border:1.5px solid rgba(255,255,255,.2);border-radius:5px;cursor:pointer;background:transparent;display:grid;place-items:center;transition:all .15s}
+.card .ftr input:checked{background:var(--cyan);border-color:var(--cyan)}
+.card .ftr input:checked::after{content:'✓';color:#000;font-weight:700;font-size:12px;line-height:1}
+.card .id{font-family:'Azeret Mono';font-size:10px;color:#555;letter-spacing:1.5px}
+.card .ftr select{appearance:none;-webkit-appearance:none;font-family:'Azeret Mono';font-size:10px;background:#000;color:var(--cyan);border:1px solid rgba(61,224,224,.3);border-radius:6px;padding:5px 10px;cursor:pointer;letter-spacing:1px}
+.card .ftr select:hover{background:#0a0a0a}
+
+.result{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--cyan);border-radius:12px;padding:18px 22px;max-width:380px;box-shadow:0 30px 70px rgba(0,0,0,.55);display:none}
+.result.show{display:block}
+.result h4{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--cyan);margin-bottom:8px;font-family:'Azeret Mono'}
+.result code{display:block;font-family:'Azeret Mono';font-size:12px;color:var(--text);background:#000;padding:10px;border-radius:6px;margin:8px 0;white-space:pre-wrap;word-break:break-all}
+footer{text-align:center;color:var(--dim);font-size:12px;padding:30px 0 50px;border-top:1px solid var(--line);margin-top:36px}
+</style>
+</head>
+<body>
+
+<header><div class="shell">
+  <div class="tag">stats v1 · 10 % layout candidates</div>
+  <h1>EMO 2.0 — <span class="accent">размещение %</span></h1>
+  <p class="lead">10 вариантов как показать <em>session</em> и <em>weekly</em> на 240×280. Три семейства: <span style="color:var(--cyan)">face-native</span>, <span style="color:#ffb02e">dashboard</span>, <span style="color:#FF4D4D">ambient</span>. Все плитки крутятся синхронно по фейковому session 0→100 за 8 с, чтобы сравнивать поведение цвета и движения.</p>
+  <div class="legend">
+    <span class="swatch"><span class="dot" style="background:#3DE0E0"></span>0–70%</span>
+    <span class="swatch"><span class="dot" style="background:#FFB02E"></span>70–90%</span>
+    <span class="swatch"><span class="dot" style="background:#FF4D4D"></span>90–100%</span>
+  </div>
+</div></header>
+
+<div class="toolbar"><div class="shell row">
+  <span class="count"><strong id="picked">0</strong> / 10 выбрано · <span id="defaultBadge">default: —</span></span>
+  <span class="live"><span>session <span class="v" id="liveS">0%</span></span><span>weekly <span class="v" id="liveW">0%</span></span></span>
+  <div style="display:flex;gap:8px">
+    <button class="btn" onclick="selectAll(false)">Очистить</button>
+    <button class="btn primary" onclick="showResult()">Готово →</button>
+  </div>
+</div></div>
+
+<div class="shell" id="content"></div>
+
+<div class="result" id="result">
+  <h4>К имплементации</h4>
+  <code id="resultText"></code>
+  <button class="btn" style="margin-top:10px" onclick="closeResult()">Закрыть</button>
+</div>
+
+<footer><div class="shell">ClauLi · EMO 2.0 — % layout candidates v1 · pick 1 default + до 2 как доп. view-mode</div></footer>
+
+<script>
+const TAU = Math.PI * 2;
+const CYAN  = '#3DE0E0';
+const AMBER = '#FFB02E';
+const RED   = '#FF4D4D';
+const DIM_TRACK = 'rgba(255,255,255,0.08)';
+
+// ─────────────────────────── color lerp (mirrors firmware) ─────────────────
+function hex(c){ return parseInt(c,16); }
+function parseHex(h){
+  return [hex(h.slice(1,3)), hex(h.slice(3,5)), hex(h.slice(5,7))];
+}
+function rgbStr(r,g,b,a=1){ return `rgba(${r|0},${g|0},${b|0},${a})`; }
+function lerpRGB(a,b,t){
+  const [ar,ag,ab]=parseHex(a), [br,bg,bb]=parseHex(b);
+  return [ar+(br-ar)*t, ag+(bg-ag)*t, ab+(bb-ab)*t];
+}
+function haloColor(pct){
+  let rgb;
+  if (pct < 70) rgb = parseHex(CYAN);
+  else if (pct < 90) rgb = lerpRGB(CYAN, AMBER, (pct-70)/20);
+  else rgb = lerpRGB(AMBER, RED, Math.min(1,(pct-90)/10));
+  return rgbStr(rgb[0],rgb[1],rgb[2]);
+}
+
+// ─────────────────────────── eye paths ──────────────────────────────────────
+function pSquircle(ctx, r, n=4){
+  ctx.beginPath();
+  for (let i=0;i<=64;i++){
+    const t=(i/64)*TAU, ct=Math.cos(t), st=Math.sin(t);
+    const x = Math.sign(ct)*Math.pow(Math.abs(ct), 2/n)*r;
+    const y = Math.sign(st)*Math.pow(Math.abs(st), 2/n)*r;
+    if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.closePath();
+}
+
+// paintHalo: very tight rim glow. Extends only ~6 px beyond the eye silhouette
+// at r=30. Fully transparent at the outer edge (no canvas clip / ring).
+function paintHalo(ctx, cx, cy, baseR, color){
+  const [cr,cg,cb] = parseHex(color);
+  const haloR = baseR * 1.20;
+  // Inner stop sits well inside the eye so the rim density peaks right at
+  // the silhouette boundary, not deep inside.
+  const grad = ctx.createRadialGradient(cx, cy, baseR * 0.80, cx, cy, haloR);
+  grad.addColorStop(0.00, rgbStr(cr,cg,cb, 0.32));
+  grad.addColorStop(0.50, rgbStr(cr,cg,cb, 0.14));
+  grad.addColorStop(1.00, rgbStr(cr,cg,cb, 0));
+  ctx.save();
+  ctx.fillStyle = grad;
+  ctx.fillRect(cx - haloR, cy - haloR, haloR*2, haloR*2);
+  ctx.restore();
+}
+
+// drawEye: NEUTRAL squircle eye. `color` tints BOTH the halo and the form
+// silhouette — specular + highlight stay white so the 3-D feel survives the
+// red zone (a fully-red eye reads as alarming, which is the intent).
+function drawEye(ctx, cx, cy, opts){
+  const { color=CYAN, r=30, scaleY=1, scale=1, dx=0, dy=0 } = opts;
+  if (scaleY < 0.04) return;
+  const eyeR = r * scale;
+  // 1. Halo (tight rim glow, same colour as eye)
+  paintHalo(ctx, cx+dx, cy+dy, eyeR, color);
+  // 2. Base eye — fill in current usage colour
+  ctx.save();
+  ctx.translate(cx+dx, cy+dy);
+  ctx.scale(scale, scale*scaleY);
+  ctx.fillStyle = color;
+  pSquircle(ctx, r, 4); ctx.fill();
+  // 3. Inner highlight (white) — gives the 3-D bulge across any tint
+  const g = ctx.createRadialGradient(-r*0.20,-r*0.25,r*0.05, 0,0,r*0.6);
+  g.addColorStop(0,'rgba(255,255,255,.55)');
+  g.addColorStop(0.5,'rgba(255,255,255,.10)');
+  g.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle = g;
+  pSquircle(ctx, r, 4); ctx.fill();
+  // 4. Specular dot (white)
+  if (scaleY > 0.4) {
+    ctx.beginPath();
+    ctx.ellipse(-r*0.20,-r*0.25, r*0.13, r*0.09, 0, 0, TAU);
+    ctx.fillStyle='#fff'; ctx.globalAlpha=0.85; ctx.fill();
+  }
+  ctx.restore();
+}
+
+// Eye geometry helpers (canvas is 240×280 — same as device).
+const EYE_CY = 110, EYE_R = 30, EYE_GAP = 20;
+function eyeX(side, W){ const cx = W/2; return side === 'L' ? cx - EYE_R - EYE_GAP/2 : cx + EYE_R + EYE_GAP/2; }
+
+// Periodic blink: ~3.5s cycle.
+function blinkScaleY(t){
+  const period = 3500, in_ = t % period;
+  if (in_ < 180) {
+    const u = in_/180;
+    return u < 0.5 ? 1 - (u/0.5)*0.9 : 0.1 + ((u-0.5)/0.5)*0.9;
+  }
+  return 1;
+}
+
+// ─────────────────────────── 10 layout variants ─────────────────────────────
+const VARIANTS = [];
+function add(family, id, name, desc, enc, draw){
+  VARIANTS.push({family, id, name, desc, enc, draw});
+}
+
+// Shared state, mutated each frame in the loop.
+const STATE = { session: 0, weekly: 50 };
+
+// ─── A. Face-native ─────────────────────────────────────────────────────────
+
+// 1. BROWS — two arches above the eyes; length+arch = %
+add('A', 'brows', 'Brows', 'Брови над глазами — длина и изгиб = %.',
+    '<span class="k">L brow</span> = session • <span class="k">R brow</span> = weekly',
+function(ctx, t, W, H){
+  const lx = eyeX('L', W), rx = eyeX('R', W);
+  const sy = blinkScaleY(t);
+  // Draw brow first so eyes occlude its inner end? No, brows above eyes, won't conflict.
+  function brow(cx, pct){
+    const col = haloColor(pct);
+    const u = pct / 100;
+    // Concerned at high pct: outer end drops, inner end rises.
+    const innerY = EYE_CY - 50 - u*4;       // inner tip rises 0..-4
+    const outerY = EYE_CY - 40 + u*10;      // outer tip drops 0..+10
+    const length = 36 + u*10;               // 36..46 px
+    const lift   = -8 - u*4;                 // arch height
+    const dirInner = (cx < W/2) ? +1 : -1;   // L: inner is to the right
+    const ix = cx + dirInner * 4;
+    const ox = cx - dirInner * length;
+    const mx = (ix+ox)/2;
+    const my = (EYE_CY - 48) + lift;
+    ctx.save();
+    ctx.lineCap = 'round'; ctx.lineWidth = 3 + u*2.5;
+    ctx.strokeStyle = col;
+    ctx.shadowColor = col; ctx.shadowBlur = 14;
+    ctx.beginPath();
+    ctx.moveTo(ox, outerY);
+    ctx.quadraticCurveTo(mx, my, ix, innerY);
+    ctx.stroke();
+    ctx.restore();
+  }
+  brow(lx, STATE.session);
+  brow(rx, STATE.weekly);
+  drawEye(ctx, lx, EYE_CY, {color:haloColor(STATE.session), r:EYE_R, scaleY:sy});
+  drawEye(ctx, rx, EYE_CY, {color:haloColor(STATE.session), r:EYE_R, scaleY:sy});
+});
+
+// 2. TEAR-PEARLS — drops falling below each eye, count = %/20
+add('A', 'tear_pearls', 'Tear-pearls', 'Капли под глазом — count и скорость = %.',
+    '<span class="k">L drops</span> = session • <span class="k">R drops</span> = weekly',
+function(ctx, t, W, H){
+  const lx = eyeX('L', W), rx = eyeX('R', W);
+  const sy = blinkScaleY(t);
+  const col = haloColor(STATE.session);
+  drawEye(ctx, lx, EYE_CY, {color:col, r:EYE_R, scaleY:sy});
+  drawEye(ctx, rx, EYE_CY, {color:col, r:EYE_R, scaleY:sy});
+  function drops(cx, pct){
+    const n = Math.max(0, Math.min(5, Math.floor(pct / 20) + (pct > 0 ? 1 : 0)));
+    if (n === 0) return;
+    const speed = 1200 - pct*8;   // 1200..400 ms cycle
+    for (let i = 0; i < n; i++){
+      const phase = (t + i * (speed/n)) % speed / speed;
+      const y0 = EYE_CY + EYE_R + 8;
+      const y1 = H - 14;
+      const y = y0 + (y1 - y0) * phase;
+      const opacity = phase < 0.15 ? phase/0.15 : (phase > 0.85 ? (1 - phase)/0.15 : 1);
+      const c = haloColor(pct);
+      ctx.save();
+      ctx.fillStyle = c; ctx.globalAlpha = opacity * 0.95;
+      ctx.shadowColor = c; ctx.shadowBlur = 8;
+      ctx.beginPath();
+      // tear-drop: rounded bottom, point top
+      ctx.moveTo(cx, y);
+      ctx.bezierCurveTo(cx+4, y+4, cx+4, y+10, cx, y+12);
+      ctx.bezierCurveTo(cx-4, y+10, cx-4, y+4, cx, y);
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+  }
+  drops(lx, STATE.session);
+  drops(rx, STATE.weekly);
+});
+
+// 3. PUPIL-AS-GAUGE — small pupil dot inside each eye, position = %
+add('A', 'pupil_gauge', 'Pupil-gauge', 'Зрачок внутри глаза идёт по диагонали как стрелка.',
+    '<span class="k">L pupil</span> = session • <span class="k">R pupil</span> = weekly',
+function(ctx, t, W, H){
+  const lx = eyeX('L', W), rx = eyeX('R', W);
+  const sy = blinkScaleY(t);
+  const col = haloColor(STATE.session);
+  function eyeWithPupil(cx, pct){
+    drawEye(ctx, cx, EYE_CY, {color:col, r:EYE_R, scaleY:sy});
+    if (sy < 0.3) return;
+    // Pupil position: top-left @ 0% → bottom-right @ 100%.
+    const u = pct / 100;
+    const px = cx + (u - 0.5) * (EYE_R * 1.0);
+    const py = EYE_CY + (u - 0.5) * (EYE_R * 0.85);
+    ctx.save();
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.arc(px, py, 5, 0, TAU); ctx.closePath(); ctx.fill();
+    // Tiny tick mark to hint scale: corner anchors
+    ctx.fillStyle = 'rgba(255,255,255,0.18)';
+    ctx.beginPath(); ctx.arc(cx - EYE_R*0.5, EYE_CY - EYE_R*0.42, 1.5, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + EYE_R*0.5, EYE_CY + EYE_R*0.42, 1.5, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+  eyeWithPupil(lx, STATE.session);
+  eyeWithPupil(rx, STATE.weekly);
+});
+
+// 4. PULSE-RATE — no text/bars; heartbeat frequency = session, amplitude = weekly
+add('A', 'pulse_rate', 'Pulse-rate', 'Частота пульса = session, амплитуда halo = weekly.',
+    '<span class="k">period</span> = session • <span class="k">amplitude</span> = weekly',
+function(ctx, t, W, H){
+  const lx = eyeX('L', W), rx = eyeX('R', W);
+  const sy = blinkScaleY(t);
+  // session: period 4000ms @ 0% → 600ms @ 100%
+  const period = 4000 - (STATE.session/100) * 3400;
+  // weekly: amp 1.05 @ 0% → 1.35 @ 100%
+  const ampMax = 1.05 + (STATE.weekly/100) * 0.30;
+  const u = (t % period) / period;
+  // sharp heartbeat: two-bump
+  const beat = Math.exp(-Math.pow((u-0.05)*16,2)) * 0.7 + Math.exp(-Math.pow((u-0.18)*14,2)) * 0.3;
+  const scale = 1 + (ampMax - 1) * beat;
+  const col = haloColor(STATE.session);
+  drawEye(ctx, lx, EYE_CY, {color:col, r:EYE_R, scaleY:sy, scale});
+  drawEye(ctx, rx, EYE_CY, {color:col, r:EYE_R, scaleY:sy, scale});
+  // Subtle "bpm" hint at bottom (debug only — would not ship to ESP).
+  ctx.save();
+  ctx.fillStyle = 'rgba(255,255,255,0.18)';
+  ctx.font = '10px "Azeret Mono", monospace';
+  ctx.textAlign = 'center';
+  const bpm = Math.round(60000 / period);
+  ctx.fillText(`${bpm} bpm  ·  amp ${(ampMax*100|0)}%`, W/2, H - 16);
+  ctx.restore();
+});
+
+// ─── B. Dashboard chrome ───────────────────────────────────────────────────
+
+// 5. BEZEL ORBIT — rounded-rect track around screen, top arc = session, bottom = weekly
+add('B', 'bezel_orbit', 'Bezel orbit', 'Светящаяся дорожка по периметру — верх=session, низ=weekly.',
+    '<span class="k">top arc</span> = session • <span class="k">bottom arc</span> = weekly',
+function(ctx, t, W, H){
+  const lx = eyeX('L', W), rx = eyeX('R', W);
+  const sy = blinkScaleY(t);
+  const col = haloColor(STATE.session);
+  drawEye(ctx, lx, EYE_CY, {color:col, r:EYE_R, scaleY:sy});
+  drawEye(ctx, rx, EYE_CY, {color:col, r:EYE_R, scaleY:sy});
+
+  // Rounded-rect path with corner radius 28, inset 8.
+  const inset = 8, rr = 28;
+  const x0=inset, y0=inset, x1=W-inset, y1=H-inset;
+  // Track (dim)
+  function tracePath(){
+    ctx.beginPath();
+    ctx.moveTo(x0+rr, y0);
+    ctx.lineTo(x1-rr, y0); ctx.quadraticCurveTo(x1, y0, x1, y0+rr);
+    ctx.lineTo(x1, y1-rr); ctx.quadraticCurveTo(x1, y1, x1-rr, y1);
+    ctx.lineTo(x0+rr, y1); ctx.quadraticCurveTo(x0, y1, x0, y1-rr);
+    ctx.lineTo(x0, y0+rr); ctx.quadraticCurveTo(x0, y0, x0+rr, y0);
+  }
+  ctx.save();
+  ctx.lineWidth = 3; ctx.strokeStyle = DIM_TRACK;
+  tracePath(); ctx.stroke();
+  ctx.restore();
+
+  // Compute the path-length-style arcs by walking the same perimeter as line dashes.
+  // Approximate perimeter:
+  const sides = 2*(x1-x0-2*rr) + 2*(y1-y0-2*rr) + 2*Math.PI*rr;
+  // Top half (from top-center clockwise) and bottom half (from bottom-center counter-clockwise).
+  function drawHalf(pct, direction){
+    if (pct <= 0) return;
+    ctx.save();
+    ctx.lineWidth = 4; ctx.lineCap = 'round';
+    ctx.strokeStyle = haloColor(pct);
+    ctx.shadowColor = haloColor(pct); ctx.shadowBlur = 14;
+    const halfLen = sides/2;
+    const len = (pct/100) * halfLen;
+    const startOffset = direction === 'top' ? -sides/4 : sides/4;
+    // setLineDash with offset to draw a partial loop.
+    ctx.setLineDash([len, sides - len]);
+    ctx.lineDashOffset = -startOffset;
+    tracePath(); ctx.stroke();
+    ctx.restore();
+  }
+  drawHalf(STATE.session, 'top');
+  drawHalf(STATE.weekly, 'bottom');
+});
+
+// 6. TWIN COLUMNS — far-left + far-right vertical bars
+add('B', 'twin_columns', 'Twin columns', 'Две колонки на кромках экрана, снизу вверх.',
+    '<span class="k">L column</span> = session • <span class="k">R column</span> = weekly',
+function(ctx, t, W, H){
+  const lx = eyeX('L', W), rx = eyeX('R', W);
+  const sy = blinkScaleY(t);
+  const col = haloColor(STATE.session);
+  drawEye(ctx, lx, EYE_CY, {color:col, r:EYE_R, scaleY:sy});
+  drawEye(ctx, rx, EYE_CY, {color:col, r:EYE_R, scaleY:sy});
+  function col_bar(x, pct){
+    const c = haloColor(pct);
+    const top = 12, bot = H - 12, fullH = bot - top;
+    // Track
+    ctx.save();
+    ctx.fillStyle = DIM_TRACK;
+    ctx.fillRect(x-2, top, 4, fullH);
+    // Fill (bottom-up)
+    const h = fullH * (pct/100);
+    ctx.fillStyle = c;
+    ctx.shadowColor = c; ctx.shadowBlur = 10;
+    ctx.fillRect(x-2, bot - h, 4, h);
+    // End cap glow
+    ctx.beginPath();
+    ctx.arc(x, bot - h, 4, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+  col_bar(10, STATE.session);
+  col_bar(W - 10, STATE.weekly);
+});
+
+// 7. CORNER CHIP — large serif digit in top-right
+add('B', 'corner_chip', 'Corner chip', 'Бейдж в углу — крупная серифная цифра + мелкий weekly.',
+    '<span class="k">large digit</span> = session • <span class="k">small</span> = weekly',
+function(ctx, t, W, H){
+  const lx = eyeX('L', W), rx = eyeX('R', W);
+  const sy = blinkScaleY(t);
+  const col = haloColor(STATE.session);
+  drawEye(ctx, lx, EYE_CY, {color:col, r:EYE_R, scaleY:sy});
+  drawEye(ctx, rx, EYE_CY, {color:col, r:EYE_R, scaleY:sy});
+  // Chip frame, top-right
+  ctx.save();
+  const cw = 70, ch = 52, pad = 8;
+  const cx = W - cw - pad, cy = pad;
+  ctx.fillStyle = 'rgba(255,255,255,0.04)';
+  ctx.strokeStyle = 'rgba(255,255,255,0.10)'; ctx.lineWidth = 1;
+  ctx.beginPath();
+  const r = 8;
+  ctx.moveTo(cx+r, cy);
+  ctx.arcTo(cx+cw, cy, cx+cw, cy+ch, r);
+  ctx.arcTo(cx+cw, cy+ch, cx, cy+ch, r);
+  ctx.arcTo(cx, cy+ch, cx, cy, r);
+  ctx.arcTo(cx, cy, cx+cw, cy, r);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  // Big serif session %
+  ctx.fillStyle = haloColor(STATE.session);
+  ctx.font = '600 32px "Newsreader", serif';
+  ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+  ctx.fillText(`${STATE.session|0}`, cx+cw-9, cy+2);
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.font = '500 11px "Azeret Mono", monospace';
+  ctx.fillText('%', cx+cw-9, cy+24);
+  // Small weekly
+  ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  ctx.font = '700 9px "Azeret Mono", monospace';
+  ctx.textAlign = 'left';
+  ctx.fillText(`W ${STATE.weekly|0}%`, cx+8, cy+36);
+  ctx.restore();
+});
+
+// 8. HUD RIBBON — two monospaced segmented lines below the eyes
+add('B', 'hud_ribbon', 'HUD ribbon', 'Моноширинные сегменты ▰▱ под глазами + цифра справа.',
+    '<span class="k">top row</span> = session • <span class="k">bot row</span> = weekly',
+function(ctx, t, W, H){
+  const lx = eyeX('L', W), rx = eyeX('R', W);
+  const sy = blinkScaleY(t);
+  const col = haloColor(STATE.session);
+  drawEye(ctx, lx, EYE_CY, {color:col, r:EYE_R, scaleY:sy});
+  drawEye(ctx, rx, EYE_CY, {color:col, r:EYE_R, scaleY:sy});
+  function row(y, label, pct){
+    const c = haloColor(pct);
+    ctx.save();
+    ctx.font = '700 11px "Azeret Mono", monospace';
+    ctx.textBaseline = 'middle';
+    // Label
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.textAlign = 'left';
+    ctx.fillText(label, 14, y);
+    // Segments
+    const segs = 10, segW = 12, segH = 8;
+    const startX = 48;
+    const filled = Math.round((pct/100) * segs);
+    for (let i = 0; i < segs; i++){
+      ctx.fillStyle = i < filled ? c : 'rgba(255,255,255,0.10)';
+      if (i < filled) { ctx.shadowColor = c; ctx.shadowBlur = 6; }
+      else ctx.shadowBlur = 0;
+      const sx = startX + i * (segW + 2);
+      ctx.fillRect(sx, y - segH/2, segW, segH);
+    }
+    ctx.shadowBlur = 0;
+    // Pct text
+    ctx.fillStyle = c;
+    ctx.textAlign = 'right';
+    ctx.fillText(`${pct|0}%`, W - 14, y);
+    ctx.restore();
+  }
+  row(H - 32, 'SESS', STATE.session);
+  row(H - 14, 'WEEK', STATE.weekly);
+});
+
+// ─── C. Ambient / motion ───────────────────────────────────────────────────
+
+// 9. ECG MONITOR — scrolling waveform below eyes
+// Use a rolling buffer indexed by t to keep it true to "scrolling right-to-left".
+const ECG_BUF_LEN = 240;
+const ECG_BUF = new Array(ECG_BUF_LEN).fill(0);
+let ecgLastT = -1, ecgPhase = 0;
+add('C', 'ecg_monitor', 'ECG monitor', 'Прокручиваемая ЭКГ — частота спайков=session, амплитуда=weekly.',
+    '<span class="k">spike rate</span> = session • <span class="k">amplitude</span> = weekly',
+function(ctx, t, W, H){
+  const lx = eyeX('L', W), rx = eyeX('R', W);
+  const sy = blinkScaleY(t);
+  const col = haloColor(STATE.session);
+  drawEye(ctx, lx, EYE_CY, {color:col, r:EYE_R, scaleY:sy});
+  drawEye(ctx, rx, EYE_CY, {color:col, r:EYE_R, scaleY:sy});
+
+  // Advance buffer based on dt.
+  if (ecgLastT < 0 || ecgLastT > t) ecgLastT = t;   // loop reset
+  const dt = t - ecgLastT;
+  ecgLastT = t;
+  const pxPerSec = 60;
+  const step = Math.max(1, Math.round((dt/1000) * pxPerSec));
+  // Spike period 1800ms @ 0% → 400ms @ 100%
+  const spikePeriod = 1800 - (STATE.session/100) * 1400;
+  const amp = 6 + (STATE.weekly/100) * 24;
+  for (let k = 0; k < step; k++){
+    ecgPhase = (ecgPhase + (1000/pxPerSec)) % spikePeriod;
+    const u = ecgPhase / spikePeriod;
+    let y = 0;
+    // ECG-style: baseline → up spike → down spike → baseline (P-QRS-T compressed)
+    if (u > 0.05 && u < 0.10) y = -amp * (u-0.05)/0.05 * 0.4;       // P
+    else if (u >= 0.10 && u < 0.13) y = -amp * 0.4 + amp * 1.4 * (u-0.10)/0.03;  // R up
+    else if (u >= 0.13 && u < 0.18) y = amp * 1.0 - amp * 1.5 * (u-0.13)/0.05;   // S down
+    else if (u >= 0.18 && u < 0.22) y = -amp * 0.5 + amp * 0.5 * (u-0.18)/0.04;  // back to baseline
+    else if (u > 0.30 && u < 0.45) y = -amp * 0.25 * Math.sin(((u-0.30)/0.15)*Math.PI); // T wave
+    // shift buffer
+    ECG_BUF.shift(); ECG_BUF.push(y);
+  }
+
+  // Draw waveform
+  const yMid = H - 50;
+  ctx.save();
+  // Faint grid
+  ctx.strokeStyle = 'rgba(61,224,224,0.06)'; ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, yMid); ctx.lineTo(W, yMid); ctx.stroke();
+  // Wave
+  ctx.lineWidth = 1.8; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.strokeStyle = col;
+  ctx.shadowColor = col; ctx.shadowBlur = 10;
+  ctx.beginPath();
+  for (let i = 0; i < ECG_BUF_LEN; i++){
+    const x = (i / ECG_BUF_LEN) * W;
+    const y = yMid + ECG_BUF[i];
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  // Pct readouts in corner, lab-monitor style
+  ctx.shadowBlur = 0;
+  ctx.font = '700 10px "Azeret Mono", monospace';
+  ctx.fillStyle = col;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText(`S ${STATE.session|0}%`, 10, H - 14);
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.textAlign = 'right';
+  ctx.fillText(`W ${STATE.weekly|0}%`, W - 10, H - 14);
+  ctx.restore();
+});
+
+// 10. CONSTELLATION RINGS — 12 dots around each eye
+add('C', 'constellation', 'Constellation', 'Кольцо из 12 точек вокруг каждого глаза — лепестки диафрагмы.',
+    '<span class="k">L ring</span> = session • <span class="k">R ring</span> = weekly',
+function(ctx, t, W, H){
+  const lx = eyeX('L', W), rx = eyeX('R', W);
+  const sy = blinkScaleY(t);
+  const col = haloColor(STATE.session);
+  function ring(cx, pct){
+    const N = 12, R = 54;
+    const lit = Math.round((pct/100) * N);
+    const c = haloColor(pct);
+    for (let i = 0; i < N; i++){
+      const ang = -TAU/4 + (i/N)*TAU;   // start at top
+      const px = cx + Math.cos(ang) * R;
+      const py = EYE_CY + Math.sin(ang) * R;
+      const on = i < lit;
+      ctx.save();
+      if (on){
+        ctx.fillStyle = c; ctx.shadowColor = c; ctx.shadowBlur = 8;
+      } else {
+        ctx.fillStyle = 'rgba(255,255,255,0.12)';
+      }
+      ctx.beginPath();
+      ctx.arc(px, py, on ? 2.8 : 1.6, 0, TAU); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+  }
+  ring(lx, STATE.session);
+  ring(rx, STATE.weekly);
+  // Eyes on top of ring (rings extend beyond eye radius)
+  drawEye(ctx, lx, EYE_CY, {color:col, r:EYE_R, scaleY:sy});
+  drawEye(ctx, rx, EYE_CY, {color:col, r:EYE_R, scaleY:sy});
+});
+
+// ─────────────────────────── build DOM ──────────────────────────────────────
+const FAMILY_META = {
+  A: { title: 'A · Face-native', sub: 'Метрики «вшиты» в лицо — без статичной chrome.' },
+  B: { title: 'B · Dashboard chrome', sub: 'Чёткий «приборный» readout — больше данных, меньше «лица».' },
+  C: { title: 'C · Ambient / motion', sub: 'Атмосферная подача — движение как несущая.' },
+};
+const content = document.getElementById('content');
+let counter = 0;
+['A','B','C'].forEach(fam => {
+  const sec = document.createElement('section');
+  sec.className = 'family';
+  sec.innerHTML = `<h2>${FAMILY_META[fam].title}</h2><p>${FAMILY_META[fam].sub}</p>`;
+  content.appendChild(sec);
+  const grid = document.createElement('div');
+  grid.className = 'grid';
+  content.appendChild(grid);
+  VARIANTS.filter(v => v.family === fam).forEach(v => {
+    counter++;
+    const c = document.createElement('div');
+    c.className = 'card'; c.dataset.id = v.id;
+    c.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px">
+        <h3>${v.name}</h3>
+        <span class="id">#${String(counter).padStart(2,'0')}</span>
+      </div>
+      <div class="desc">${v.desc}</div>
+      <canvas width="240" height="280"></canvas>
+      <div class="enc">${v.enc}</div>
+      <div class="ftr">
+        <label><input type="checkbox" data-id="${v.id}"><span>Включить</span></label>
+        <select class="role" data-id="${v.id}">
+          <option value="">— роль —</option>
+          <option value="default">DEFAULT</option>
+          <option value="extra">EXTRA</option>
+        </select>
+      </div>`;
+    const cv = c.querySelector('canvas');
+    v.ctx = cv.getContext('2d'); v.cv = cv;
+    c.querySelector('input').addEventListener('change', e => {
+      v.picked = e.target.checked;
+      c.classList.toggle('picked', v.picked);
+      if (!v.picked) { c.querySelector('.role').value = ''; v.role = ''; }
+      updateCount();
+    });
+    c.querySelector('.role').addEventListener('change', e => {
+      v.role = e.target.value;
+      if (v.role === 'default') {
+        // enforce single default
+        VARIANTS.forEach(o => {
+          if (o !== v && o.role === 'default') {
+            o.role = '';
+            const sel = document.querySelector(`.role[data-id="${o.id}"]`);
+            if (sel) sel.value = '';
+          }
+        });
+      }
+      if (v.role && !v.picked) {
+        v.picked = true;
+        c.querySelector('input').checked = true;
+        c.classList.add('picked');
+      }
+      updateCount();
+    });
+    grid.appendChild(c);
+  });
+});
+
+// ─────────────────────────── animation loop ────────────────────────────────
+// Cycle biased to warning zones so the colour change is visible most of the time:
+//   0   →  70  in 1.2 s  (cyan zone, quick traverse)
+//  70   →  90  in 2.0 s  (cyan→amber lerp)
+//  90   → 100  in 1.4 s  (amber→red lerp)
+//  hold 100    for 1.4 s  (full red)
+//  100 →   0   in 0.6 s   (quick reset)
+//  total                  6.6 s
+function sessionAt(phase){
+  if (phase < 1200) return (phase/1200) * 70;
+  if (phase < 3200) return 70 + ((phase-1200)/2000) * 20;
+  if (phase < 4600) return 90 + ((phase-3200)/1400) * 10;
+  if (phase < 6000) return 100;
+  return 100 - ((phase-6000)/600) * 100;
+}
+const CYCLE_MS = 6600;
+
+function loop(now){
+  STATE.session = sessionAt(now % CYCLE_MS);
+  const weekU = ((now + 3000) % 14000) / 14000;
+  STATE.weekly = 30 + (Math.sin(weekU * TAU) * 0.5 + 0.5) * 40;
+  const lS = document.getElementById('liveS');
+  const lW = document.getElementById('liveW');
+  lS.textContent = `${STATE.session|0}%`;
+  lS.style.color = haloColor(STATE.session);
+  lW.textContent = `${STATE.weekly|0}%`;
+  lW.style.color = haloColor(STATE.weekly);
+  for (const v of VARIANTS){
+    v.ctx.clearRect(0, 0, v.cv.width, v.cv.height);
+    try { v.draw(v.ctx, now, v.cv.width, v.cv.height); } catch(e){ console.error(v.id, e); }
+  }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+// ─────────────────────────── result + roles UI ──────────────────────────────
+function updateCount(){
+  const n = VARIANTS.filter(v => v.picked).length;
+  document.getElementById('picked').textContent = n;
+  const def = VARIANTS.find(v => v.role === 'default');
+  document.getElementById('defaultBadge').textContent = def ? `default: ${def.id}` : 'default: —';
+}
+function selectAll(v){
+  VARIANTS.forEach(o => { o.picked = v; o.role = ''; });
+  document.querySelectorAll('.card input[type=checkbox]').forEach(c => c.checked = v);
+  document.querySelectorAll('.card .role').forEach(s => s.value = '');
+  document.querySelectorAll('.card').forEach(c => c.classList.toggle('picked', v));
+  updateCount();
+}
+async function showResult(){
+  const def = VARIANTS.find(v => v.role === 'default');
+  const extras = VARIANTS.filter(v => v.role === 'extra').map(v => v.id);
+  const lines = [];
+  lines.push(`default: ${def ? def.id : '(не выбран)'}`);
+  if (extras.length) lines.push(`extras:  ${extras.join(', ')}`);
+  if (!def) {
+    lines.push('');
+    lines.push('Не выбран DEFAULT — без него ничего не сохранится.');
+    document.getElementById('resultText').textContent = lines.join('\n');
+    document.getElementById('result').classList.add('show');
+    return;
+  }
+  // Persist to daemon
+  try {
+    const r = await fetch('/api/emo2-stats-config', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ default: def.id, extras })
+    });
+    const j = await r.json().catch(()=>({}));
+    if (r.ok) {
+      lines.push('');
+      lines.push('✓ Сохранено в демоне — будет применено как только firmware');
+      lines.push('  ESP-side получит поддержку этих % layouts.');
+    } else {
+      lines.push('');
+      lines.push('✕ Ошибка сохранения: ' + (j.error || `HTTP ${r.status}`));
+    }
+  } catch (e) {
+    lines.push('');
+    lines.push('✕ Сеть: ' + e.message);
+  }
+  document.getElementById('resultText').textContent = lines.join('\n');
+  document.getElementById('result').classList.add('show');
+}
+function closeResult(){ document.getElementById('result').classList.remove('show'); }
+
+// On load: hydrate UI with daemon's saved picks so the gallery opens with the
+// current selection highlighted, not blank.
+(async function hydrateFromDaemon(){
+  try {
+    const r = await fetch('/api/emo2-stats-config');
+    if (!r.ok) return;
+    const j = await r.json();
+    const cfg = j.config || {};
+    function setRole(id, role) {
+      const v = VARIANTS.find(x => x.id === id);
+      if (!v) return;
+      v.role = role;
+      v.picked = true;
+      const card = document.querySelector(`.card[data-id="${id}"]`);
+      if (!card) return;
+      const sel = card.querySelector('.role');
+      const cb  = card.querySelector('input[type=checkbox]');
+      if (sel) sel.value = role;
+      if (cb)  cb.checked = true;
+      card.classList.add('picked');
+    }
+    if (cfg.default) setRole(cfg.default, 'default');
+    (cfg.extras || []).forEach(id => setRole(id, 'extra'));
+    updateCount();
+  } catch (e) { console.warn('hydrate failed', e); }
+})();
+
+// Hash anchor (item 2): when opened via iframe with `#bezel_orbit` etc.,
+// scroll the matching card into view and highlight it.
+(function focusHashCard(){
+  const id = (location.hash || '').slice(1);
+  if (!id) return;
+  // Wait one rAF so cards have laid out before we scroll.
+  requestAnimationFrame(() => {
+    const card = document.querySelector(`.card[data-id="${id}"]`);
+    if (!card) return;
+    card.scrollIntoView({block:'center', behavior:'instant'});
+    card.classList.add('hash-highlight');
+  });
+})();
+</script>
+</body>
+</html>

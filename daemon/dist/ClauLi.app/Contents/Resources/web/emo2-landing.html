@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ClauLi · EMO 2.0</title>
+<meta property="og:title" content="ClauLi · EMO 2.0">
+<meta property="og:description" content="Living-ai-style animated robot eyes for the ClauLi desktop Claude Code monitor.">
+<meta property="og:image" content="emo2-demo.gif">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;700&family=Onest:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#050505;--surface:#0e0e0e;--surface2:#181818;
+  --text:#f5f5f5;--dim:#8a8a8a;
+  --cyan:#3DE0E0;--cyan-soft:rgba(61,224,224,.18);
+  --amber:#FFB02E;--red:#FF4D4D;
+  --line:rgba(255,255,255,.06);
+}
+html,body{background:var(--bg);color:var(--text);font-family:'Onest',system-ui,sans-serif;line-height:1.55;font-feature-settings:'ss01';-webkit-font-smoothing:antialiased}
+body{overflow-x:hidden;position:relative}
+body::before{content:'';position:fixed;inset:-200px;background:radial-gradient(900px 600px at 20% 0%,var(--cyan-soft),transparent 60%),radial-gradient(800px 500px at 90% 30%,rgba(255,176,46,.07),transparent 60%);pointer-events:none;z-index:-2}
+body::after{content:'';position:fixed;inset:0;opacity:.025;pointer-events:none;z-index:-1;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:160px}
+a{color:inherit}
+.shell{max-width:1180px;margin:0 auto;padding:0 28px}
+
+/* Nav */
+.nav{position:sticky;top:0;background:rgba(5,5,5,.7);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line);z-index:50}
+.nav .shell{display:flex;align-items:center;justify-content:space-between;padding-top:20px;padding-bottom:20px}
+.logo{font-family:'Azeret Mono';font-weight:700;font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--cyan);text-decoration:none}
+.logo .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 12px var(--cyan);margin-right:8px;vertical-align:middle;animation:pulse 2.5s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+.nav-links{display:flex;gap:28px;font-size:13px;color:var(--dim)}
+.nav-links a{text-decoration:none;transition:color .2s}
+.nav-links a:hover{color:var(--text)}
+
+/* Hero */
+.hero{padding:88px 0 64px;text-align:center;position:relative}
+.tag{display:inline-block;font-family:'Azeret Mono';font-size:10px;letter-spacing:3px;color:var(--cyan);text-transform:uppercase;padding:6px 12px;border:1px solid rgba(61,224,224,.3);border-radius:100px;margin-bottom:22px}
+.h1{font-size:clamp(48px,7vw,86px);font-weight:600;letter-spacing:-2.5px;line-height:.95;margin-bottom:22px}
+.h1 .accent{background:linear-gradient(120deg,#3DE0E0 0%,#80f6f6 50%,#3DE0E0 100%);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:700}
+.sub{font-size:18px;color:var(--dim);max-width:580px;margin:0 auto 42px;line-height:1.6}
+
+/* Device frame mockup */
+.device{display:inline-block;padding:28px;border-radius:36px;background:linear-gradient(165deg,#1c1c1c 0%,#0a0a0a 70%);border:1px solid var(--line);box-shadow:0 70px 140px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.02),inset 0 1px 0 rgba(255,255,255,.04)}
+.device-screen{width:480px;height:280px;background:#000;border-radius:18px;overflow:hidden;position:relative;box-shadow:inset 0 0 0 1px rgba(255,255,255,.04),inset 0 0 60px rgba(0,0,0,.8)}
+.device-screen canvas{display:block;width:100%;height:100%}
+@media(max-width:560px){.device-screen{width:88vw;height:48vw}.device{padding:18px;border-radius:24px}}
+
+.cta-row{display:flex;justify-content:center;gap:12px;margin-top:38px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:11px 22px;border-radius:8px;font-family:'Onest';font-weight:500;font-size:13px;text-decoration:none;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--text);transition:all .2s}
+.btn:hover{background:var(--surface2);transform:translateY(-1px);border-color:rgba(255,255,255,.1)}
+.btn.primary{background:var(--cyan);color:#000;border-color:transparent;font-weight:600}
+.btn.primary:hover{filter:brightness(1.1);box-shadow:0 0 30px rgba(61,224,224,.4)}
+
+/* Sections */
+section{padding:96px 0;border-top:1px solid var(--line);position:relative}
+.sec-head{margin-bottom:54px}
+.sec-label{font-family:'Azeret Mono';font-size:10px;letter-spacing:3px;color:var(--cyan);text-transform:uppercase;margin-bottom:14px}
+.h2{font-size:clamp(32px,4.6vw,54px);font-weight:600;letter-spacing:-1.3px;line-height:1.05;margin-bottom:16px;max-width:780px}
+.h2 .accent{color:var(--cyan)}
+.sec-sub{color:var(--dim);font-size:17px;max-width:600px}
+
+/* Feature grid */
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}
+.feat{padding:30px;background:var(--surface);border:1px solid var(--line);border-radius:16px;transition:all .25s;position:relative;overflow:hidden}
+.feat::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--cyan-soft),transparent);opacity:0;transition:opacity .25s}
+.feat:hover{border-color:rgba(61,224,224,.25);transform:translateY(-2px)}
+.feat:hover::before{opacity:1}
+.feat-ic{width:36px;height:36px;border-radius:10px;background:var(--cyan-soft);color:var(--cyan);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;font-family:'Azeret Mono';margin-bottom:18px}
+.feat h3{font-size:17px;font-weight:600;margin-bottom:10px;letter-spacing:-.2px}
+.feat p{font-size:14px;color:var(--dim);line-height:1.65}
+
+/* Mood grid */
+.moods{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:16px}
+.mood{padding:24px 18px;background:var(--surface);border:1px solid var(--line);border-radius:14px;text-align:center;transition:transform .25s}
+.mood:hover{transform:translateY(-2px)}
+.mood canvas{width:140px;height:90px;display:block;margin:0 auto 14px;border-radius:8px;background:#000}
+.mood-name{font-family:'Azeret Mono';font-size:10px;color:var(--cyan);letter-spacing:2px;text-transform:uppercase}
+
+/* Showcase */
+.showcase{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px}
+.demo{padding:24px;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.demo h3{font-size:13px;font-weight:600;margin-bottom:14px;color:var(--cyan);font-family:'Azeret Mono';letter-spacing:1.5px;text-transform:uppercase}
+.demo canvas{width:100%;aspect-ratio:2/1;display:block;border-radius:8px;background:#000}
+.demo p{font-size:13px;color:var(--dim);margin-top:14px;line-height:1.55}
+
+/* Specs */
+.specs{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.spec{padding:24px;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.spec-label{font-family:'Azeret Mono';font-size:10px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;margin-bottom:10px}
+.spec-value{font-size:22px;color:var(--text);font-weight:500;letter-spacing:-.5px}
+.spec-value .unit{color:var(--dim);font-size:13px;margin-left:6px;font-weight:400}
+
+/* GIF section */
+.gif-wrap{display:flex;justify-content:center}
+.gif-wrap img{max-width:100%;border-radius:18px;border:1px solid var(--line);box-shadow:0 30px 80px rgba(0,0,0,.5)}
+
+footer{padding:54px 0;text-align:center;color:var(--dim);font-size:13px;border-top:1px solid var(--line)}
+footer a{color:var(--cyan);text-decoration:none}
+footer a:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="shell">
+    <a class="logo" href="#"><span class="dot"></span>ClauLi · EMO 2.0</a>
+    <div class="nav-links">
+      <a href="#what">Что внутри</a>
+      <a href="#moods">Эмоции</a>
+      <a href="#anim">Анимация</a>
+      <a href="#specs">Железо</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="shell">
+    <div class="tag">new screen · ESP32 · LVGL 9</div>
+    <h1 class="h1">Глаза, которые<br><span class="accent">смотрят на тебя</span></h1>
+    <p class="sub">Полноценные «живые» глаза в стиле Living.ai EMO. Три слоя LVGL — bloom, base, specular — собираются на лету, и цвет halo подсказывает, сколько у тебя осталось Claude Code.</p>
+    <div class="device">
+      <div class="device-screen"><canvas id="hero" width="960" height="560"></canvas></div>
+    </div>
+    <div class="cta-row">
+      <a class="btn primary" href="/">Открыть демона</a>
+      <a class="btn" href="/static/emo-preview.html">Live preview</a>
+      <a class="btn" href="/static/emo2-demo.gif" target="_blank">GIF демо</a>
+    </div>
+  </div>
+</header>
+
+<section id="what">
+  <div class="shell">
+    <div class="sec-head">
+      <div class="sec-label">what's new</div>
+      <h2 class="h2">Не «иконка с тинтом», а <span class="accent">живое существо</span></h2>
+      <p class="sec-sub">Прежний emo был монохромным силуэтом, чей цвет менялся по % лимита. EMO 2.0 — это полностью переделанный экран с объёмом, свечением и характером.</p>
+    </div>
+    <div class="features">
+      <div class="feat">
+        <div class="feat-ic">✦</div>
+        <h3>Three-layer compositing</h3>
+        <p>Halo bloom 96×96 → base squircle 64×64 (anti-aliased) → procedural specular highlight. Каждый слой собирается LVGL 9 на ESP32-C6 в реальном времени.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-ic">◐</div>
+        <h3>Hybrid status colour</h3>
+        <p>База — фирменный бирюзовый (узнаваемый EMO-look). Halo плавно лерпится cyan → amber → red при росте usage. Информация считывается с одного взгляда.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-ic">♥</div>
+        <h3>7 mood shapes</h3>
+        <p>NEUTRAL, HAPPY, SLEEP, ANGRY, UPSET, SAD, LOVE. Каждое настроение — процедурно сгенерированная форма (squircle, heart, slit, frown) — без вендорного арта.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-ic">~</div>
+        <h3>Smooth blink + saccades</h3>
+        <p>Моргание через анимацию scale_y за 180 мс. Микро-саккады каждые 1.5–5 с, любопытные взгляды каждые 30–60 с — как у живого робота.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-ic">♥</div>
+        <h3>Heartbeat + warning flicker</h3>
+        <p>Тихая пульсация halo раз в 4–6 с. При лимите ≥80% — короткие алармовые вспышки до ×1.30 каждые 8–12 с.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-ic">⟳</div>
+        <h3>Reconnect-aware</h3>
+        <p>BLE упал — глаза прячутся, появляется «Переподключение…» с анимированными точками. Линк восстановился — eyes "wake up" из тонкой полоски.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="moods">
+  <div class="shell">
+    <div class="sec-head">
+      <div class="sec-label">moods</div>
+      <h2 class="h2">Все 7 настроений — <span class="accent">процедурно</span></h2>
+      <p class="sec-sub">Ни одного нарисованного спрайта. Каждая форма описана математикой в <code>tools/build_emo_hd.py</code> и пересобирается одной командой.</p>
+    </div>
+    <div class="moods" id="moodGrid"></div>
+  </div>
+</section>
+
+<section id="anim">
+  <div class="shell">
+    <div class="sec-head">
+      <div class="sec-label">animations</div>
+      <h2 class="h2">Анимация — <span class="accent">всё в коде</span></h2>
+      <p class="sec-sub">Никаких кадровых GIF на устройстве. Все эффекты — LVGL animations с интерполяцией, легко на C6.</p>
+    </div>
+    <div class="showcase">
+      <div class="demo">
+        <h3>Smooth blink</h3>
+        <canvas id="dBlink" width="600" height="300"></canvas>
+        <p>scale_y 1.0 → 0.1 → 1.0 за 180 мс — без свапа спрайта, чистая интерполяция.</p>
+      </div>
+      <div class="demo">
+        <h3>Heartbeat pulse</h3>
+        <canvas id="dHeart" width="600" height="300"></canvas>
+        <p>Halo дышит ±6% каждые 4–6 с — едва заметный «живой» пульс.</p>
+      </div>
+      <div class="demo">
+        <h3>Sleep + Z's</h3>
+        <canvas id="dSleep" width="600" height="300"></canvas>
+        <p>Лимит выбран — глаза становятся щёлочками, рядом всплывают z's.</p>
+      </div>
+      <div class="demo">
+        <h3>Warning flicker</h3>
+        <canvas id="dWarn" width="600" height="300"></canvas>
+        <p>При ≥80% halo вспыхивает амбером/красным — даже периферическим зрением видно.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="gif">
+  <div class="shell">
+    <div class="sec-head" style="text-align:center;margin:0 auto">
+      <div class="sec-label">8 sec loop</div>
+      <h2 class="h2" style="margin-left:auto;margin-right:auto">Снято <span class="accent">тем же кодом</span></h2>
+      <p class="sec-sub" style="margin-left:auto;margin-right:auto">Этот GIF сгенерирован тем же процедурным конвейером, что и шейдеры на устройстве — то, что вы видите, и есть то, что показывает ClauLi.</p>
+    </div>
+    <div class="gif-wrap"><img src="emo2-demo.gif" alt="emo 2.0 animated demo"></div>
+  </div>
+</section>
+
+<section id="specs">
+  <div class="shell">
+    <div class="sec-head">
+      <div class="sec-label">hardware</div>
+      <h2 class="h2">Скромное <span class="accent">железо</span></h2>
+      <p class="sec-sub">Всё работает на ESP32-C6 — никаких внешних GPU, никаких рендер-серверов.</p>
+    </div>
+    <div class="specs">
+      <div class="spec"><div class="spec-label">SoC</div><div class="spec-value">ESP32-C6<span class="unit">RISC-V · BLE5 · WiFi6</span></div></div>
+      <div class="spec"><div class="spec-label">Display</div><div class="spec-value">240×280<span class="unit">AMOLED · ST7789V2</span></div></div>
+      <div class="spec"><div class="spec-label">RAM</div><div class="spec-value">28%<span class="unit">/ 320 KB</span></div></div>
+      <div class="spec"><div class="spec-label">Flash</div><div class="spec-value">40%<span class="unit">/ 3.1 MB (huge_app)</span></div></div>
+      <div class="spec"><div class="spec-label">UI framework</div><div class="spec-value">LVGL 9<span class="unit">+ NimBLE 2</span></div></div>
+      <div class="spec"><div class="spec-label">Sprite source</div><div class="spec-value">100% procedural<span class="unit">tools/build_emo_hd.py</span></div></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="shell">
+    Built by Sedek · <a href="https://github.com/MrSedek" target="_blank">github.com/MrSedek</a> · <a href="https://t.me/sedek" target="_blank">t.me/sedek</a>
+  </div>
+</footer>
+
+<script>
+// ───────────────────────── shape paths ─────────────────────────────────────
+const TAU = Math.PI * 2;
+
+function squirclePath(ctx, w, h, n) {
+  n = n || 4;
+  ctx.beginPath();
+  const a = w / 2, b = h / 2;
+  for (let i = 0; i <= 96; i++) {
+    const t = (i / 96) * TAU;
+    const ct = Math.cos(t), st = Math.sin(t);
+    const x = Math.sign(ct) * Math.pow(Math.abs(ct), 2 / n) * a;
+    const y = Math.sign(st) * Math.pow(Math.abs(st), 2 / n) * b;
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+}
+
+function heartPath(ctx, size) {
+  const s = size / 2;
+  ctx.beginPath();
+  ctx.moveTo(0, s * 0.35);
+  ctx.bezierCurveTo(s * 1.1, s * 0.15, s * 0.95, -s * 0.65, 0, -s * 0.18);
+  ctx.bezierCurveTo(-s * 0.95, -s * 0.65, -s * 1.1, s * 0.15, 0, s * 0.35);
+  ctx.closePath();
+}
+
+// Build the mood path centred at (0,0). For "clipped" moods (ANGRY/UPSET/SAD)
+// we draw the squircle with a rectangle cut via even-odd fill rule.
+function moodPath(ctx, mood, w, h) {
+  switch (mood) {
+    case 'NEUTRAL': squirclePath(ctx, w, h, 4); return;
+    case 'HAPPY':   squirclePath(ctx, w, h * 0.92, 4); return;
+    case 'SLEEP':   squirclePath(ctx, w, h * 0.20, 4); return;
+    case 'LOVE':    heartPath(ctx, w * 1.05); return;
+    case 'ANGRY':
+    case 'UPSET':
+    case 'SAD': {
+      const cuts = { ANGRY: -0.30, UPSET: 0.05, SAD: -0.10 };
+      const cut = cuts[mood] * (h / 2);
+      // Draw squircle, then subtract a top rect via even-odd fill.
+      ctx.beginPath();
+      // outer
+      squirclePath(ctx, w, h, 4);
+      // inner rect (counter-clockwise) — using ctx.rect adds another sub-path
+      ctx.rect(-w / 2 - 2, -h / 2 - 2, w + 4, (h / 2) + cut + 2);
+      return;
+    }
+  }
+}
+
+// ───────────────────────── eye renderer ────────────────────────────────────
+const PAL = {
+  cyan: [61, 224, 224],
+  amber: [255, 176, 46],
+  red: [255, 77, 77],
+};
+function hex(c){return '#'+c.map(v=>v.toString(16).padStart(2,'0')).join('')}
+function mix(a, b, t){return a.map((v,i)=>Math.round(v + (b[i]-v)*t))}
+function haloColor(pct){
+  if (pct < 70) return hex(PAL.cyan);
+  if (pct < 90) return hex(mix(PAL.cyan, PAL.amber, (pct-70)/20));
+  return hex(mix(PAL.amber, PAL.red, Math.min(1,(pct-90)/10)));
+}
+
+function drawEye(ctx, cx, cy, mood, size, opts) {
+  opts = opts || {};
+  const scaleY   = opts.scaleY   == null ? 1.0 : opts.scaleY;
+  const halo     = opts.halo     == null ? 1.0 : opts.halo;
+  const color    = opts.color    || '#3DE0E0';
+  const showSpec = opts.spec !== false;
+
+  if (scaleY < 0.04) return;
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  const oddEven = (mood === 'ANGRY' || mood === 'UPSET' || mood === 'SAD');
+
+  // halo (with shadowBlur)
+  ctx.save();
+  ctx.scale(halo, halo * scaleY);
+  ctx.fillStyle = color;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 48;
+  ctx.globalAlpha = 0.55;
+  moodPath(ctx, mood, size * 1.18, size * 1.18);
+  ctx.fill(oddEven ? 'evenodd' : 'nonzero');
+  // second shadow pass for extra bloom
+  ctx.shadowBlur = 24;
+  ctx.globalAlpha = 0.7;
+  moodPath(ctx, mood, size * 1.05, size * 1.05);
+  ctx.fill(oddEven ? 'evenodd' : 'nonzero');
+  ctx.restore();
+
+  // base
+  ctx.save();
+  ctx.scale(1, scaleY);
+  ctx.shadowBlur = 0;
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = color;
+  moodPath(ctx, mood, size, size);
+  ctx.fill(oddEven ? 'evenodd' : 'nonzero');
+
+  // inner radial highlight for 3D sphere feel
+  const g = ctx.createRadialGradient(-size*0.18, -size*0.22, size*0.05, 0, 0, size*0.55);
+  g.addColorStop(0,    'rgba(255,255,255,.55)');
+  g.addColorStop(0.5,  'rgba(255,255,255,.12)');
+  g.addColorStop(1,    'rgba(255,255,255,0)');
+  ctx.fillStyle = g;
+  moodPath(ctx, mood, size, size);
+  ctx.fill(oddEven ? 'evenodd' : 'nonzero');
+  ctx.restore();
+
+  // specular dot
+  if (showSpec && scaleY > 0.4 && mood !== 'SLEEP') {
+    ctx.save();
+    ctx.scale(1, scaleY);
+    ctx.fillStyle = '#fff';
+    ctx.globalAlpha = 0.9;
+    ctx.beginPath();
+    ctx.ellipse(-size*0.18, -size*0.22, size*0.10, size*0.07, 0, 0, TAU);
+    ctx.fill();
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+// ───────────────────────── scene logic ─────────────────────────────────────
+function makeBlinker(period) {
+  return function(t){
+    const phase = (t % period) / period;
+    // close at 0.08–0.16 of period
+    if (phase < 0.08 || phase > 0.16) return 1.0;
+    const local = (phase - 0.08) / 0.08;     // 0..1
+    const u = local < 0.5 ? local * 2 : (1 - local) * 2;
+    return 1.0 - u * 0.9;
+  };
+}
+
+function drawScene(ctx, W, H, time, opts) {
+  opts = opts || {};
+  ctx.clearRect(0, 0, W, H);
+  const size = opts.size || H * 0.6;
+  const gap  = opts.gap || size * 0.4;
+  const cy   = H / 2;
+  const lx   = W / 2 - size/2 - gap/2;
+  const rx   = W / 2 + size/2 + gap/2;
+  const mood = opts.mood || 'NEUTRAL';
+  const color = opts.color || haloColor(opts.pct || 20);
+  const scaleY = opts.scaleY != null ? opts.scaleY : 1;
+  const halo   = opts.halo   != null ? opts.halo   : 1;
+
+  drawEye(ctx, lx, cy, mood, size, {color, scaleY, halo});
+  drawEye(ctx, rx, cy, mood, size, {color, scaleY, halo});
+
+  // z's during sleep
+  if (opts.zzz) {
+    ctx.save();
+    ctx.fillStyle = color;
+    ctx.font = '600 28px Onest, sans-serif';
+    for (let i = 0; i < 3; i++) {
+      const ph = ((time / 1800) + i * 0.33) % 1;
+      ctx.globalAlpha = (1 - ph) * 0.9;
+      ctx.fillText('z', rx + size/2 + 16 + ph * 18, cy - 20 - ph * 60);
+    }
+    ctx.restore();
+  }
+}
+
+// ───────────────────────── hero animation ──────────────────────────────────
+const heroCv = document.getElementById('hero');
+const heroCtx = heroCv.getContext('2d');
+const HW = heroCv.width, HH = heroCv.height;
+const blink = makeBlinker(4200);
+
+function heroTick(now){
+  const t = now % 8000;
+  let mood, pct, zzz = false;
+  if (t < 2200)      { mood='NEUTRAL'; pct = 22 + (t/2200)*8; }
+  else if (t < 3600) { mood='HAPPY';   pct = 42; }
+  else if (t < 5000) { mood='LOVE';    pct = 62; }
+  else if (t < 6400) { mood='ANGRY';   pct = 90; }
+  else               { mood='SLEEP';   pct = 100; zzz = true; }
+
+  const color = haloColor(pct);
+  // heartbeat pulse halo
+  const halo = 1 + 0.06 * Math.sin(now / 1600 * Math.PI * 2);
+  const scaleY = mood === 'SLEEP' ? 0.35 : blink(now);
+
+  drawScene(heroCtx, HW, HH, now, {mood, pct, color, scaleY, halo, zzz,
+    size: HH * 0.55, gap: HH * 0.30});
+}
+
+// ───────────────────────── mood gallery ────────────────────────────────────
+const moods = ['NEUTRAL','HAPPY','SLEEP','ANGRY','UPSET','SAD','LOVE'];
+const moodGrid = document.getElementById('moodGrid');
+const moodCtxes = {};
+moods.forEach(m => {
+  const wrap = document.createElement('div');
+  wrap.className = 'mood';
+  const cv = document.createElement('canvas');
+  cv.width = 280; cv.height = 180;
+  wrap.appendChild(cv);
+  const lbl = document.createElement('div');
+  lbl.className = 'mood-name';
+  lbl.textContent = m;
+  wrap.appendChild(lbl);
+  moodGrid.appendChild(wrap);
+  moodCtxes[m] = cv.getContext('2d');
+});
+
+function moodsTick(now){
+  for (const m of moods) {
+    const ctx = moodCtxes[m];
+    drawScene(ctx, 280, 180, now, {
+      mood: m, color: m === 'LOVE' ? '#FF6B9D' : '#3DE0E0',
+      size: 76, gap: 22, scaleY: blink(now)
+    });
+  }
+}
+
+// ───────────────────────── per-effect demos ────────────────────────────────
+function demoBlink(ctx, W, H, now){
+  const t = now % 2000;
+  let scaleY = 1;
+  if (t < 180) { const u = t < 90 ? t/90 : (180-t)/90; scaleY = 1 - u*0.9; }
+  drawScene(ctx, W, H, now, {mood:'NEUTRAL', color:'#3DE0E0', scaleY, size: H*0.55, gap: H*0.3});
+}
+function demoHeart(ctx, W, H, now){
+  const halo = 1 + 0.10 * Math.sin(now/900 * Math.PI * 2);
+  drawScene(ctx, W, H, now, {mood:'LOVE', color:'#FF6B9D', halo, size: H*0.55, gap: H*0.3});
+}
+function demoSleep(ctx, W, H, now){
+  const halo = 1 + 0.12 * Math.sin(now/1400 * Math.PI * 2);
+  drawScene(ctx, W, H, now, {mood:'SLEEP', color:'#3DE0E0', halo, zzz:true, size: H*0.55, gap: H*0.3});
+}
+function demoWarn(ctx, W, H, now){
+  const t = now % 4500;
+  let halo = 1;
+  let pct = 86;
+  if (t > 3000 && t < 3400) { halo = 1 + 0.30 * (1 - Math.abs(t-3200)/200); pct = 95; }
+  drawScene(ctx, W, H, now, {mood:'NEUTRAL', color: haloColor(pct), halo, size: H*0.55, gap: H*0.3});
+}
+
+const demos = [
+  [document.getElementById('dBlink'), demoBlink],
+  [document.getElementById('dHeart'), demoHeart],
+  [document.getElementById('dSleep'), demoSleep],
+  [document.getElementById('dWarn'),  demoWarn],
+];
+
+// ───────────────────────── main loop ───────────────────────────────────────
+function loop(now){
+  heroTick(now);
+  moodsTick(now);
+  for (const [cv, fn] of demos) {
+    fn(cv.getContext('2d'), cv.width, cv.height, now);
+  }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

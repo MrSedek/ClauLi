@@ -1,0 +1,206 @@
+# ClauLi release pipeline
+#
+# Trigger: push a tag matching `v*` (e.g. `git tag v0.1.0 && git push --tags`).
+# Output: a GitHub Release with four artefacts attached:
+#   - firmware.bin               — ESP32-C6 OTA-flashable image
+#   - ClauLi-macOS.zip           — py2app .app bundle inside a zip
+#   - clauli-linux-x86_64.tar.gz — PyInstaller onedir, Linux x86_64
+#   - ClauLi-windows-x86_64.zip  — PyInstaller onedir, Windows x86_64
+#
+# No code-signing yet — macOS users will see a Gatekeeper "unidentified
+# developer" prompt on first launch (Right-click → Open). Windows users
+# may see SmartScreen "Don't run". This is the trade-off we accepted in
+# scope-decision; revisit when an Apple Developer account is available.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:        # allow manual runs from the Actions tab
+
+permissions:
+  contents: write           # required to create a release
+
+jobs:
+  # ───────────────────────────────────────────────────────────────────────
+  firmware:
+    name: Firmware (ESP32-C6)
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio
+            ~/.cache/pip
+          key: pio-${{ runner.os }}-${{ hashFiles('firmware/platformio.ini') }}
+
+      - name: Install PlatformIO
+        run: pip install --upgrade platformio
+
+      - name: Build firmware (esp32c6)
+        run: pio run -d firmware -e esp32c6
+
+      - name: Stage artefacts
+        run: |
+          mkdir -p out
+          cp firmware/.pio/build/esp32c6/firmware.bin   out/firmware.bin
+          cp firmware/.pio/build/esp32c6/partitions.bin out/partitions.bin
+          cp firmware/.pio/build/esp32c6/bootloader.bin out/bootloader.bin || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firmware
+          path: out/*
+
+  # ───────────────────────────────────────────────────────────────────────
+  macos:
+    name: macOS bundle
+    runs-on: macos-14            # arm64 runner
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install runtime + build deps
+        run: |
+          cd daemon
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install py2app
+
+      - name: Build .app
+        run: |
+          cd daemon
+          python setup_macos.py py2app
+
+      - name: Zip the bundle
+        run: |
+          cd daemon/dist
+          ditto -c -k --sequesterRsrc --keepParent ClauLi.app ClauLi-macOS.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: daemon/dist/ClauLi-macOS.zip
+
+  # ───────────────────────────────────────────────────────────────────────
+  linux:
+    name: Linux bundle
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install system deps (gtk for pystray, bluez for bleak)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            gir1.2-appindicator3-0.1 \
+            libgirepository1.0-dev \
+            libdbus-1-dev \
+            bluez
+
+      - name: Install Python deps
+        run: |
+          cd daemon
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build with PyInstaller
+        run: |
+          cd daemon
+          pyinstaller --clean --noconfirm clauli.spec
+
+      - name: Tar the dist tree
+        run: |
+          cd daemon/dist
+          tar czf clauli-linux-x86_64.tar.gz clauli/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: daemon/dist/clauli-linux-x86_64.tar.gz
+
+  # ───────────────────────────────────────────────────────────────────────
+  windows:
+    name: Windows bundle
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python deps
+        shell: pwsh
+        run: |
+          cd daemon
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build with PyInstaller
+        shell: pwsh
+        run: |
+          cd daemon
+          pyinstaller --clean --noconfirm clauli.spec
+
+      - name: Zip the dist tree
+        shell: pwsh
+        run: |
+          cd daemon/dist
+          Compress-Archive -Path clauli/* -DestinationPath ClauLi-windows-x86_64.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: daemon/dist/ClauLi-windows-x86_64.zip
+
+  # ───────────────────────────────────────────────────────────────────────
+  release:
+    name: Publish release
+    needs: [firmware, macos, linux, windows]
+    runs-on: ubuntu-22.04
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artefacts
+
+      - name: Flatten artefact tree
+        run: |
+          mkdir -p release
+          find artefacts -mindepth 2 -type f -exec cp {} release/ \;
+          ls -la release/
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+          generate_release_notes: true
+          fail_on_unmatched_files: false
+          body: |
+            ## ClauLi ${{ github.ref_name }}
+
+            ### Downloads
+            - **Firmware** (`firmware.bin`) — flash via web UI's OTA tab or `esptool.py write_flash 0x10000 firmware.bin`.
+            - **macOS** (`ClauLi-macOS.zip`) — unzip, drag to `/Applications`. On first launch Right-click → Open to bypass Gatekeeper (no code-signing).
+            - **Linux** (`clauli-linux-x86_64.tar.gz`) — `tar xzf`, run `./clauli/clauli --tray`.
+            - **Windows** (`ClauLi-windows-x86_64.zip`) — unzip, run `clauli.exe --tray`. Click *More info → Run anyway* on SmartScreen prompt.
+
+            Auto-generated release notes below.

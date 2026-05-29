@@ -1,4 +1,17 @@
+# Core runtime — required for any mode (CLI, daemon, tray).
 aiohttp>=3.9
 bleak>=0.22
 httpx>=0.27
 anthropic>=0.40
+
+# Tray UI — only needed for `--tray` mode and the bundled .app/.exe.
+# Imported lazily by daemon/tray.py so plain `python claude_usage_daemon.py`
+# works without these installed.
+pillow>=10.0
+pystray>=0.19; sys_platform != "darwin"
+rumps>=0.4;   sys_platform == "darwin"
+
+# Native dashboard window on macOS (WKWebView). Lets the tray open the
+# dashboard as a real app window instead of the default browser. Pairs with
+# pyobjc-framework-Cocoa, which rumps already pulls in. macOS-only.
+pyobjc-framework-WebKit>=10.0; sys_platform == "darwin"

@@ -1,0 +1,17 @@
+# Build-only dependencies — needed to PACKAGE native bundles, NOT to run the
+# daemon. Runtime deps live in requirements.txt; keep the two separate so a
+# plain `pip install -r requirements.txt` deploy stays lean.
+#
+# Install alongside the runtime deps inside the build venv:
+#   pip install -r requirements.txt -r requirements-build.txt
+
+# setuptools is no longer pre-installed in Python 3.12+ virtualenvs, so
+# `from setuptools import setup` in setup_macos.py fails with ModuleNotFoundError
+# unless we pull it in explicitly.
+setuptools
+
+# macOS .app bundle (setup_macos.py)
+py2app; sys_platform == 'darwin'
+
+# Linux / Windows single-dir bundle (clauli.spec)
+pyinstaller; sys_platform != 'darwin'

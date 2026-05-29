@@ -12,11 +12,13 @@ Usage: claude-ctrl <command>
 Commands:
   usage      Switch ESP32 to Usage screen
   emo        Switch ESP32 to EMO screen
+  emo2       Switch ESP32 to EMO 2.0 screen (HD eyes + bloom)
   bt         Switch ESP32 to Bluetooth screen
   splash     Switch ESP32 to Splash screen
   cycle      Cycle ESP32 screens
   view       Cycle the current screen's view (BOOT-click analog)
   anim       Switch to the next animation/emotion now
+  diagnose   Run an 8-second visual diagnostic on the emo 2.0 screen
   reboot     Reboot the ESP32
   refresh    Force data refresh on ESP32
   status     Show current daemon status
@@ -29,10 +31,10 @@ EOF
 }
 
 case "${1:-help}" in
-  usage|emo|bt|splash|cycle)
+  usage|emo|emo2|bt|splash|cycle)
     python3 "$DAEMON_SCRIPT" --screen "$1" --port "$PORT"
     ;;
-  view|anim|reboot)
+  view|anim|reboot|diagnose)
     python3 "$DAEMON_SCRIPT" --action "$1" --port "$PORT"
     ;;
   refresh)

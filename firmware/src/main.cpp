@@ -6,10 +6,12 @@
 #include "data.h"
 #include "ui.h"
 #include "ble.h"
+#include "ota.h"
 #include "splash.h"
 #include "usage_rate.h"
 #include "i18n.h"
 #include "emo.h"
+#include "emo2.h"
 #include <Preferences.h>
 #include <esp_system.h>
 
@@ -37,6 +39,11 @@ static int16_t logical_h() { return (current_rotation % 2 == 0) ? LCD_HEIGHT : L
 static uint16_t *buf1 = nullptr;
 static uint16_t *buf2 = nullptr;
 
+// QA screenshot: when set, my_flush_cb streams each rendered strip over Serial
+// (rgb565le). A full-screen invalidate flushes strips top-to-bottom, so the
+// concatenated byte stream equals the framebuffer in row-major order.
+static volatile bool g_screenshot = false;
+
 // LVGL tick callback
 static uint32_t my_tick(void) {
     return millis();
@@ -48,7 +55,20 @@ static void my_flush_cb(lv_display_t* disp, const lv_area_t* area, uint8_t* px_m
     int32_t h = area->y2 - area->y1 + 1;
     uint16_t *src = (uint16_t*)px_map;
     gfx->draw16bitRGBBitmap(area->x1, area->y1, src, w, h);
+    if (g_screenshot) Serial.write((const uint8_t*)src, (size_t)w * h * 2);
     lv_display_flush_ready(disp);
+}
+
+// Dump the active screen over Serial in the protocol screenshot.sh expects.
+static void do_screenshot() {
+    int32_t w = logical_w(), h = logical_h();
+    Serial.printf("SCREENSHOT_START %d %d %d\n", (int)w, (int)h, (int)(w * h * 2));
+    Serial.flush();
+    g_screenshot = true;
+    lv_obj_invalidate(lv_screen_active());
+    lv_refr_now(lv_display_get_default());
+    g_screenshot = false;
+    Serial.println("SCREENSHOT_END");
 }
 
 // ─── Parse JSON ─────────────────────────────────────────────────────────────
@@ -60,6 +80,13 @@ static bool parse_json(const char* json, UsageData* out) {
         return false;
     }
 
+    // `s` is mandatory for a usage frame — if missing, this payload is
+    // something else (e.g. {cfg:...} config blob) and we leave `valid=false`
+    // so the caller doesn't update the UI with zeros.
+    if (!doc["s"].is<float>() && !doc["s"].is<int>()) {
+        out->valid = false;
+        return false;
+    }
     out->session_pct = doc["s"] | 0.0f;
     out->session_reset_mins = doc["sr"] | -1;
     out->weekly_pct = doc["w"] | 0.0f;
@@ -131,9 +158,11 @@ static void btn_poll_one(const btn_config_t& cfg, btn_state_t& st) {
 // ─── Button actions ─────────────────────────────────────────────────────────
 static void action_trigger_animation(void) {
     ui_trigger_animation();
-    // Persist the chosen EMO view mode so it survives a reboot.
-    if (ui_get_current_screen() == SCREEN_EMO) {
-        g_prefs.putInt("emo_view", (int)emo_get_view());
+    // Persist the chosen view mode so it survives a reboot.
+    switch (ui_get_current_screen()) {
+    case SCREEN_EMO:  g_prefs.putInt("emo_view",  (int)emo_get_view());  break;
+    case SCREEN_EMO2: g_prefs.putInt("emo2_view", (int)emo2_get_view()); break;
+    default: break;
     }
 }
 
@@ -141,15 +170,25 @@ static void action_cycle_screen(void) {
     ui_cycle_screen();
 }
 
-static void action_rotate(void) {
-    current_rotation = (current_rotation + 1) % 4;
+// Apply a specific rotation + persist to NVS. Both the BTN_B-driven cycle
+// and the web CTRL bytes (0x30/0x31) call this so the value survives reboot.
+static void action_set_rotation_persisted(uint8_t rot) {
+    rot &= 0x03;
+    if (rot == current_rotation) return;
+    current_rotation = rot;
     gfx->setRotation(current_rotation);
     lv_display_t* disp = lv_display_get_default();
     if (disp) lv_display_set_resolution(disp, logical_w(), logical_h());
     lv_obj_invalidate(lv_screen_active());
     ui_relayout();
     splash_relayout();
-    Serial.printf("Rotation: %d (%dx%d)\n", current_rotation, logical_w(), logical_h());
+    emo2_relayout();   // walks every absolute-positioned emo2 layout object
+    g_prefs.putUInt("rotation", current_rotation);
+    Serial.printf("Rotation: %d (%dx%d) [persisted]\n",
+                  current_rotation, logical_w(), logical_h());
+}
+static void action_rotate(void) {
+    action_set_rotation_persisted((current_rotation + 1) % 4);
 }
 
 static void action_space_down(void) {
@@ -199,6 +238,30 @@ static void btn_poll(void) {
 void setup() {
     Serial.begin(115200);
     delay(300);
+    // Boot reason + heap snapshot — first line on every restart so user can
+    // grep the serial log when investigating "device keeps reconnecting" bug
+    // reports without needing to attach an extra debug tool.
+    {
+        esp_reset_reason_t rr = esp_reset_reason();
+        const char* rname = "UNKNOWN";
+        switch (rr) {
+        case ESP_RST_POWERON:   rname = "POWERON";  break;
+        case ESP_RST_EXT:       rname = "EXT_PIN";  break;
+        case ESP_RST_SW:        rname = "SOFTWARE"; break;
+        case ESP_RST_PANIC:     rname = "PANIC";    break;
+        case ESP_RST_INT_WDT:   rname = "INT_WDT";  break;
+        case ESP_RST_TASK_WDT:  rname = "TASK_WDT"; break;
+        case ESP_RST_WDT:       rname = "OTHER_WDT";break;
+        case ESP_RST_DEEPSLEEP: rname = "DEEPSLEEP";break;
+        case ESP_RST_BROWNOUT:  rname = "BROWNOUT"; break;
+        case ESP_RST_SDIO:      rname = "SDIO";     break;
+        default:                rname = "UNKNOWN";  break;
+        }
+        uint32_t free_heap  = ESP.getFreeHeap();
+        uint32_t min_heap   = ESP.getMinFreeHeap();
+        Serial.printf("[BOOT] reason=%s (%d) free_heap=%u min_heap=%u\n",
+                      rname, (int)rr, (unsigned)free_heap, (unsigned)min_heap);
+    }
     Serial.println("{\"ready\":true}");
 
     // Init display — Arduino_HWSPI (SPIClass) on ESP32-C6
@@ -246,15 +309,24 @@ void setup() {
         g_lang_user_set = true;
         i18n_set((lang_t)g_prefs.getInt("lang", (int)LANG_EN));
     }
+    // Restore display orientation persisted across reboots (BTN_B or web).
+    uint8_t saved_rot = (uint8_t)(g_prefs.getUInt("rotation", 0) & 0x03);
+    if (saved_rot != current_rotation) {
+        current_rotation = saved_rot;
+        gfx->setRotation(current_rotation);
+        lv_display_t* d = lv_display_get_default();
+        if (d) lv_display_set_resolution(d, logical_w(), logical_h());
+    }
 
     ui_init();
     ui_update_ble_status(ble_get_state(), ble_get_device_name(), ble_get_mac_address());
 #ifdef EMO_SELFTEST
-    ui_show_screen(SCREEN_EMO);
-    emo_set_view(9);  // compact + clock
+    ui_show_screen(SCREEN_EMO2);
+    emo_set_view(9);  // compact + clock (only affects legacy emo)
 #else
-    emo_set_view((uint8_t)g_prefs.getInt("emo_view", 0));  // restore saved mode
-    ui_show_screen(SCREEN_EMO);
+    emo_set_view((uint8_t)g_prefs.getInt("emo_view", 0));   // legacy emo view
+    emo2_set_view((uint8_t)g_prefs.getInt("emo2_view", 0)); // emo 2.0 view
+    ui_show_screen(SCREEN_EMO2);   // emo 2.0 is the new default screen
 #endif
 
     Serial.println("Dashboard ready");
@@ -267,15 +339,57 @@ void loop() {
     lv_timer_handler();
     ui_tick_anim();
     ble_tick();
+    ota_tick();
     splash_tick();
 
     btn_poll();
 
+    // Serial command handler (QA screenshot). Line-buffered; "screenshot\n"
+    // dumps the active LVGL screen over Serial via do_screenshot().
+    {
+        static char scmd[16];
+        static uint8_t slen = 0;
+        while (Serial.available()) {
+            char c = (char)Serial.read();
+            if (c == '\n' || c == '\r') {
+                scmd[slen] = 0;
+                if (slen && strcmp(scmd, "screenshot") == 0) do_screenshot();
+                slen = 0;
+            } else if (slen < sizeof(scmd) - 1) {
+                scmd[slen++] = c;
+            }
+        }
+    }
+
+    // Heap watch — log free + min-since-boot every 60 s. A monotonic decline
+    // of `min_heap` signals a memory leak; a sudden drop predicts a future
+    // OOM-watchdog reset. Cheap (one printf/min) and grep-able from serial.
+    static uint32_t heap_log_last_ms = 0;
+    uint32_t _now_ms = millis();
+    if (_now_ms - heap_log_last_ms >= 60000) {
+        heap_log_last_ms = _now_ms;
+        Serial.printf("[HEAP] free=%u min=%u largest=%u uptime=%us\n",
+                      (unsigned)ESP.getFreeHeap(),
+                      (unsigned)ESP.getMinFreeHeap(),
+                      (unsigned)ESP.getMaxAllocHeap(),
+                      (unsigned)(_now_ms / 1000));
+    }
+
     ble_state_t bs = ble_get_state();
     if (bs != last_ble_state) {
         last_ble_state = bs;
+        // BLE state transition trace — pairs with daemon-side BLE: CONNECT /
+        // DISCONNECT log lines for round-trip diagnostics.
+        const char* sname = (bs == BLE_STATE_CONNECTED)    ? "CONNECTED"
+                          : (bs == BLE_STATE_ADVERTISING)  ? "ADVERTISING"
+                          : (bs == BLE_STATE_DISCONNECTED) ? "DISCONNECTED"
+                                                            : "UNKNOWN";
+        Serial.printf("[BLE] state -> %s (uptime=%us free_heap=%u)\n",
+                      sname, (unsigned)(_now_ms / 1000),
+                      (unsigned)ESP.getFreeHeap());
         ui_update_ble_status(bs, ble_get_device_name(), ble_get_mac_address());
         emo_set_connected(bs == BLE_STATE_CONNECTED);
+        emo2_set_connected(bs == BLE_STATE_CONNECTED);
     }
 
 #ifdef EMO_SELFTEST
@@ -303,9 +417,15 @@ void loop() {
         emo_next_emotion();
     }
 #else
-    // Process incoming BLE data
+    // Process incoming BLE data — payload may be a usage frame ({s:...}),
+    // a config blob ({cfg:...}) or both. Route by JSON keys.
     if (ble_has_data()) {
-        if (parse_json(ble_get_data(), &usage)) {
+        const char* json = ble_get_data();
+        bool ack = false;
+        // Try cfg first — won't touch usage if it's a pure config payload.
+        if (emo2_apply_cfg_json(json)) ack = true;
+        // Then try usage. parse_json sets `valid=true` only when `s` exists.
+        if (parse_json(json, &usage) && usage.valid) {
             int g_before = usage_rate_group();
             usage_rate_sample(usage.session_pct);
             int g_after = usage_rate_group();
@@ -313,15 +433,18 @@ void loop() {
                 splash_pick_for_current_rate();
             }
             ui_update(&usage);
-            ble_send_ack();
-        } else {
-            ble_send_nack();
+            emo2_set_data_received();   // anchor for state-machine staleness
+            ack = true;
         }
+        if (ack) ble_send_ack();
+        else     ble_send_nack();
     }
 #endif
 
-    // Process BLE control commands
-    if (ble_has_ctrl_cmd()) {
+    // Process BLE control commands — drain the queue per tick so a rapid
+    // host-side burst (e.g. form+op+color from a state-config edit) isn't
+    // throttled to one byte per 16ms loop.
+    while (ble_has_ctrl_cmd()) {
         uint8_t cmd = ble_get_ctrl_cmd();
         switch (cmd) {
         case 0x01: ui_show_screen(SCREEN_USAGE);      break;
@@ -329,20 +452,99 @@ void loop() {
         case 0x03: ui_show_screen(SCREEN_SPLASH);     break;
         case 0x04: ui_cycle_screen();                 break;
         case 0x06: ui_show_screen(SCREEN_EMO);        break;
+        case 0x09: ui_show_screen(SCREEN_EMO2);       break;  // ClauLi (HD)
+        case 0x0A: ui_show_screen(SCREEN_EMO2);
+                   emo2_run_diagnostics();            break;  // 8s diag sequence
         case 0x05: esp_restart();                     break;  // device reboot
         case 0x07: action_trigger_animation();        break;  // BOOT-click analog (cycle view)
         case 0x08:                                            // next animation now (screen-aware)
-            if (ui_get_current_screen() == SCREEN_SPLASH) splash_next();
-            else emo_next_emotion();
+            switch (ui_get_current_screen()) {
+            case SCREEN_SPLASH:   splash_next();           break;
+            case SCREEN_EMO2:     emo2_next_emotion();     break;
+            default:              emo_next_emotion();      break;
+            }
             break;
         case 0x10: ble_request_refresh();             break;
+        // 0x18–0x1B: daemon-driven state signals for emo2.
+        case 0x18: emo2_set_token_expired(true);      break;
+        case 0x19: emo2_set_token_expired(false);     break;
+        case 0x1A: emo2_set_manual_mode(true);        break;
+        case 0x1B: emo2_set_manual_mode(false);       break;
+        // 0x1C–0x1F: halo colour override (cyan/amber/red/auto).
+        case 0x1C: emo2_set_color_override(0);        break;
+        case 0x1D: emo2_set_color_override(1);        break;
+        case 0x1E: emo2_set_color_override(2);        break;
+        case 0x1F: emo2_set_color_override(0xFF);     break;
+        // % stats layout pick (matches daemon CTRL_STATS_*)
+        case 0x20: emo2_set_stats_layout(0); break;   // off
+        case 0x21: emo2_set_stats_layout(1); break;   // bezel_orbit
+        case 0x22: emo2_set_stats_layout(2); break;   // twin_columns
+        case 0x23: emo2_set_stats_layout(3); break;   // hud_ribbon
+        case 0x24: emo2_set_stats_layout(4); break;   // brows (deprecated)
+        case 0x25: emo2_set_stats_layout(5); break;   // tear_pearls
+        case 0x26: emo2_set_stats_layout(6); break;   // corner_chip
+        case 0x27: emo2_set_stats_layout(7); break;   // ecg_monitor
+        case 0x28: emo2_set_stats_layout(8); break;   // classic (text + bars)
+        // Orientation (web toggle persists to NVS — same as BTN_B but explicit)
+        case 0x30: action_set_rotation_persisted(0); break;   // portrait
+        case 0x31: action_set_rotation_persisted(1); break;   // landscape (90° CW)
+        // Usage text mode (matches daemon CTRL_TEXT_*)
+        case 0x44: emo2_set_text_mode(0); break;      // none
+        case 0x45: emo2_set_text_mode(1); break;      // pct only
+        case 0x46: emo2_set_text_mode(2); break;      // reset only
+        case 0x47: emo2_set_text_mode(3); break;      // both
+        // 0x51-0x54: text SOURCE (off/session/weekly/both)
+        case 0x51: emo2_set_text_source(0); break;
+        case 0x52: emo2_set_text_source(1); break;
+        case 0x53: emo2_set_text_source(2); break;
+        case 0x54: emo2_set_text_source(3); break;
+        // 0x55-0x57: text FORMAT (pct / pct+reset / reset)
+        case 0x55: emo2_set_text_format(0); break;
+        case 0x56: emo2_set_text_format(1); break;
+        case 0x57: emo2_set_text_format(2); break;
+        // 0x5C-0x5E: text PLACEMENT (top / middle / bottom — item 2/3).
+        case 0x5C: emo2_set_text_placement(0); break;
+        case 0x5D: emo2_set_text_placement(1); break;
+        case 0x5E: emo2_set_text_placement(2); break;
+        // Clock style — 7 picked candidates + off. 0x48-0x4C use the
+        // legacy byte range; 0x58 + 0x5A-0x5B continue past the
+        // text_format CTRLs. 0x59 reserved (was badge — dropped).
+        case 0x48: emo2_set_clock_style(0); break;   // off
+        case 0x49: emo2_set_clock_style(1); break;   // mono (c01)
+        case 0x4A: emo2_set_clock_style(2); break;   // major_mono (c05)
+        case 0x4B: emo2_set_clock_style(3); break;   // orbitron (c07)
+        case 0x4C: emo2_set_clock_style(4); break;   // outline (c08)
+        case 0x58: emo2_set_clock_style(5); break;   // neon (c10)
+        // case 0x59: badge — DROPPED.
+        case 0x5A: emo2_set_clock_style(6); break;   // seconds (c13)
+        case 0x5B: emo2_set_clock_style(7); break;   // bracket (c15)
+        // 0x4D-0x50: LAYOUT-fill colour override (separate from halo).
+        case 0x4D: emo2_set_layout_color_override(0);    break;  // cyan
+        case 0x4E: emo2_set_layout_color_override(1);    break;  // amber
+        case 0x4F: emo2_set_layout_color_override(2);    break;  // red
+        case 0x50: emo2_set_layout_color_override(0xFF); break;  // auto
         // 0x40/0x41: connect-time seed — ignored once the user has chosen.
         case 0x40: if (!g_lang_user_set) { i18n_set(LANG_EN); ui_relang(); } break;
         case 0x41: if (!g_lang_user_set) { i18n_set(LANG_RU); ui_relang(); } break;
         // 0x42/0x43: explicit choice from the web UI — apply + persist.
         case 0x42: set_lang_persist(LANG_EN); break;
         case 0x43: set_lang_persist(LANG_RU); break;
-        default: break;
+        // 0x80–0x9F: explicit form select on emo2 (up to 32 moods).
+        // 0xA0–0xBF: trigger one of up to 32 motion ops on emo2.
+        // Moved here from 0x50/0x70 which collided with the layout-colour
+        // (0x4D-0x50), text-source (0x51-0x54), text-format (0x55-0x57),
+        // and clock-style (0x58-0x5B) CTRLs added in later iterations.
+        default:
+            if (cmd >= 0x80 && cmd <= 0x9F) {
+                // Form picker — switch to ClauLi if not already showing.
+                if (ui_get_current_screen() != SCREEN_EMO2) ui_show_screen(SCREEN_EMO2);
+                emo2_set_mood_idx(cmd - 0x80);
+            } else if (cmd >= 0xA0 && cmd <= 0xBF) {
+                // Motion op — same routing as forms.
+                if (ui_get_current_screen() != SCREEN_EMO2) ui_show_screen(SCREEN_EMO2);
+                emo2_trigger_op(cmd - 0xA0);
+            }
+            break;
         }
     }
 

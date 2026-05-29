@@ -24,6 +24,7 @@ enum str_id {
     STR_BT_ADDR,        // "Address:" / "Адрес:"
     STR_BT_RESET,       // "Reset Bluetooth" / "Сброс Bluetooth"
     STR_RECONNECT,      // "Reconnecting" / "Переподключение"
+    STR_REAUTH,         // "Re-auth needed" / "Нужен повторный вход"
     STR_COUNT
 };
 

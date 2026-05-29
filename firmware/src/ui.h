@@ -7,6 +7,7 @@ enum screen_t {
     SCREEN_USAGE,
     SCREEN_EMO,
     SCREEN_BLUETOOTH,
+    SCREEN_EMO2,
     SCREEN_COUNT,
 };
 

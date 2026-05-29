@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Gradient editor — design candidates</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;600;700&family=Onest:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#050505; --surface:#0b0b09; --surface2:#131311; --surface3:#1c1c19;
+  --text:#faf9f5; --dim:#8a887e; --dimmer:#4d4c47;
+  --line:rgba(255,255,255,.07); --line2:rgba(255,255,255,.14);
+  --cyan:#3DE0E0; --warm:#FFB02E; --hot:#FF4D4D; --ok:#8fa66e;
+  --grad-1:#FFFFFF; --grad-2:#4FBF6E; --grad-3:#FFD23F; --grad-4:#FF4D4D;
+}
+html,body{height:100%}
+body{
+  font-family:'Onest',system-ui,sans-serif;
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 30%, #0e0d0a 0%, var(--bg) 65%),
+    repeating-linear-gradient(0deg, transparent 0, transparent 2px, rgba(255,255,255,.008) 2px, rgba(255,255,255,.008) 3px);
+  background-attachment:fixed;
+  color:var(--text); min-height:100vh; padding:48px 32px 96px;
+  font-size:14px; line-height:1.5;
+}
+/* ────────── Hero ────────── */
+.hero{max-width:1180px;margin:0 auto 48px;padding-bottom:32px;border-bottom:1px solid var(--line)}
+.kicker{font:700 11px/1 'Azeret Mono',monospace;letter-spacing:3px;color:var(--cyan);text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.kicker::before{content:'';width:8px;height:8px;background:var(--cyan);border-radius:50%;box-shadow:0 0 12px var(--cyan)}
+.hero h1{font:700 42px/1 'Azeret Mono',monospace;letter-spacing:-1px;margin-bottom:14px}
+.hero h1 em{font-style:normal;color:var(--warm)}
+.hero p{color:var(--dim);max-width:680px;font-size:15px;line-height:1.6}
+.hero .meta{margin-top:18px;display:flex;gap:20px;font:600 11px/1 'Azeret Mono',monospace;letter-spacing:1.5px;text-transform:uppercase;color:var(--dimmer)}
+.hero .meta span{display:inline-flex;align-items:center;gap:6px}
+.hero .meta span::before{content:'';width:5px;height:5px;background:var(--dim);border-radius:1px}
+
+/* ────────── Card ────────── */
+.grid{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:48px}
+.card{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:14px;
+  overflow:hidden;
+  position:relative;
+}
+.card::before{
+  content:'';position:absolute;inset:0 0 auto 0;height:2px;
+  background:linear-gradient(90deg, transparent, var(--cyan), transparent);
+  opacity:0;transition:opacity .3s;
+}
+.card:hover::before{opacity:.5}
+.card-head{display:flex;align-items:flex-start;gap:24px;padding:26px 32px 22px;border-bottom:1px solid var(--line)}
+.card-num{
+  flex-shrink:0;width:42px;height:42px;
+  display:grid;place-items:center;
+  border:1px solid var(--line2);border-radius:8px;
+  font:700 18px/1 'Azeret Mono',monospace;color:var(--warm);
+  background:rgba(255,176,46,.04);
+}
+.card-title{font:700 24px/1.1 'Azeret Mono',monospace;letter-spacing:-.5px;margin-bottom:6px}
+.card-title .tag{display:inline-block;font-size:9.5px;letter-spacing:2px;color:var(--cyan);background:rgba(61,224,224,.08);border:1px solid rgba(61,224,224,.30);padding:3px 7px;border-radius:4px;margin-left:8px;vertical-align:middle}
+.card-desc{color:var(--dim);font-size:14px;line-height:1.55;max-width:680px}
+.card-body{padding:32px}
+.card-foot{
+  padding:18px 32px;border-top:1px solid var(--line);
+  background:linear-gradient(180deg,transparent,rgba(0,0,0,.18));
+  display:flex;gap:24px;flex-wrap:wrap;
+}
+.card-foot .note{flex:1;min-width:220px}
+.card-foot .note h4{font:700 10px/1 'Azeret Mono',monospace;letter-spacing:1.8px;text-transform:uppercase;color:var(--dim);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.card-foot .note h4::before{content:'◆';color:var(--warm);font-size:8px}
+.card-foot .note ul{list-style:none;font-size:12.5px;color:var(--text)}
+.card-foot .note li{padding-left:14px;position:relative;margin-bottom:4px;line-height:1.45;color:#cfcfc8}
+.card-foot .note li::before{content:'›';position:absolute;left:0;color:var(--cyan);font-weight:700}
+
+/* ────────── Editor primitives ────────── */
+.editor-wrap{background:#070705;border:1px solid var(--line2);border-radius:10px;padding:22px 22px 18px;position:relative}
+.editor-label{font:700 9.5px/1 'Azeret Mono',monospace;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.editor-label .live{font-size:8.5px;letter-spacing:1.5px;color:var(--warm);background:rgba(255,176,46,.07);border:1px solid rgba(255,176,46,.30);padding:2px 6px;border-radius:3px}
+
+/* Strip — the gradient itself */
+.strip-frame{
+  position:relative;height:48px;border-radius:6px;overflow:visible;
+  background:#000;border:1px solid var(--line2);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.5), 0 1px 0 rgba(255,255,255,.04);
+}
+.strip-inner{position:absolute;inset:0;border-radius:5px;overflow:hidden}
+.strip-fill{position:absolute;inset:0}
+/* Tick scale below */
+.strip-ticks{
+  position:relative;margin-top:6px;height:18px;
+  font:600 9px/1 'JetBrains Mono',monospace;color:var(--dimmer);
+  letter-spacing:.5px;
+}
+.strip-ticks span{position:absolute;transform:translateX(-50%);padding-top:8px;border-left:1px solid var(--line2)}
+.strip-ticks span::before{content:'';position:absolute;top:0;left:-1px;width:1px;height:4px;background:var(--dim)}
+.strip-ticks span.major::before{background:var(--text);height:6px}
+.strip-ticks span.major{color:var(--dim);font-weight:700}
+
+/* Stop pins ON the strip */
+.strip-pins{position:absolute;inset:0;pointer-events:none}
+.pin{
+  position:absolute;top:-9px;transform:translateX(-50%);
+  pointer-events:auto;cursor:grab;
+}
+.pin::before{
+  content:'';display:block;width:14px;height:14px;
+  border-radius:50% 50% 50% 0;
+  background:var(--pin-color, var(--cyan));
+  border:2px solid #000;
+  box-shadow:0 0 0 1px rgba(255,255,255,.25), 0 2px 8px rgba(0,0,0,.7);
+  transform:rotate(-45deg);
+}
+.pin:hover::before{transform:rotate(-45deg) scale(1.15);box-shadow:0 0 0 1px var(--text),0 2px 12px rgba(0,0,0,.85)}
+.pin.locked{cursor:default}
+.pin.locked::after{
+  content:'⚓';position:absolute;top:-2px;left:50%;transform:translateX(-50%);
+  font-size:7px;color:var(--dim);
+}
+.pin .pin-tip{
+  position:absolute;top:-22px;left:50%;transform:translateX(-50%);
+  font:700 9px/1 'JetBrains Mono',monospace;color:var(--text);
+  background:#0a0a08;padding:3px 5px;border-radius:3px;
+  border:1px solid var(--line2);white-space:nowrap;letter-spacing:.5px;
+  opacity:0;transition:opacity .15s;
+}
+.pin:hover .pin-tip,.pin.active .pin-tip{opacity:1}
+
+/* Stops list — table-like editor below */
+.stops-table{margin-top:18px;display:flex;flex-direction:column;gap:8px}
+.stop-row{
+  display:grid;grid-template-columns:30px 36px 1fr 64px 30px;
+  align-items:center;gap:10px;padding:6px 8px;
+  background:rgba(255,255,255,.015);border:1px solid var(--line);border-radius:6px;
+  transition:background .12s,border-color .12s;
+}
+.stop-row:hover{background:rgba(61,224,224,.04);border-color:rgba(61,224,224,.20)}
+.stop-row.locked{background:rgba(255,176,46,.025);border-color:rgba(255,176,46,.16)}
+.stop-row .drag{font:700 12px/1 'JetBrains Mono',monospace;color:var(--dim);text-align:center;cursor:grab;user-select:none}
+.stop-row.locked .drag{color:var(--warm);cursor:default}
+.stop-row .swatch{
+  width:36px;height:24px;border-radius:4px;border:1px solid rgba(255,255,255,.20);
+  cursor:pointer;background:var(--swatch-color,#fff);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.35);transition:transform .12s;
+}
+.stop-row .swatch:hover{transform:scale(1.05);border-color:var(--text)}
+.stop-row .slider-wrap{position:relative;display:flex;align-items:center;gap:8px}
+.stop-row .slider-wrap input[type=range]{flex:1;accent-color:var(--cyan)}
+.stop-row.locked .slider-wrap input[type=range]{opacity:.25;pointer-events:none}
+.stop-row .pct-num{
+  font:700 12px/1 'JetBrains Mono',monospace;color:var(--text);text-align:right;
+  background:transparent;border:1px solid var(--line);border-radius:4px;padding:5px 7px;width:64px;
+  letter-spacing:.5px;
+}
+.stop-row.locked .pct-num{color:var(--warm);background:rgba(255,176,46,.03);cursor:not-allowed}
+.stop-row .pct-num:focus{outline:none;border-color:var(--cyan)}
+.stop-row .pct-suffix{position:absolute;right:8px;color:var(--dim);font:600 10px/1 'JetBrains Mono',monospace;pointer-events:none}
+.stop-row .remove{
+  width:24px;height:24px;display:grid;place-items:center;background:transparent;border:1px solid var(--line);border-radius:4px;color:var(--dim);cursor:pointer;font-size:13px;transition:all .12s;
+}
+.stop-row .remove:hover:not(:disabled){background:rgba(255,77,77,.08);border-color:var(--hot);color:var(--hot)}
+.stop-row .remove:disabled{opacity:.2;cursor:not-allowed}
+.stop-row.locked .remove{visibility:hidden}
+
+/* Active range indicator below each stop row (Candidate 1) */
+.stop-row .range-bar{display:none;height:3px;background:var(--swatch-color);border-radius:2px;margin-top:6px;grid-column:1/-1;opacity:.6}
+.stop-row.with-range .range-bar{display:block}
+
+/* Action row */
+.actions{margin-top:18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.btn{
+  font:700 11px/1 'Azeret Mono',monospace;letter-spacing:1.6px;text-transform:uppercase;
+  padding:9px 16px;border-radius:6px;cursor:pointer;border:1px solid var(--line2);
+  background:rgba(255,255,255,.03);color:var(--text);transition:all .12s;display:inline-flex;align-items:center;gap:7px;
+}
+.btn:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.25)}
+.btn.primary{background:var(--cyan);color:#000;border-color:transparent;font-weight:700}
+.btn.primary:hover{background:#5ee9e9}
+.btn.primary:disabled{background:rgba(255,255,255,.05);color:var(--dim);cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--dim)}
+.btn.ghost:hover{color:var(--text);border-color:rgba(255,255,255,.20)}
+.btn.warm{background:rgba(255,176,46,.10);border-color:rgba(255,176,46,.45);color:var(--warm)}
+.btn.warm:hover{background:rgba(255,176,46,.18)}
+.actions .spacer{flex:1}
+.actions .status{font:600 10px/1 'Azeret Mono',monospace;letter-spacing:1.5px;color:var(--dim);text-transform:uppercase}
+.actions .status.dirty{color:var(--warm)}
+
+/* ───── PRESETS (Candidate 2 + 4) ───── */
+.presets-rail{
+  margin:0 0 22px;padding:14px;background:#070705;
+  border:1px solid var(--line2);border-radius:10px;
+}
+.presets-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.presets-head h3{font:700 10px/1 'Azeret Mono',monospace;letter-spacing:2px;text-transform:uppercase;color:var(--dim)}
+.presets-head .count{font:600 9px/1 'JetBrains Mono',monospace;color:var(--dimmer)}
+.presets-head .add-btn{
+  margin-left:auto;font:700 9px/1 'Azeret Mono',monospace;letter-spacing:1.5px;
+  background:transparent;border:1px dashed var(--line2);color:var(--dim);padding:5px 10px;border-radius:5px;cursor:pointer;transition:all .12s;
+}
+.presets-head .add-btn:hover{color:var(--warm);border-color:var(--warm);background:rgba(255,176,46,.05)}
+.presets-row{
+  display:flex;gap:10px;overflow-x:auto;padding:4px 2px 8px;
+  scrollbar-width:thin;scrollbar-color:var(--line2) transparent;
+}
+.presets-row::-webkit-scrollbar{height:6px}
+.presets-row::-webkit-scrollbar-thumb{background:var(--line2);border-radius:3px}
+.preset{
+  flex-shrink:0;width:96px;cursor:pointer;
+  background:transparent;border:none;padding:0;font-family:inherit;
+  transition:transform .12s;
+}
+.preset:hover{transform:translateY(-2px)}
+.preset-strip{
+  height:38px;border-radius:6px;border:1px solid var(--line2);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.4);background:#000;
+  position:relative;overflow:hidden;
+}
+.preset-strip::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(255,255,255,.08),transparent 40%);
+  pointer-events:none;
+}
+.preset.active .preset-strip{border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan),0 0 14px rgba(61,224,224,.30)}
+.preset-label{
+  margin-top:6px;font:700 9px/1 'Azeret Mono',monospace;
+  letter-spacing:1.3px;text-transform:uppercase;color:var(--text);
+}
+.preset-meta{font:500 8.5px/1 'JetBrains Mono',monospace;color:var(--dimmer);margin-top:3px}
+.preset.active .preset-label{color:var(--cyan)}
+
+/* ───── SMOOTH / STEP TOGGLE (Candidate 3 + 4) ───── */
+.mode-toggle{
+  display:inline-flex;align-items:center;background:#070705;border:1px solid var(--line2);border-radius:8px;padding:3px;
+}
+.mode-toggle button{
+  font:700 10px/1 'Azeret Mono',monospace;letter-spacing:1.5px;text-transform:uppercase;
+  background:transparent;border:none;color:var(--dim);padding:7px 14px;cursor:pointer;border-radius:5px;transition:all .12s;
+  display:inline-flex;align-items:center;gap:6px;
+}
+.mode-toggle button.active{background:rgba(61,224,224,.10);color:var(--cyan)}
+.mode-toggle button:hover:not(.active){color:var(--text)}
+.mode-toggle .icon{font-size:11px}
+
+/* Side-by-side comparison strips (Candidate 3) */
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+.compare-cell h5{font:700 9px/1 'Azeret Mono',monospace;letter-spacing:1.8px;color:var(--dim);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:7px}
+.compare-cell h5 .marker{width:8px;height:8px;border-radius:1px}
+.compare-cell.step h5 .marker{background:var(--warm)}
+.compare-cell.smooth h5 .marker{background:var(--cyan)}
+.compare-cell .strip-frame{height:42px}
+
+.explain{margin-top:14px;padding:12px 14px;background:rgba(255,255,255,.015);border-left:2px solid var(--cyan);border-radius:0 6px 6px 0;font-size:12px;color:var(--dim);line-height:1.5}
+.explain b{color:var(--text);font-family:'Azeret Mono',monospace;letter-spacing:.5px}
+
+/* ───── Custom color popover (shared minimal version) ───── */
+.cp-pop{
+  position:absolute;z-index:50;background:#0a0a08;border:1px solid var(--line2);border-radius:8px;padding:8px;
+  box-shadow:0 14px 36px rgba(0,0,0,.7);display:none;flex-direction:column;gap:6px;
+}
+.cp-pop.open{display:flex}
+.cp-pop input[type=color]{width:120px;height:60px;border:none;background:transparent;cursor:pointer}
+.cp-pop .cp-row{display:flex;gap:6px;align-items:center}
+.cp-pop input[type=text]{flex:1;background:#040404;border:1px solid var(--line);color:var(--text);font:700 10px/1 'JetBrains Mono',monospace;padding:5px 7px;border-radius:4px;outline:none;letter-spacing:.5px;text-transform:uppercase}
+.cp-pop .cp-row button{font:700 9px/1 'Azeret Mono',monospace;letter-spacing:1.2px;padding:5px 9px;border-radius:4px;border:1px solid var(--line2);background:transparent;color:var(--dim);cursor:pointer;text-transform:uppercase}
+.cp-pop .cp-row button.ok{background:var(--cyan);color:#000;border-color:transparent}
+
+/* Subtle CRT scanline overlay on key surfaces */
+.editor-wrap::after{
+  content:'';position:absolute;inset:0;border-radius:10px;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent 0,transparent 2px,rgba(255,255,255,.012) 2px,rgba(255,255,255,.012) 3px);
+  mix-blend-mode:overlay;opacity:.5;
+}
+
+/* Misc */
+.divider{height:1px;background:var(--line);margin:14px 0}
+.hint-row{display:flex;align-items:center;gap:10px;margin-top:6px;font:500 11px/1.4 'Onest',sans-serif;color:var(--dim)}
+.hint-row kbd{font:700 9px/1 'JetBrains Mono',monospace;background:#070705;border:1px solid var(--line2);border-bottom-width:2px;padding:3px 6px;border-radius:3px;color:var(--text)}
+
+/* Pick-banner CTA at the bottom of each card */
+.pick-bar{
+  margin-top:20px;padding:14px 18px;background:linear-gradient(135deg,rgba(61,224,224,.04),rgba(255,176,46,.04));
+  border:1px solid rgba(255,255,255,.10);border-radius:8px;display:flex;align-items:center;gap:14px;
+}
+.pick-bar .pick-icon{font-size:18px}
+.pick-bar .pick-text{flex:1;font-size:12.5px;color:var(--dim)}
+.pick-bar .pick-text b{color:var(--text);font-family:'Azeret Mono',monospace;letter-spacing:.5px}
+.pick-bar .pick-btn{
+  font:700 11px/1 'Azeret Mono',monospace;letter-spacing:1.6px;text-transform:uppercase;
+  padding:9px 18px;background:var(--text);color:#000;border:none;border-radius:6px;cursor:pointer;transition:all .12s;
+}
+.pick-bar .pick-btn:hover{background:var(--cyan)}
+
+/* Master design (Candidate 4) — slight emphasis */
+.card.master{border-color:rgba(255,176,46,.30);background:linear-gradient(180deg,rgba(255,176,46,.025),var(--surface) 30%)}
+.card.master .card-num{color:var(--cyan);background:rgba(61,224,224,.06);border-color:rgba(61,224,224,.35)}
+.card.master::after{
+  content:'RECOMMENDED';position:absolute;top:18px;right:24px;
+  font:700 9px/1 'Azeret Mono',monospace;letter-spacing:2.2px;color:var(--warm);
+  background:rgba(255,176,46,.10);border:1px solid rgba(255,176,46,.45);padding:4px 8px;border-radius:4px;
+}
+
+@media (max-width:780px){
+  body{padding:32px 18px 64px}
+  .hero h1{font-size:32px}
+  .compare-grid{grid-template-columns:1fr}
+  .stop-row{grid-template-columns:24px 32px 1fr 56px 28px}
+}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="kicker">Design candidates · Gradient editor v2</div>
+  <h1>Цвет по % — <em>четыре направления</em></h1>
+  <p>Текущий редактор работает (после фикса BLE chunking и lock-fix первого stop'а), но интерфейс плотный и нет ни пресетов, ни плавного градиента. Ниже — четыре варианта переработки, от минимальной правки до полной интеграции. Каждый пример рабочий — можно поменять цвет, перетащить, попробовать пресет.</p>
+  <div class="meta">
+    <span>Stack: HTML/CSS/JS · Azeret Mono · Onest</span>
+    <span>Aesthetic: operator console</span>
+    <span>Theme: dark</span>
+  </div>
+</header>
+
+<main class="grid">
+
+  <!-- ━━━━━━━━━━━━━━━━ CANDIDATE 1 ━━━━━━━━━━━━━━━━ -->
+  <section class="card" id="cand1">
+    <div class="card-head">
+      <div class="card-num">01</div>
+      <div>
+        <div class="card-title">Refined operator <span class="tag">EVOLUTION</span></div>
+        <div class="card-desc">Тот же редактор, но в три раза просторнее. Первый stop залочен на 0%. Маркеры на полосе сразу видны как «булавки» — таскаете цвет за пин, остальные параметры в табличке снизу.</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="editor-wrap">
+        <div class="editor-label">Live gradient strip <span class="live">PCT 0 ↔ 100</span></div>
+        <div class="strip-frame">
+          <div class="strip-inner"><div class="strip-fill" id="c1-strip"></div></div>
+          <div class="strip-pins" id="c1-pins"></div>
+        </div>
+        <div class="strip-ticks" id="c1-ticks"></div>
+        <div class="stops-table" id="c1-stops"></div>
+        <div class="actions">
+          <button class="btn ghost" data-act="add" data-cand="c1">+ stop</button>
+          <button class="btn ghost" data-act="reset" data-cand="c1">reset</button>
+          <div class="spacer"></div>
+          <div class="status" id="c1-status">saved</div>
+          <button class="btn primary" data-act="apply" data-cand="c1" disabled>apply</button>
+        </div>
+      </div>
+    </div>
+    <div class="card-foot">
+      <div class="note">
+        <h4>Что нового</h4>
+        <ul>
+          <li>Первый stop <b>залочен на 0%</b> — цвет редактируется, % серый и недоступный</li>
+          <li>Полоса градиента <b>в 3× выше</b>, под ней — шкала 0/10/20…/100</li>
+          <li>Стопы видны как <b>пины на полосе</b> — наглядно где они</li>
+          <li>Hover на row → подсветка соответствующего диапазона</li>
+        </ul>
+      </div>
+      <div class="note">
+        <h4>Когда брать</h4>
+        <ul>
+          <li>Если хочется минимально вмешаться в текущий UX</li>
+          <li>Не добавляет новых концепций — пользователь сразу разберётся</li>
+          <li>~80 LoC изменений в index.html</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ━━━━━━━━━━━━━━━━ CANDIDATE 2 ━━━━━━━━━━━━━━━━ -->
+  <section class="card" id="cand2">
+    <div class="card-head">
+      <div class="card-num">02</div>
+      <div>
+        <div class="card-title">Presets library <span class="tag">+ CURATED</span></div>
+        <div class="card-desc">Сверху — лента предустановленных градиентов («CYBER», «ARCTIC», «FERRARI», «STEALTH»…). Тап на пресет загружает его в редактор, после этого можно докрутить. Свои пресеты сохраняются в localStorage.</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="presets-rail">
+        <div class="presets-head">
+          <h3>Presets</h3>
+          <span class="count" id="c2-preset-count">8 built-in · 0 custom</span>
+          <button class="add-btn" id="c2-save-preset">+ save current</button>
+        </div>
+        <div class="presets-row" id="c2-presets"></div>
+      </div>
+      <div class="editor-wrap">
+        <div class="editor-label">Editor <span class="live">PCT 0 ↔ 100</span></div>
+        <div class="strip-frame">
+          <div class="strip-inner"><div class="strip-fill" id="c2-strip"></div></div>
+          <div class="strip-pins" id="c2-pins"></div>
+        </div>
+        <div class="strip-ticks" id="c2-ticks"></div>
+        <div class="stops-table" id="c2-stops"></div>
+        <div class="actions">
+          <button class="btn ghost" data-act="add" data-cand="c2">+ stop</button>
+          <div class="spacer"></div>
+          <div class="status" id="c2-status">saved</div>
+          <button class="btn primary" data-act="apply" data-cand="c2" disabled>apply</button>
+        </div>
+      </div>
+    </div>
+    <div class="card-foot">
+      <div class="note">
+        <h4>Что нового</h4>
+        <ul>
+          <li><b>8 встроенных пресетов</b> в горизонтальной ленте</li>
+          <li>Тап на пресет → загружается в редактор. Можно подкрутить и заапплаить</li>
+          <li>«+ save current» → сохраняет текущий набор как user-пресет (localStorage). Своему пресету можно дать имя</li>
+          <li>Длинный тап (или X) — удалить user-пресет</li>
+        </ul>
+      </div>
+      <div class="note">
+        <h4>Список встроенных</h4>
+        <ul>
+          <li><b>CYBER</b> — cyan → green → yellow → red (default)</li>
+          <li><b>ARCTIC</b> — холодная палитра до red</li>
+          <li><b>FERRARI</b> — pure yellow → pure red</li>
+          <li><b>HEAT</b>, <b>STEALTH</b>, <b>FOREST</b>, <b>SUNSET</b>, <b>MONO</b></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ━━━━━━━━━━━━━━━━ CANDIDATE 3 ━━━━━━━━━━━━━━━━ -->
+  <section class="card" id="cand3">
+    <div class="card-head">
+      <div class="card-num">03</div>
+      <div>
+        <div class="card-title">Step ↔ smooth toggle <span class="tag">INTERPOLATION</span></div>
+        <div class="card-desc">Те же stops, но переключаемая интерполяция. STEP (как сейчас) — резкие скачки цвета при переходе через порог. SMOOTH — плавный lerp между stops. ESP сразу видит обоих режима, для firmware нужен новый branch в halo_color.</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="editor-wrap">
+        <div class="editor-label">
+          Interpolation mode
+          <div class="mode-toggle" style="margin-left:auto" id="c3-mode">
+            <button class="active" data-mode="step"><span class="icon">▌</span>STEP</button>
+            <button data-mode="smooth"><span class="icon">~</span>SMOOTH</button>
+          </div>
+        </div>
+        <div class="compare-grid">
+          <div class="compare-cell step">
+            <h5><span class="marker"></span>Step — firmware now</h5>
+            <div class="strip-frame">
+              <div class="strip-inner"><div class="strip-fill" id="c3-step-strip"></div></div>
+            </div>
+          </div>
+          <div class="compare-cell smooth">
+            <h5><span class="marker"></span>Smooth — proposed</h5>
+            <div class="strip-frame">
+              <div class="strip-inner"><div class="strip-fill" id="c3-smooth-strip"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="strip-ticks" id="c3-ticks"></div>
+        <div class="stops-table" id="c3-stops"></div>
+        <div class="actions">
+          <button class="btn ghost" data-act="add" data-cand="c3">+ stop</button>
+          <div class="spacer"></div>
+          <div class="status" id="c3-status">saved · step</div>
+          <button class="btn primary" data-act="apply" data-cand="c3" disabled>apply</button>
+        </div>
+        <div class="explain">
+          <b>Step</b>: at pct=53, color jumps from green to yellow at the 50% boundary. Visual feedback is binary — «спокойно / тревога».
+          <br><b>Smooth</b>: at pct=53, color is interpolated between green (50%) and yellow (70%) — slight yellowish tint, 15% of the way. Visual feedback is continuous — приятнее для глаза, но менее «алармно».
+        </div>
+      </div>
+    </div>
+    <div class="card-foot">
+      <div class="note">
+        <h4>Что нового</h4>
+        <ul>
+          <li>Переключатель <b>STEP / SMOOTH</b> в правом углу заголовка</li>
+          <li>Side-by-side preview двух режимов на одном наборе stops</li>
+          <li>Mode сохраняется через cfg.gradient_mode на ESP (новое поле)</li>
+        </ul>
+      </div>
+      <div class="note">
+        <h4>Firmware impact</h4>
+        <ul>
+          <li><code>halo_color()</code> ветвится по новому полю gradient_mode</li>
+          <li>SMOOTH = существующая lerp-формула, +~20 LoC в emo2.cpp</li>
+          <li>Web preview уже умеет SMOOTH через CSS <code>linear-gradient</code></li>
+          <li>Daemon: один extra ключ <code>gradient_mode</code> в cfg JSON</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ━━━━━━━━━━━━━━━━ CANDIDATE 4 ━━━━━━━━━━━━━━━━ -->
+  <section class="card master" id="cand4">
+    <div class="card-head">
+      <div class="card-num">04</div>
+      <div>
+        <div class="card-title">All-in-one master <span class="tag">FULL</span></div>
+        <div class="card-desc">Объединение всех трёх: presets-rail сверху, refined editor с лочкой первого stop'а в центре, smooth/step toggle в action-row. Один экран — все возможности. Это то, что я предлагаю положить в основную страницу, если зайдёт.</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="presets-rail">
+        <div class="presets-head">
+          <h3>Presets</h3>
+          <span class="count" id="c4-preset-count">8 built-in · 0 custom</span>
+          <button class="add-btn" id="c4-save-preset">+ save current</button>
+        </div>
+        <div class="presets-row" id="c4-presets"></div>
+      </div>
+      <div class="editor-wrap">
+        <div class="editor-label">
+          Live gradient strip
+          <span class="live" id="c4-mode-live">STEP</span>
+          <div class="mode-toggle" style="margin-left:auto" id="c4-mode">
+            <button class="active" data-mode="step"><span class="icon">▌</span>STEP</button>
+            <button data-mode="smooth"><span class="icon">~</span>SMOOTH</button>
+          </div>
+        </div>
+        <div class="strip-frame">
+          <div class="strip-inner"><div class="strip-fill" id="c4-strip"></div></div>
+          <div class="strip-pins" id="c4-pins"></div>
+        </div>
+        <div class="strip-ticks" id="c4-ticks"></div>
+        <div class="stops-table" id="c4-stops"></div>
+        <div class="actions">
+          <button class="btn ghost" data-act="add" data-cand="c4">+ stop</button>
+          <button class="btn ghost" data-act="reset" data-cand="c4">reset</button>
+          <div class="spacer"></div>
+          <div class="status" id="c4-status">saved · step</div>
+          <button class="btn primary" data-act="apply" data-cand="c4" disabled>apply</button>
+        </div>
+        <div class="hint-row">
+          <kbd>drag</kbd> pin to reposition · <kbd>tap</kbd> swatch for color picker · first stop locks 0%
+        </div>
+      </div>
+      <div class="pick-bar">
+        <div class="pick-icon">⚡</div>
+        <div class="pick-text">Если ок — могу прямо сейчас перенести в <b>index.html</b> поверх существующего gradient editor. ~250 LoC web + 30 LoC firmware (для smooth mode).</div>
+      </div>
+    </div>
+    <div class="card-foot">
+      <div class="note">
+        <h4>Включено</h4>
+        <ul>
+          <li>✓ Presets row + сохранение в localStorage</li>
+          <li>✓ Lock первого stop на 0%</li>
+          <li>✓ Pins прямо на gradient strip</li>
+          <li>✓ Step / Smooth переключатель</li>
+          <li>✓ Шкала 0/20/40/60/80/100 под полосой</li>
+        </ul>
+      </div>
+      <div class="note">
+        <h4>Не включено (намеренно)</h4>
+        <ul>
+          <li>Eyedropper (брать цвет с экрана) — overkill для embedded usage</li>
+          <li>Color picker через HSV-popover — оставляем native <code>&lt;input type="color"&gt;</code></li>
+          <li>Numeric HSL/RGB ввод — пользователь работает с hex, этого хватает</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- Hidden color picker popover — shared minimal version used by swatch clicks -->
+<div class="cp-pop" id="cp-pop">
+  <input type="color" id="cp-color" value="#FFFFFF">
+  <div class="cp-row">
+    <input type="text" id="cp-hex" maxlength="7" value="#FFFFFF">
+    <button id="cp-cancel">x</button>
+    <button class="ok" id="cp-ok">ok</button>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────
+// Shared helpers
+// ─────────────────────────────────────────────────────────────────
+const DEFAULT_STOPS = [
+  {pct: 0,  color: '#FFFFFF'},
+  {pct: 50, color: '#4FBF6E'},
+  {pct: 70, color: '#FFD23F'},
+  {pct: 90, color: '#FF4D4D'},
+];
+const BUILTIN_PRESETS = [
+  {name:'CYBER',    meta:'default',  stops:[{pct:0,color:'#3DE0E0'},{pct:50,color:'#4FBF6E'},{pct:70,color:'#FFD23F'},{pct:90,color:'#FF4D4D'}]},
+  {name:'ARCTIC',   meta:'cold→hot', stops:[{pct:0,color:'#E0F4FF'},{pct:60,color:'#62AAEA'},{pct:85,color:'#FF4D4D'}]},
+  {name:'FERRARI',  meta:'race',     stops:[{pct:0,color:'#FFF200'},{pct:60,color:'#FFA200'},{pct:90,color:'#E00000'}]},
+  {name:'HEAT',     meta:'thermal',  stops:[{pct:0,color:'#1A0040'},{pct:40,color:'#A8324B'},{pct:75,color:'#FFB02E'},{pct:95,color:'#FFFFD0'}]},
+  {name:'STEALTH',  meta:'mono',     stops:[{pct:0,color:'#5A5A5A'},{pct:70,color:'#9A9A9A'},{pct:95,color:'#FF4D4D'}]},
+  {name:'FOREST',   meta:'organic',  stops:[{pct:0,color:'#4FBF6E'},{pct:55,color:'#D2C03A'},{pct:80,color:'#D85B2A'},{pct:95,color:'#9A1010'}]},
+  {name:'SUNSET',   meta:'warm',     stops:[{pct:0,color:'#FFE3B0'},{pct:50,color:'#FF8A3A'},{pct:85,color:'#D63A4F'}]},
+  {name:'MONO',     meta:'b&w',      stops:[{pct:0,color:'#202020'},{pct:50,color:'#888888'},{pct:90,color:'#F2F2F2'}]},
+];
+
+function sortStops(stops){ return [...stops].sort((a,b)=>a.pct-b.pct); }
+
+function cssStep(stops){
+  const s = sortStops(stops);
+  const parts = [];
+  parts.push(`${s[0].color} 0%`);
+  for (let i=0;i<s.length;i++){
+    const cur = s[i], next = s[i+1];
+    const end = next ? next.pct : 100;
+    parts.push(`${cur.color} ${cur.pct}%`);
+    parts.push(`${cur.color} ${end}%`);
+  }
+  return 'linear-gradient(90deg,' + parts.join(',') + ')';
+}
+function cssSmooth(stops){
+  const s = sortStops(stops);
+  // Anchor first stop at 0% so the first color is the "below threshold" base.
+  const parts = s.map(st => `${st.color} ${st.pct}%`);
+  return 'linear-gradient(90deg,' + parts.join(',') + ')';
+}
+
+// Render tick scale (0/10/20.../100). Major ticks every 20%.
+function renderTicks(el){
+  el.innerHTML = '';
+  for (let i=0;i<=100;i+=10){
+    const span = document.createElement('span');
+    span.style.left = i + '%';
+    if (i % 20 === 0) { span.classList.add('major'); span.textContent = i + (i===100?'':''); }
+    el.appendChild(span);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Pin renderer on strip
+// ─────────────────────────────────────────────────────────────────
+function renderPins(container, stops, opts={}){
+  container.innerHTML = '';
+  sortStops(stops).forEach((s, idx) => {
+    const pin = document.createElement('div');
+    pin.className = 'pin' + (idx===0 ? ' locked' : '');
+    pin.style.left = s.pct + '%';
+    pin.style.setProperty('--pin-color', s.color);
+    pin.innerHTML = `<span class="pin-tip">${s.pct}% · ${s.color.toUpperCase()}</span>`;
+    container.appendChild(pin);
+    if (idx !== 0 && opts.onDrag) {
+      let dragging = false;
+      pin.addEventListener('mousedown', e => {
+        e.preventDefault(); dragging = true;
+        const frame = container.parentElement.getBoundingClientRect();
+        const move = ev => {
+          const x = Math.max(1, Math.min(frame.width-1, ev.clientX - frame.left));
+          const pct = Math.round((x/frame.width)*100);
+          opts.onDrag(idx, pct);
+        };
+        const up = () => { dragging=false; document.removeEventListener('mousemove',move); document.removeEventListener('mouseup',up); };
+        document.addEventListener('mousemove', move);
+        document.addEventListener('mouseup', up);
+      });
+    }
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Stops table renderer (shared)
+// ─────────────────────────────────────────────────────────────────
+function renderStopsTable(container, stops, candName, onChange){
+  container.innerHTML = '';
+  sortStops(stops).forEach((s, idx) => {
+    const row = document.createElement('div');
+    row.className = 'stop-row' + (idx===0 ? ' locked' : '');
+    row.innerHTML = `
+      <div class="drag" title="${idx===0 ? 'Locked at 0%' : 'Drag to reorder'}">${idx===0 ? '⚓' : '⋮⋮'}</div>
+      <button class="swatch" style="--swatch-color:${s.color}" title="Click to change colour"></button>
+      <div class="slider-wrap">
+        <input type="range" min="0" max="100" value="${s.pct}" ${idx===0 ? 'disabled' : ''}>
+      </div>
+      <div style="position:relative">
+        <input class="pct-num" type="number" min="0" max="100" value="${s.pct}" ${idx===0 ? 'readonly' : ''}>
+        <span class="pct-suffix">%</span>
+      </div>
+      <button class="remove" title="Remove" ${idx===0 || stops.length<=2 ? 'disabled' : ''}>✕</button>
+    `;
+    const swatch = row.querySelector('.swatch');
+    const slider = row.querySelector('input[type=range]');
+    const num    = row.querySelector('input.pct-num');
+    const rm     = row.querySelector('.remove');
+
+    swatch.onclick = (e) => openCp(s.color, e.target, (newHex) => {
+      const real = stops.findIndex(x => x === s);
+      if (real >= 0) { stops[real].color = newHex; onChange(); }
+    });
+    if (idx !== 0) {
+      slider.oninput = () => {
+        const v = parseInt(slider.value,10);
+        const real = stops.findIndex(x => x === s);
+        if (real >= 0) { stops[real].pct = v; onChange(); }
+      };
+      num.onchange = () => {
+        let v = Math.max(1, Math.min(100, parseInt(num.value,10) || 0));
+        const real = stops.findIndex(x => x === s);
+        if (real >= 0) { stops[real].pct = v; onChange(); }
+      };
+      rm.onclick = () => {
+        const real = stops.findIndex(x => x === s);
+        if (real > 0) { stops.splice(real, 1); onChange(); }
+      };
+    }
+    container.appendChild(row);
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Shared color picker popover
+// ─────────────────────────────────────────────────────────────────
+const cpEl = document.getElementById('cp-pop');
+const cpColor = document.getElementById('cp-color');
+const cpHex = document.getElementById('cp-hex');
+let cpOnOk = null;
+function openCp(initial, anchor, onOk){
+  cpColor.value = initial.toUpperCase();
+  cpHex.value = initial.toUpperCase();
+  cpOnOk = onOk;
+  const r = anchor.getBoundingClientRect();
+  cpEl.style.left = (window.scrollX + r.left) + 'px';
+  cpEl.style.top  = (window.scrollY + r.bottom + 8) + 'px';
+  cpEl.classList.add('open');
+  setTimeout(() => document.addEventListener('mousedown', cpOutside, true), 0);
+}
+function closeCp(){ cpEl.classList.remove('open'); cpOnOk = null; document.removeEventListener('mousedown', cpOutside, true); }
+function cpOutside(e){ if (!cpEl.contains(e.target)) closeCp(); }
+cpColor.oninput = () => { cpHex.value = cpColor.value.toUpperCase(); };
+cpHex.oninput   = () => { if (/^#[0-9a-f]{6}$/i.test(cpHex.value)) cpColor.value = cpHex.value; };
+document.getElementById('cp-cancel').onclick = closeCp;
+document.getElementById('cp-ok').onclick = () => {
+  const hex = (cpHex.value.match(/^#[0-9a-f]{6}$/i) ? cpHex.value : cpColor.value).toUpperCase();
+  if (cpOnOk) cpOnOk(hex);
+  closeCp();
+};
+
+// ─────────────────────────────────────────────────────────────────
+// State for each candidate
+// ─────────────────────────────────────────────────────────────────
+function mkState(){ return {stops: DEFAULT_STOPS.map(s => ({...s})), saved: DEFAULT_STOPS.map(s => ({...s})), mode: 'step'}; }
+const states = {
+  c1: mkState(),
+  c2: mkState(),
+  c3: mkState(),
+  c4: mkState(),
+};
+
+function isDirty(name){
+  return JSON.stringify(sortStops(states[name].stops)) !== JSON.stringify(sortStops(states[name].saved))
+      || states[name].mode !== (states[name].savedMode || 'step');
+}
+
+function refreshCard(name){
+  const st = states[name];
+  const stripEl = document.getElementById(`${name}-strip`);
+  if (stripEl) {
+    const css = (st.mode === 'smooth') ? cssSmooth(st.stops) : cssStep(st.stops);
+    stripEl.style.background = css;
+  }
+  const pinsEl = document.getElementById(`${name}-pins`);
+  if (pinsEl) renderPins(pinsEl, st.stops, { onDrag: (idx, pct) => {
+    // idx is index in sorted; locate the real entry by reference
+    const sorted = sortStops(st.stops);
+    const s = sorted[idx];
+    const real = st.stops.findIndex(x => x === s);
+    if (real >= 0) { st.stops[real].pct = pct; refreshCard(name); }
+  }});
+  const stopsEl = document.getElementById(`${name}-stops`);
+  if (stopsEl) renderStopsTable(stopsEl, st.stops, name, () => refreshCard(name));
+  const ticksEl = document.getElementById(`${name}-ticks`);
+  if (ticksEl) renderTicks(ticksEl);
+
+  const statusEl = document.getElementById(`${name}-status`);
+  const applyBtn = document.querySelector(`[data-act="apply"][data-cand="${name}"]`);
+  const dirty = isDirty(name);
+  if (statusEl) {
+    statusEl.textContent = dirty
+      ? (st.mode === 'smooth' ? 'unsaved · smooth' : 'unsaved · step')
+      : (st.mode === 'smooth' ? 'saved · smooth' : 'saved · step');
+    statusEl.classList.toggle('dirty', dirty);
+  }
+  if (applyBtn) applyBtn.disabled = !dirty;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Action buttons
+// ─────────────────────────────────────────────────────────────────
+document.querySelectorAll('[data-act]').forEach(btn => {
+  btn.onclick = () => {
+    const act  = btn.dataset.act;
+    const name = btn.dataset.cand;
+    const st = states[name];
+    if (act === 'add') {
+      const sorted = sortStops(st.stops);
+      let bestGap = -1, insertPct = 50;
+      for (let i = 1; i < sorted.length; i++){
+        const g = sorted[i].pct - sorted[i-1].pct;
+        if (g > bestGap) { bestGap = g; insertPct = Math.round((sorted[i].pct + sorted[i-1].pct)/2); }
+      }
+      st.stops.push({pct: insertPct, color: '#888888'});
+    } else if (act === 'reset') {
+      st.stops = DEFAULT_STOPS.map(s => ({...s}));
+    } else if (act === 'apply') {
+      st.saved = st.stops.map(s => ({...s}));
+      st.savedMode = st.mode;
+    }
+    refreshCard(name);
+  };
+});
+
+// ─────────────────────────────────────────────────────────────────
+// Candidate 2 + 4: presets
+// ─────────────────────────────────────────────────────────────────
+function renderPresets(containerId, name, customs){
+  const wrap = document.getElementById(containerId);
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  const cur = JSON.stringify(sortStops(states[name].stops));
+  [...BUILTIN_PRESETS, ...customs].forEach((p, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'preset' + (cur === JSON.stringify(sortStops(p.stops)) ? ' active' : '');
+    btn.innerHTML = `
+      <div class="preset-strip" style="background:${cssStep(p.stops)}"></div>
+      <div class="preset-label">${p.name}</div>
+      <div class="preset-meta">${p.meta || (p.stops.length + ' stops')}</div>
+    `;
+    btn.onclick = () => {
+      states[name].stops = p.stops.map(s => ({...s}));
+      refreshCard(name);
+      renderPresets(containerId, name, customs);
+    };
+    wrap.appendChild(btn);
+  });
+}
+const c2Customs = [];
+const c4Customs = [];
+function setupPresetsBlock(name, listEl, savEl, customs){
+  renderPresets(listEl, name, customs);
+  document.getElementById(savEl).onclick = () => {
+    const presetName = prompt('Preset name (8 chars max):', 'MY' + (customs.length+1));
+    if (!presetName) return;
+    customs.push({ name: presetName.slice(0,8).toUpperCase(), meta:'custom', stops: states[name].stops.map(s => ({...s})) });
+    renderPresets(listEl, name, customs);
+    document.getElementById(`${name}-preset-count`).textContent =
+      `${BUILTIN_PRESETS.length} built-in · ${customs.length} custom`;
+  };
+}
+setupPresetsBlock('c2', 'c2-presets', 'c2-save-preset', c2Customs);
+setupPresetsBlock('c4', 'c4-presets', 'c4-save-preset', c4Customs);
+
+// ─────────────────────────────────────────────────────────────────
+// Candidate 3 + 4: mode toggle
+// ─────────────────────────────────────────────────────────────────
+function bindModeToggle(toggleId, name){
+  const wrap = document.getElementById(toggleId);
+  if (!wrap) return;
+  wrap.querySelectorAll('button').forEach(b => {
+    b.onclick = () => {
+      wrap.querySelectorAll('button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      states[name].mode = b.dataset.mode;
+      if (name === 'c3') {
+        // c3 keeps two side-by-side previews; the toggle indicates which one is "active" for the apply.
+        // No visual mode swap needed on the strip — both always visible.
+      }
+      const live = document.getElementById(`${name}-mode-live`);
+      if (live) live.textContent = b.dataset.mode.toUpperCase();
+      refreshCard(name);
+    };
+  });
+}
+bindModeToggle('c3-mode', 'c3');
+bindModeToggle('c4-mode', 'c4');
+
+// Candidate 3 has two side-by-side strips, render both explicitly.
+function refreshCard3(){
+  const st = states.c3;
+  document.getElementById('c3-step-strip').style.background   = cssStep(st.stops);
+  document.getElementById('c3-smooth-strip').style.background = cssSmooth(st.stops);
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Bootstrap all cards
+// ─────────────────────────────────────────────────────────────────
+['c1','c2','c3','c4'].forEach(name => refreshCard(name));
+refreshCard3();
+// Re-run refresh on every state change for c3's dual strips.
+const _origRefresh = refreshCard;
+window.refreshCard = function(name){
+  _origRefresh(name);
+  if (name === 'c3') refreshCard3();
+};
+
+</script>
+</body>
+</html>

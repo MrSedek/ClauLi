@@ -1,6 +1,7 @@
 #include "ui.h"
 #include "splash.h"
 #include "emo.h"
+#include "emo2.h"
 #include "i18n.h"
 #include <cstring>
 #include <lvgl.h>
@@ -357,6 +358,7 @@ void ui_init(void) {
     init_usage_screen(scr);
     init_bluetooth_screen(scr);
     emo_init();
+    emo2_init();
     splash_init();
 }
 
@@ -381,6 +383,7 @@ void ui_update(const UsageData* data) {
     lv_label_set_text_fmt(lbl_weekly_reset, "%s \xC2\xB7 %s", TR(STR_WEEK), buf);
 
     emo_set_usage(data);
+    emo2_set_usage(data);
 
     last_usage = *data;
     have_usage = true;
@@ -390,6 +393,7 @@ void ui_update(const UsageData* data) {
 
 void ui_tick_anim(void) {
     emo_tick();
+    emo2_tick();
 
     // Usage screen spinner (only when usage is visible)
     if (current_screen != SCREEN_USAGE) return;
@@ -421,12 +425,14 @@ void ui_show_screen(screen_t screen) {
     lv_obj_add_flag(usage_container, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(ble_container, LV_OBJ_FLAG_HIDDEN);
     emo_hide();
+    emo2_hide();
     splash_hide();
 
     switch (screen) {
     case SCREEN_SPLASH:     splash_show(); break;
     case SCREEN_USAGE:      lv_obj_clear_flag(usage_container, LV_OBJ_FLAG_HIDDEN); break;
     case SCREEN_EMO:        emo_show(); break;
+    case SCREEN_EMO2:       emo2_show(); break;
     case SCREEN_BLUETOOTH:  lv_obj_clear_flag(ble_container, LV_OBJ_FLAG_HIDDEN); break;
     default: break;
     }
@@ -436,11 +442,12 @@ void ui_show_screen(screen_t screen) {
 }
 
 void ui_cycle_screen(void) {
-    // Cycle: Usage → Emo → Splash → Usage (Bluetooth NOT in cycle)
+    // Cycle: Usage → Emo → Emo2 → Splash → Usage (Bluetooth NOT in cycle)
     screen_t next;
     switch (current_screen) {
-    case SCREEN_USAGE:      next = SCREEN_EMO; break;
-    case SCREEN_EMO:        next = SCREEN_SPLASH; break;
+    case SCREEN_USAGE:      next = SCREEN_EMO;   break;
+    case SCREEN_EMO:        next = SCREEN_EMO2;  break;
+    case SCREEN_EMO2:       next = SCREEN_SPLASH; break;
     case SCREEN_SPLASH:     next = SCREEN_USAGE; break;
     case SCREEN_BLUETOOTH:  next = SCREEN_USAGE; break;
     default:                next = SCREEN_USAGE; break;
@@ -459,6 +466,9 @@ void ui_trigger_animation(void) {
         break;
     case SCREEN_EMO:
         emo_next_mood();
+        break;
+    case SCREEN_EMO2:
+        emo2_next_view();
         break;
     case SCREEN_USAGE:
         // Cycle the spinner message immediately
@@ -529,6 +539,7 @@ void ui_relang(void) {
                          last_ble_mac[0] ? last_ble_mac : nullptr);
 
     emo_relang();
+    emo2_relang();
 }
 
 void ui_relayout(void) {

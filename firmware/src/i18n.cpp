@@ -12,7 +12,7 @@ static const char* const S[STR_COUNT][2] = {
     /* STR_SESSION_SHORT */ { "S",               "С" },
     /* STR_WEEK_SHORT    */ { "W",               "Н" },
     /* STR_WEEK_PCT_PREFIX*/{ "W ",              "Н " },
-    /* STR_RESET_IN      */ { "Reset in",        "Сброс через" },
+    /* STR_RESET_IN      */ { "Until reset",     "до сброса" },
     /* STR_DASH          */ { "--",              "--" },
     /* STR_U_MIN         */ { "m",               "м" },
     /* STR_U_HOUR        */ { "h",               "ч" },
@@ -25,6 +25,7 @@ static const char* const S[STR_COUNT][2] = {
     /* STR_BT_ADDR       */ { "Address:",        "Адрес:" },
     /* STR_BT_RESET      */ { "Reset Bluetooth", "Сброс Bluetooth" },
     /* STR_RECONNECT */ { "Reconnecting", "Переподключение" },
+    /* STR_REAUTH    */ { "Re-auth needed", "Нужен повторный вход" },
 };
 
 const char* TR(str_id id) { return S[id][g_lang]; }

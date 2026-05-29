@@ -1,19 +1,22 @@
 #!/bin/bash
-# Take a screenshot from the Waveshare AMOLED display via LVGL snapshot.
+# Capture the active LVGL screen over Serial. The firmware streams the frame
+# top-to-bottom as raw rgb565le; dimensions come from the SCREENSHOT_START line
+# (no longer hardcoded — the C6/ST7789 panel is 240x280, not the old 480x480).
 # Usage: ./screenshot.sh [output.png] [port]
 
 OUTPUT="${1:-screenshot.png}"
 PORT="${2:-/dev/ttyACM0}"
 
-TMPRAW=$(mktemp /tmp/screenshot_XXXXXX.raw)
-trap "rm -f '$TMPRAW'" EXIT
+TMPRAW=$(mktemp /tmp/screenshot_raw.XXXXXX)
+TMPDIM=$(mktemp /tmp/screenshot_dim.XXXXXX)
+trap "rm -f '$TMPRAW' '$TMPDIM'" EXIT
 
 echo "Taking screenshot from $PORT..."
 
-python3 - "$PORT" "$TMPRAW" << 'PYEOF'
+python3 - "$PORT" "$TMPRAW" "$TMPDIM" << 'PYEOF'
 import serial, sys
 
-port_path, raw_path = sys.argv[1], sys.argv[2]
+port_path, raw_path, dim_path = sys.argv[1], sys.argv[2], sys.argv[3]
 
 port = serial.Serial(port_path, 115200, timeout=10)
 port.reset_input_buffer()
@@ -40,6 +43,8 @@ while len(data) < raw_size:
 
 with open(raw_path, "wb") as f:
     f.write(data)
+with open(dim_path, "w") as f:
+    f.write(f"{w} {h}")
 
 for _ in range(10):
     line = port.readline().decode("utf-8", errors="replace").strip()
@@ -55,7 +60,8 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-ffmpeg -y -f rawvideo -pixel_format rgb565le -video_size 480x480 \
+read -r W H < "$TMPDIM"
+ffmpeg -y -f rawvideo -pixel_format rgb565le -video_size "${W}x${H}" \
     -i "$TMPRAW" -update 1 -frames:v 1 "$OUTPUT" 2>/dev/null || true
 
 
