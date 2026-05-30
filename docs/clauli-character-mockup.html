@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ClauLi · Герои + живые эмоции — макет</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;500;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#050505; --surface:#131311; --surface2:#1c1c19;
+    --text:#faf9f5; --dim:#8a887e; --faint:#5d5b52;
+    --line:#242421; --line2:#33322d;
+    --cyan:#3DE0E0; --accent:#d97757; --green:#74e36a;
+    --amber:#FFB02E; --red:#FF4D4D; --pink:#f078b4; --blue:#5aa0ef; --clay:#dc7a5a;
+    --screen:#040706;
+    --disp:'Bricolage Grotesque',serif; --mono:'Azeret Mono',ui-monospace,monospace; --body:'Onest',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--body);line-height:1.5;-webkit-font-smoothing:antialiased;
+    background-image:radial-gradient(900px 540px at 10% -8%,rgba(61,224,224,.08),transparent 60%),radial-gradient(820px 560px at 94% -2%,rgba(217,119,87,.07),transparent 55%);background-attachment:fixed}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+  section{padding:40px 0}
+  .kick{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:3px;text-transform:uppercase;color:var(--cyan);display:inline-flex;align-items:center;gap:9px}
+  .kick::before{content:"";width:24px;height:1px;background:linear-gradient(90deg,var(--cyan),transparent)}
+  h1{font-family:var(--disp);font-weight:800;font-size:clamp(32px,6vw,58px);line-height:.95;letter-spacing:-1.5px;margin:18px 0 12px;
+    background:linear-gradient(180deg,#fff,#9fd6d8 70%,#3f8d90);-webkit-background-clip:text;background-clip:text;color:transparent}
+  h2{font-family:var(--disp);font-weight:800;font-size:clamp(22px,3.4vw,32px);letter-spacing:-.5px;margin:14px 0 6px}
+  .lede,.sub{color:var(--dim);max-width:660px;font-size:15px}
+  .lede b,.sub b{color:var(--text);font-weight:600}
+
+  /* selector pills */
+  .pills{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .pill{font-family:var(--mono);font-size:12px;font-weight:500;letter-spacing:.5px;color:var(--dim);background:var(--surface);
+    border:1px solid var(--line2);padding:9px 16px;border-radius:11px;cursor:pointer;transition:.16s;display:inline-flex;gap:8px;align-items:center}
+  .pill:hover{color:var(--text);border-color:var(--faint)}
+  .pill.on{color:#04100f;background:var(--cyan);border-color:var(--cyan);box-shadow:0 0 16px rgba(61,224,224,.3)}
+  .pill .dot{width:8px;height:8px;border-radius:50%;background:currentColor;opacity:.7}
+  .pill.on[data-char="pixl"]{background:var(--green);border-color:var(--green);box-shadow:0 0 16px rgba(116,227,106,.3)}
+  .pill.on[data-char="blob"]{background:var(--clay);border-color:var(--clay);box-shadow:0 0 16px rgba(217,119,87,.35)}
+
+  .selrow{display:flex;gap:26px;align-items:center;flex-wrap:wrap;margin-top:18px}
+  .charcard{flex:0 0 auto}
+  .charname{font-family:var(--disp);font-weight:800;font-size:26px;letter-spacing:-.5px}
+  .charsub{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:1px;margin-top:3px}
+  .chardesc{color:var(--dim);font-size:13.5px;max-width:520px;margin-top:8px}
+
+  /* device + controls layout */
+  .stagewrap{display:grid;grid-template-columns:300px 1fr;gap:26px;margin-top:26px;align-items:start}
+  .device{background:radial-gradient(circle at 50% 34%,#0b1311,var(--screen) 82%);border:1px solid var(--line2);border-radius:34px;
+    box-shadow:0 0 0 9px #0a0c0b,0 0 0 10px #1b1f1d,0 30px 70px -28px #000,inset 0 0 50px -18px #000;padding:10px;position:relative;overflow:hidden}
+  .device svg{width:100%;height:auto;display:block;border-radius:26px}
+  .devcap{font-family:var(--mono);font-size:10.5px;color:var(--faint);text-align:center;margin-top:10px;letter-spacing:.5px}
+
+  .ctrls{display:flex;flex-direction:column;gap:16px}
+  .cgroup{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+  .clabel{font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--faint);margin-bottom:10px}
+  .cpills{display:flex;gap:7px;flex-wrap:wrap}
+  .cp{font-family:var(--mono);font-size:11px;color:var(--dim);background:var(--surface2);border:1px solid var(--line2);padding:6px 11px;border-radius:9px;cursor:pointer;transition:.15s}
+  .cp:hover{color:var(--text)}
+  .cp.on{color:#04100f;background:var(--cyan);border-color:var(--cyan)}
+  .cp.sw{display:inline-flex;align-items:center;gap:6px}
+  .cp .chip{width:11px;height:11px;border-radius:3px}
+  .note{background:var(--surface);border:1px solid var(--line);border-left:2px solid var(--accent);border-radius:11px;padding:12px 15px;font-size:12.5px;color:var(--dim);margin-top:8px}
+  .note b{color:var(--text)}
+
+  /* emotion grid */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(176px,1fr));gap:14px;margin-top:24px}
+  .ecard{background:linear-gradient(180deg,#121613,#0c100e);border:1px solid var(--line);border-radius:14px;padding:12px;transition:.18s}
+  .ecard:hover{border-color:var(--line2);transform:translateY(-2px)}
+  .estage{background:radial-gradient(circle at 50% 42%,#0a1210,var(--screen) 82%);border:1px solid var(--line);border-radius:11px;aspect-ratio:300/170;display:grid;place-items:center;overflow:hidden}
+  .estage svg{width:96%;height:auto;display:block}
+  .en{font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--faint);text-transform:uppercase;margin-top:9px}
+  .eru{font-family:var(--disp);font-weight:600;font-size:16px;letter-spacing:-.2px;margin:1px 0 3px}
+  .etr{font-size:11px;color:var(--dim);min-height:28px}
+
+  /* svg eye styling */
+  .pair{will-change:transform}
+  .pair .bd{fill:var(--c)}
+  .pair .lid{fill:var(--screen)}
+  .twk{animation:twk 2.2s ease-in-out infinite}
+  @keyframes twk{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.15)}}
+  .zz{animation:zz 3s ease-in-out infinite}
+  @keyframes zz{0%{opacity:0;transform:translateY(4px)}30%{opacity:.9}100%{opacity:0;transform:translateY(-12px)}}
+
+  footer{padding:34px 0 60px;border-top:1px solid var(--line);color:var(--faint);font-size:12.5px;margin-top:24px}
+  footer b{color:var(--text)}
+  @media(max-width:760px){.stagewrap{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <section style="padding-top:56px">
+    <span class="kick">ClauLi · макет · герои + живые эмоции</span>
+    <h1>ClauLi · Pixl · Blob<br>один экран, три героя</h1>
+    <p class="lede">Селектор героя сверху меняет <b>только отрисовку</b>. Все настройки —
+      <b>лайаут, цвет, часы, текст, тайминги</b> — остаются на месте и применяются к любому герою.
+      Анимации полностью переработаны: всегда живой «слой жизни» (дыхание, микро-саккады,
+      естественное моргание) + <b>сигнатура движения под каждую эмоцию</b> + своя пластика у каждого героя.
+      Это макет для ревью — пока ничего в прошивке не меняется.</p>
+  </section>
+
+  <!-- ── Character selector + device + controls ── -->
+  <section>
+    <span class="kick">01 · герой</span>
+    <h2>Выбор героя</h2>
+    <div class="pills" id="charPills" style="margin-top:14px"></div>
+
+    <div class="selrow">
+      <div class="charcard" id="charInfo"></div>
+    </div>
+
+    <div class="stagewrap">
+      <div>
+        <div class="device"><div id="device"></div></div>
+        <div class="devcap" id="devcap">живой экран · эмоция меняется каждые ~4 c</div>
+      </div>
+      <div class="ctrls">
+        <div class="cgroup">
+          <div class="clabel">Лайаут (% статистика)</div>
+          <div class="cpills" id="layoutCtl"></div>
+        </div>
+        <div class="cgroup">
+          <div class="clabel">Цвет</div>
+          <div class="cpills" id="colorCtl"></div>
+        </div>
+        <div class="cgroup">
+          <div class="clabel">Часы</div>
+          <div class="cpills" id="clockCtl"></div>
+        </div>
+        <div class="cgroup">
+          <div class="clabel">Текст</div>
+          <div class="cpills" id="textCtl"></div>
+        </div>
+        <div class="note">Эти контролы — <b>общие</b>. Переключи героя выше — лайаут/цвет/часы/текст
+          остаются выбранными и применяются к новому герою. На устройстве Blob — это <b>глаза + рот</b>
+          (без полноэкранного тела), чтобы лайаут/часы/текст не перекрывались.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Emotion grid ── -->
+  <section>
+    <span class="kick">02 · эмоции · <span id="gridChar">ClauLi</span></span>
+    <h2>Живые эмоции героя</h2>
+    <p class="sub">Каждая карточка анимируется постоянно: слой жизни + сигнатура эмоции + вход (squash-pop).
+      Переключи героя — сетка перерисуется его языком формы и пластикой.</p>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <footer>
+    <div>Дизайн вдохновлён EMO (Living.AI): только идея выразительности, <b>ассеты не копировались</b>.
+      Все герои (ClauLi/Pixl/Blob) и схемы — <b>собственные оригинальные иллюстрации</b>.
+      Рендер повторяет логику прошивки (залитый силуэт + bloom + блик + веки) и веб-превью (<code>drawTileEye</code>).</div>
+  </footer>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════════
+//  CHARACTER RENDERERS  — one mood spec, three visual languages
+// ════════════════════════════════════════════════════════════════════
+let UID = 0;
+const CHAR_DEF = { clauli:"#3DE0E0", pixl:"#74e36a", blob:"#dc7a5a" };
+
+// ---- helpers (clauli glossy eye) -------------------------------------
+function specMarkup(){
+  return `<ellipse cx="-12" cy="-18" rx="11" ry="7.5" fill="#fff" opacity=".8" filter="url(#soft)"/>`
+       + `<ellipse cx="8" cy="12" rx="4.5" ry="3" fill="#fff" opacity=".5" filter="url(#soft)"/>`;
+}
+function lids(s,f){
+  let m=""; const lidT=s.lidT||0, ang=(s.ang||0)*f;
+  if(lidT>0||ang!==0){ const edge=-46+lidT*92;
+    m+=`<g transform="rotate(${ang})"><rect x="-130" y="-280" width="260" height="${280+edge}" class="lid"/></g>`; }
+  if(s.smile){ const k=s.smile.k, c=s.smile.curve;
+    m+=`<path class="lid" d="M -60 300 L -60 ${k} Q 0 ${k+c} 60 ${k} L 60 300 Z"/>`; }
+  else if(s.lidB){ const k=46-s.lidB*92;
+    m+=`<path class="lid" d="M -60 300 L -60 ${k} Q 0 ${k+5} 60 ${k} L 60 300 Z"/>`; }
+  return m;
+}
+function clauliEye(cx,s,f){
+  const id="cl"+(UID++), sx=s.sx||1, sy=s.sy||1, gx=(s.gx||0), gy=s.gy||0, body=s.body||"sq";
+  let inner="";
+  if(body==="sq"||body==="slit"){
+    inner+=`<clipPath id="${id}"><rect x="-40" y="-46" width="80" height="92" rx="30"/></clipPath>`;
+    inner+=`<g clip-path="url(#${id})"><rect class="bd" x="-40" y="-46" width="80" height="92" rx="30"/>`
+         +`<rect x="-40" y="-46" width="80" height="92" fill="url(#gloss)"/>`+specMarkup();
+    if(body==="slit") inner+=`<rect class="lid" x="-9" y="-46" width="18" height="92" rx="9"/>`;
+    inner+=lids(s,f)+`</g>`;
+  } else if(body==="heart"){
+    inner+=`<path class="bd" d="M 0 34 C -40 6 -38 -32 0 -12 C 38 -32 40 6 0 34 Z"/>`
+         +`<ellipse cx="-12" cy="-8" rx="8" ry="5.5" fill="#fff" opacity=".7" filter="url(#soft)"/>`;
+  } else if(body==="star"){
+    inner+=`<path class="bd" d="M 0 -44 C 7 -13 13 -7 44 0 C 13 7 7 13 0 44 C -7 13 -13 7 -44 0 C -13 -7 -7 -13 0 -44 Z"/>`
+         +`<circle cx="0" cy="0" r="9" fill="#fff" opacity=".5" filter="url(#soft)"/>`;
+  }
+  return `<g transform="translate(${cx} 70) scale(${sx} ${sy}) translate(${gx} ${gy})">${inner}</g>`;
+}
+function clauliPair(s){
+  const r=Object.assign({},s,s.right||{});
+  return { eyes: clauliEye(96,s,1)+clauliEye(204,r,-1), extra: props(s.props,s.c) };
+}
+function props(list,c){
+  const L=96,R=204,CY=70; let m="";
+  (list||[]).forEach(p=>{
+    if(p==="blush") m+=`<ellipse cx="${L}" cy="${CY+38}" rx="16" ry="7" fill="${c}" opacity=".4" filter="url(#soft)"/><ellipse cx="${R}" cy="${CY+38}" rx="16" ry="7" fill="${c}" opacity=".4" filter="url(#soft)"/>`;
+    else if(p==="tear") m+=`<path class="tear" d="M ${L-34} ${CY+4} q -7 16 0 22 q 7 -6 0 -22 Z" fill="var(--blue)"/>`;
+    else if(p==="sweat") m+=`<path d="M ${R+32} ${CY-30} q -6 14 0 19 q 6 -5 0 -19 Z" fill="#bfe9ff"/>`;
+    else if(p==="zzz") m+=`<g fill="#bfe6e7" font-family="Azeret Mono,monospace"><text class="zz" x="${R+26}" y="${CY-20}" font-size="13" style="animation-delay:0s">z</text><text class="zz" x="${R+36}" y="${CY-32}" font-size="17" style="animation-delay:.6s">z</text><text class="zz" x="${R+48}" y="${CY-44}" font-size="21" style="animation-delay:1.2s">z</text></g>`;
+    else if(p==="spark"){ [[L-42,28],[R+42,38],[150,16],[R+28,CY+30]].forEach((q,i)=>{
+      m+=`<path class="twk" style="animation-delay:${i*.3}s;transform-origin:${q[0]}px ${q[1]}px" d="M ${q[0]} ${q[1]-8} C ${q[0]+2} ${q[1]-2} ${q[0]+2} ${q[1]-2} ${q[0]+8} ${q[1]} C ${q[0]+2} ${q[1]+2} ${q[0]+2} ${q[1]+2} ${q[0]} ${q[1]+8} C ${q[0]-2} ${q[1]+2} ${q[0]-2} ${q[1]+2} ${q[0]-8} ${q[1]} C ${q[0]-2} ${q[1]-2} ${q[0]-2} ${q[1]-2} ${q[0]} ${q[1]-8} Z" fill="#fff"/>`;}); }
+    else if(p==="q") m+=`<text x="${R+26}" y="${CY-16}" font-size="32" font-family="Bricolage Grotesque,serif" font-weight="800" fill="${c}">?</text>`;
+    else if(p==="anger") m+=`<g stroke="var(--red)" stroke-width="4" fill="none" stroke-linecap="round" transform="translate(${R+20} ${CY-34})"><path d="M 0 6 q 6 -10 12 0"/><path d="M 2 14 q 4 -7 9 0"/></g>`;
+    else if(p==="beam") m+=`<path d="M ${L} ${CY} L 8 ${CY-5} L 8 ${CY+5} Z" fill="var(--red)" opacity=".65"/><path d="M ${R} ${CY} L 292 ${CY-5} L 292 ${CY+5} Z" fill="var(--red)" opacity=".65"/>`;
+  });
+  return m;
+}
+
+// ---- Pixl: dot-matrix patterns ---------------------------------------
+const PIX = {
+  neutral:["0111110","1111111","1111111","1111111","1111111","1111111","0111110"],
+  happy:  ["0011100","0111110","1111111","1110111","1100011","1000001","0000000"],
+  sad:    ["0000000","1000001","1100011","1110111","1111111","0111110","0011100"],
+  ring:   ["0011100","0111110","1110111","1100011","1110111","0111110","0011100"],
+  heart:  ["0110110","1111111","1111111","1111111","0111110","0011100","0001000"],
+  closed: ["0000000","0000000","0000000","0000000","1111111","1111111","0111110"],
+  squint: ["0000000","0000000","0111110","1111111","1111111","0000000","0000000"],
+  spark:  ["0001000","0001000","0011100","1111111","0011100","0001000","0001000"],
+  angry:  ["0000001","0000111","0011111","0111111","1111111","1111111","0111110"],
+};
+function pixEye(cx, key, f){
+  let g=PIX[key]||PIX.neutral; const pitch=11, sz=8.6, n=g.length;
+  const x0=cx-(n-1)/2*pitch, y0=70-(n-1)/2*pitch; let m="";
+  for(let r=0;r<n;r++) for(let cc=0;cc<n;cc++){
+    const col = f<0 ? (n-1-cc) : cc;              // mirror right eye for angry slant
+    if(g[r][col]==="1") m+=`<rect class="bd" x="${(x0+cc*pitch-sz/2).toFixed(1)}" y="${(y0+r*pitch-sz/2).toFixed(1)}" width="${sz}" height="${sz}" rx="2"/>`;
+  }
+  return m;
+}
+function pixlPair(s){
+  const k=s.pix||"neutral", rk=(s.right&&s.right.pix)||k;
+  return { eyes: pixEye(96,k,1)+pixEye(204,rk,-1), extra: (s.props&&s.props.includes("zzz"))?props(["zzz"],s.c):"" };
+}
+
+// ---- Blob: clay body + wet eyes + mouth ------------------------------
+const MOUTH = {
+  flat:  `M 134 116 Q 150 120 166 116`,
+  smile: `M 126 112 Q 150 134 174 112`,
+  big:   `M 122 110 Q 150 142 178 110 Q 150 124 122 110 Z`,
+  frown: `M 128 124 Q 150 106 172 124`,
+  o:     null, grit:`M 128 116 L 172 116 M 134 110 L 134 122 M 146 110 L 146 122 M 158 110 L 158 122 M 166 110 L 166 122`,
+  small: `M 142 116 Q 150 121 158 116`, wavy:`M 128 116 q 8 -8 16 0 q 8 8 16 0`,
+};
+function blobEye(cx, s, f){
+  const id="bl"+(UID++); const ex=s.bx||27, ey=s.by||31;
+  let m=`<clipPath id="${id}"><ellipse cx="${cx}" cy="70" rx="${ex}" ry="${ey}"/></clipPath>`;
+  m+=`<g clip-path="url(#${id})"><ellipse cx="${cx}" cy="70" rx="${ex}" ry="${ey}" fill="#241310"/>`
+   + `<circle cx="${cx-9}" cy="58" r="8.5" fill="#fff" opacity=".95"/><circle cx="${cx+9}" cy="76" r="4" fill="#fff" opacity=".5"/>`;
+  const lidT=s.lidT||0, ang=(s.ang||0)*f;
+  if(lidT>0||ang) m+=`<g transform="rotate(${ang} ${cx} 70)"><rect x="${cx-40}" y="${(70-46+lidT*92).toFixed(1)}" width="80" height="-200" class="bd" transform="translate(0 -0)"/></g>`;
+  if(lidT>0) m+=`<rect x="${cx-40}" y="${70-ey-4}" width="80" height="${(lidT*2*ey).toFixed(1)}" class="bd"/>`;
+  if(s.smile) m+=`<path class="bd" d="M ${cx-40} 200 L ${cx-40} ${70+ey-s.smile.curve*0.5} Q ${cx} ${70-2} ${cx+40} ${70+ey-s.smile.curve*0.5} L ${cx+40} 200 Z"/>`;
+  m+=`</g>`;
+  return m;
+}
+function blobPair(s){
+  let eyes=`<rect class="bd" x="40" y="22" width="220" height="116" rx="58"/>`; // clay body
+  eyes+=blobEye(96,s,1)+blobEye(204,Object.assign({},s,s.right||{}),-1);
+  let extra="";
+  const mk=s.mouth||"flat";
+  if(mk==="o") extra+=`<ellipse class="mouth" cx="150" cy="116" rx="9" ry="11" fill="#241310"/>`;
+  else if(mk==="grit") extra+=`<path class="mouth" d="${MOUTH.grit}" stroke="#241310" stroke-width="4" fill="none" stroke-linecap="round"/>`;
+  else extra+=`<path class="mouth" d="${MOUTH[mk]||MOUTH.flat}" stroke="#241310" stroke-width="6" fill="${mk==='big'?'#241310':'none'}" stroke-linecap="round" stroke-linejoin="round"/>`;
+  if(s.brow==="angry") extra+=`<path d="M 70 44 L 116 54" stroke="#241310" stroke-width="6" stroke-linecap="round"/><path d="M 230 44 L 184 54" stroke="#241310" stroke-width="6" stroke-linecap="round"/>`;
+  else if(s.brow==="sad") extra+=`<path d="M 70 52 L 112 44" stroke="#241310" stroke-width="5" stroke-linecap="round" opacity=".7"/><path d="M 230 52 L 188 44" stroke="#241310" stroke-width="5" stroke-linecap="round" opacity=".7"/>`;
+  if(s.props&&s.props.includes("tear")) extra+=`<path class="tear" d="M 66 78 q -6 14 0 19 q 6 -5 0 -19 Z" fill="var(--blue)"/>`;
+  if(s.props&&s.props.includes("zzz")) extra+=props(["zzz"],s.c);
+  return { eyes, extra };
+}
+
+const RENDER = { clauli:clauliPair, pixl:pixlPair, blob:blobPair };
+
+// ════════════════════════════════════════════════════════════════════
+//  MOOD TABLE — one spec, all renderers read what they need
+// ════════════════════════════════════════════════════════════════════
+const MOODS = [
+  {key:"neutral", ru:"Нейтрально", en:"neutral", tr:"спокойное ожидание · дыхание, редкое моргание",
+   c:null, pix:"neutral", mouth:"flat"},
+  {key:"happy", ru:"Радость", en:"happy", tr:"похвала, ласка · полумесяцы + румянец",
+   c:"#FFB02E", smile:{k:-8,curve:60}, props:["blush"], pix:"happy", mouth:"smile"},
+  {key:"excited", ru:"Восторг", en:"excited", tr:"игра, позитив · звёзды + искры",
+   c:"#ffd24a", body:"star", props:["spark"], pix:"spark", mouth:"big", bx:30,by:33},
+  {key:"love", ru:"Влюблённость", en:"love", tr:"«I love you» · сердечки + румянец",
+   c:"#f078b4", body:"heart", props:["blush"], pix:"heart", mouth:"smile"},
+  {key:"surprised", ru:"Удивление", en:"surprised", tr:"внезапность · резко раскрытые глаза + пот",
+   c:"#cfeef0", sx:.92, sy:1.16, props:["sweat"], pix:"ring", mouth:"o", bx:30,by:36},
+  {key:"curious", ru:"Любопытство", en:"curious", tr:"новый объект · взгляд вбок, наклон",
+   c:null, gx:14, gy:4, lidT:.12, pix:"neutral", mouth:"small"},
+  {key:"confused", ru:"Замешательство", en:"confused", tr:"непонятно · асимметрия + «?»",
+   c:null, lidT:.1, props:["q"], right:{lidT:.42}, pix:"squint", mouth:"wavy"},
+  {key:"wink", ru:"Подмигивание", en:"wink", tr:"игриво · один глаз закрыт",
+   c:"#FFB02E", right:{smile:{k:-2,curve:54}, pix:"closed"}, pix:"neutral", mouth:"smile"},
+  {key:"sad", ru:"Грусть", en:"sad", tr:"игнор, «I am sad» · веки наружу + слеза",
+   c:"#5aa0ef", lidT:.2, ang:-22, props:["tear"], pix:"sad", mouth:"frown", brow:"sad"},
+  {key:"disappointed", ru:"Разочарование", en:"disappointed", tr:"несбывшееся · ровные полуопущенные веки",
+   c:"#5aa0ef", lidT:.45, pix:"squint", mouth:"flat"},
+  {key:"bored", ru:"Скука", en:"bored", tr:"долгое бездействие · тяжёлая щель, взгляд вбок",
+   c:"#6f9092", lidT:.55, gx:10, pix:"squint", mouth:"flat"},
+  {key:"sleepy", ru:"Сонливость", en:"sleepy", tr:"«I am tired» · тяжёлые веки + Zzz",
+   c:"#6a8aa6", lidT:.6, props:["zzz"], pix:"closed", mouth:"small"},
+  {key:"asleep", ru:"Сон", en:"asleep", tr:"«pretend to nap» · закрыто, ровное дыхание",
+   c:"#52708a", lidT:.82, props:["zzz"], pix:"closed", mouth:"small"},
+  {key:"angry", ru:"Злость", en:"angry", tr:"резко, «I am angry» · брови внутрь-вниз",
+   c:"#FF4D4D", lidT:.2, ang:26, props:["anger"], pix:"angry", mouth:"grit", brow:"angry"},
+  {key:"scared", ru:"Испуг", en:"scared", tr:"угроза · высокие дрожащие глаза + пот",
+   c:"#cfeef0", sx:.8, sy:1.18, props:["sweat"], pix:"ring", mouth:"wavy", bx:31,by:37},
+  {key:"laser", ru:"Лазер", en:"laser", tr:"«laser eyes» · кошачий зрачок + луч",
+   c:"#FF4D4D", body:"slit", props:["beam"], pix:"angry", mouth:"grit", brow:"angry"},
+];
+const MOODMAP = Object.fromEntries(MOODS.map(m=>[m.key,m]));
+
+// ════════════════════════════════════════════════════════════════════
+//  GLOBAL CONTROL STATE (character-agnostic)
+// ════════════════════════════════════════════════════════════════════
+const STATE = { char:"clauli", color:"auto", layout:"bars", clock:"on", text:"pct" };
+function effColor(mood){
+  if(STATE.color!=="auto") return ({cyan:"#3DE0E0",amber:"#FFB02E",red:"#FF4D4D"})[STATE.color];
+  if(mood && mood.c) return mood.c;
+  return CHAR_DEF[STATE.char];
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  SVG ASSEMBLY
+// ════════════════════════════════════════════════════════════════════
+function defs(){
+  return `<defs><linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">`
+    +`<stop offset="0" stop-color="#fff" stop-opacity=".52"/><stop offset=".42" stop-color="#fff" stop-opacity=".1"/><stop offset=".72" stop-color="#fff" stop-opacity="0"/></linearGradient>`
+    +`<filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2"/></filter></defs>`;
+}
+function pairSVG(charId, moodKey){
+  const mood = MOODMAP[moodKey];
+  const c = effColor(mood);
+  const spec = Object.assign({}, mood, {c});
+  const r = RENDER[charId](spec);
+  const glow = charId==="blob"
+    ? `filter:drop-shadow(0 0 6px ${c}) drop-shadow(0 0 16px ${c}88)`
+    : `filter:drop-shadow(0 0 5px ${c}) drop-shadow(0 0 14px ${c}88)`;
+  return `<svg viewBox="0 0 300 170" style="--c:${c}">${defs()}`
+    + `<g class="pair" data-char="${charId}" data-mood="${moodKey}" data-seed="${(UID*37)%100}" style="${glow}">`
+    + `<g class="eyes">${r.eyes}</g>${r.extra}</g></svg>`;
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  DEVICE PREVIEW — eyes in real screen context (clock+layout+text)
+// ════════════════════════════════════════════════════════════════════
+let devMood = "neutral";
+function deviceSVG(){
+  const mood = MOODMAP[devMood], c = effColor(mood), spec=Object.assign({},mood,{c});
+  // scale the 300x170 pair into the device eye band
+  const r = RENDER[STATE.char](spec);
+  const glow = `filter:drop-shadow(0 0 5px ${c}) drop-shadow(0 0 15px ${c}99)`;
+  const W=240,H=300;
+  let chrome="";
+  // clock
+  if(STATE.clock==="on") chrome+=`<text x="${W/2}" y="40" text-anchor="middle" font-family="Azeret Mono,monospace" font-size="30" fill="${c}" opacity=".9" letter-spacing="2">14:32</text>`;
+  // layout (bottom)
+  const by=224, sPct=.62, wPct=.38;
+  if(STATE.layout==="bars"){
+    chrome+=`<rect x="28" y="${by}" width="184" height="9" rx="4.5" fill="#1b1f1d"/><rect x="28" y="${by}" width="${184*sPct}" height="9" rx="4.5" fill="${c}"/>`
+      +`<rect x="28" y="${by+18}" width="184" height="9" rx="4.5" fill="#1b1f1d"/><rect x="28" y="${by+18}" width="${184*wPct}" height="9" rx="4.5" fill="${c}" opacity=".7"/>`;
+  } else if(STATE.layout==="ribbon"){
+    for(let i=0;i<11;i++){ const on=i/11<sPct; chrome+=`<rect x="${30+i*17}" y="${by}" width="12" height="13" rx="2" fill="${on?c:'#1b1f1d'}"/>`; }
+    for(let i=0;i<11;i++){ const on=i/11<wPct; chrome+=`<rect x="${30+i*17}" y="${by+20}" width="12" height="13" rx="2" fill="${on?c:'#1b1f1d'}" opacity="${on?'.75':'1'}"/>`; }
+  } else if(STATE.layout==="chips"){
+    chrome+=`<rect x="30" y="${by-6}" width="54" height="64" rx="10" fill="none" stroke="#2b302d"/><rect x="30" y="${by-6+64*(1-sPct)}" width="54" height="${64*sPct}" rx="10" fill="${c}" opacity=".55"/><text x="57" y="${by+30}" text-anchor="middle" font-family="Azeret Mono" font-size="15" fill="#fff">62</text>`
+      +`<rect x="156" y="${by-6}" width="54" height="64" rx="10" fill="none" stroke="#2b302d"/><rect x="156" y="${by-6+64*(1-wPct)}" width="54" height="${64*wPct}" rx="10" fill="${c}" opacity=".55"/><text x="183" y="${by+30}" text-anchor="middle" font-family="Azeret Mono" font-size="15" fill="#fff">38</text>`;
+  }
+  // text labels
+  if(STATE.text==="pct" && STATE.layout!=="chips"){
+    chrome+=`<text x="28" y="${by-12}" font-family="Azeret Mono,monospace" font-size="13" fill="${c}">62%</text>`
+      +`<text x="212" y="${by-12}" text-anchor="end" font-family="Azeret Mono,monospace" font-size="13" fill="${c}" opacity=".75">38%</text>`;
+  }
+  return `<svg viewBox="0 0 ${W} ${H}">${defs()}<rect width="${W}" height="${H}" rx="26" fill="url(#scr)"/>`
+    + `<defs><radialGradient id="scr" cx="50%" cy="34%" r="75%"><stop offset="0" stop-color="#0b1311"/><stop offset="1" stop-color="#040706"/></radialGradient></defs>`
+    + `<g transform="translate(0 -2) scale(0.8) translate(30 30)"><g class="pair" data-char="${STATE.char}" data-mood="${devMood}" data-seed="7" data-device="1" style="${glow}"><g class="eyes">${r.eyes}</g>${r.extra}</g></g>`
+    + chrome + `</svg>`;
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  LIVING-ANIMATION ENGINE  (life layer + mood signature + entry + easing)
+// ════════════════════════════════════════════════════════════════════
+const TS = new WeakMap();
+function st(el){
+  let s=TS.get(el);
+  if(!s){ const seed=(+el.dataset.seed||0); s={seed, sx:0,sy:0,tx:0,ty:0,sacNext:0, blinkAt:600+seed*7, blinkP:0, dbl:false, mood:el.dataset.mood, entry:performance.now()+seed*4}; TS.set(el,s);}
+  return s;
+}
+// per-mood signature → {dx,dy,sx,sy,rot}  (t seconds)
+function signature(mood,t){
+  switch(mood){
+    case "happy":      return {dy:-2-2*Math.abs(Math.sin(t*3.2))};
+    case "excited":    return {dy:-3*Math.abs(Math.sin(t*8)), dx:0.7*Math.sin(t*38), sx:1+0.02*Math.sin(t*8)};
+    case "love":       {const b=heartbeat(t); return {sx:1+b, sy:1+b};}
+    case "surprised":  return {sy:1+0.03*Math.sin(t*1.6)};
+    case "curious":    return {rot:6*Math.sin(t*1.1), dx:7*Math.sin(t*0.8)};
+    case "confused":   return {rot:5*Math.sin(t*2.1)};
+    case "sad":        return {dy:3+2*Math.sin(t*0.7), sy:1-0.02*Math.max(0,Math.sin(t*0.5))};
+    case "disappointed":return {dy:1.5+Math.sin(t*0.6)};
+    case "bored":      return {dx:7*Math.sin(t*0.5)};
+    case "sleepy":     return {dy:2*Math.max(0,Math.sin(t*0.7)), sy:1-0.06*(0.5+0.5*Math.sin(t*0.9))};
+    case "asleep":     return {sy:1-0.03*(0.5+0.5*Math.sin(t*0.6))};
+    case "angry":      return {dx:0.8*Math.sin(t*26), dy:0.5*Math.sin(t*30)};
+    case "scared":     return {dx:1.2*Math.sin(t*44), dy:1.0*Math.cos(t*50)};
+    case "laser":      return {sx:1+0.015*Math.sin(t*6)};
+    default:           return {};
+  }
+}
+function heartbeat(t){ const p=(t%1.05)/1.05; // double-thump
+  const a=Math.exp(-Math.pow((p-0.06)/0.05,2)), b=Math.exp(-Math.pow((p-0.20)/0.06,2)); return 0.07*(a+0.7*b); }
+
+function frame(now){
+  const t=now/1000;
+  document.querySelectorAll('.pair').forEach(el=>{
+    const s=st(el), mood=el.dataset.mood, ch=el.dataset.char;
+    if(s.mood!==mood){ s.mood=mood; s.entry=now; }   // mood changed → entry pop
+    // ---- life layer ----
+    const breath = 1 + 0.015*Math.sin(t*1.6 + s.seed);
+    if(now>s.sacNext){ s.tx=(Math.random()*2-1)*1.3; s.ty=(Math.random()*2-1)*1.0; s.sacNext=now+800+Math.random()*1400; }
+    s.sx += (s.tx-s.sx)*0.08; s.sy += (s.ty-s.sy)*0.08;
+    // blink (human cadence + occasional double)
+    let blinkScale=1;
+    if(now>s.blinkAt && s.blinkP===0){ s.blinkP=0.0001; s.dbl=Math.random()<0.22; }
+    if(s.blinkP>0){ s.blinkP+=0.085; const p=s.blinkP;
+      blinkScale = p<1 ? 1-0.94*Math.sin(Math.min(p,1)*Math.PI) : 1;
+      if(p>=1){ if(s.dbl){ s.dbl=false; s.blinkP=0.0001; } else { s.blinkP=0; s.blinkAt=now+3000+Math.random()*3200; } }
+    }
+    // ---- mood signature ----
+    const sig=signature(mood,t);
+    let dx=s.sx+(sig.dx||0), dy=s.sy+(sig.dy||0), sgx=(sig.sx||1), sgy=(sig.sy||1)*breath, rot=(sig.rot||0);
+    // ---- entry pop ----
+    const ep=(now-s.entry)/360;
+    if(ep>=0 && ep<1){ const k=Math.sin(ep*Math.PI); sgx*=1+0.12*k*(ep<0.4?-1:1); sgy*=1+0.18*k; }
+    // ---- per-character easing flavor ----
+    if(ch==="pixl"){ dx=Math.round(dx/3)*3; dy=Math.round(dy/3)*3; rot=0; if(Math.random()<0.04) dx+=(Math.random()<.5?-3:3); blinkScale=blinkScale<0.6?0:1; }
+    if(ch==="blob"){ const j=Math.sin(t*9+s.seed)*0.012; sgx+=j; sgy-=j; }   // gooey jiggle
+    el.style.transform=`translate(${dx.toFixed(2)}px,${dy.toFixed(2)}px) rotate(${rot.toFixed(2)}deg) scale(${sgx.toFixed(3)},${sgy.toFixed(3)})`;
+    el.style.transformBox="fill-box"; el.style.transformOrigin="center";
+    const eyes=el.querySelector('.eyes');
+    if(eyes){ eyes.style.transformBox="fill-box"; eyes.style.transformOrigin="center"; eyes.style.transform=`scaleY(${blinkScale.toFixed(3)})`; }
+    // blob mouth follows the bob
+    if(ch==="blob"){ const mo=el.querySelector('.mouth'); if(mo){ mo.style.transformBox="fill-box"; mo.style.transformOrigin="center"; mo.style.transform=`translateY(${(dy*0.4).toFixed(2)}px)`; } }
+  });
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+// ════════════════════════════════════════════════════════════════════
+//  UI WIRING
+// ════════════════════════════════════════════════════════════════════
+const CHARS=[
+  {id:"clauli",name:"ClauLi",sub:"клод-ли · глянцевый",desc:"«EMO, сделанный правильно». Глянцевый скруглённый глаз; эмоция — на веках, масштабе и взгляде. Плавная органика."},
+  {id:"pixl",name:"Pixl",sub:"пиксель · дот-матрица",desc:"Ретро дот-матрица: фосфорные пиксели, паттерн под каждую эмоцию, дискретная (ступенчатая) пластика + глитч."},
+  {id:"blob",name:"Blob",sub:"капля · клей-маскот",desc:"Глиняный маскот: влажные глаза + тягучий рот, эмоция через рот/брови/раскрытие. Тяжёлая упругая пластика."},
+];
+function renderCharPills(){
+  document.getElementById("charPills").innerHTML = CHARS.map(c=>
+    `<button class="pill ${c.id===STATE.char?'on':''}" data-char="${c.id}"><span class="dot"></span>${c.name}</button>`).join("");
+  document.querySelectorAll("#charPills .pill").forEach(b=>b.onclick=()=>{ STATE.char=b.dataset.char; renderAll(); });
+}
+function renderCharInfo(){
+  const c=CHARS.find(x=>x.id===STATE.char);
+  document.getElementById("charInfo").innerHTML=`<div class="charname">${c.name}</div><div class="charsub">${c.sub}</div><div class="chardesc">${c.desc}</div>`;
+  document.getElementById("gridChar").textContent=c.name;
+}
+function ctlGroup(elId, items, key){
+  const el=document.getElementById(elId);
+  el.innerHTML=items.map(it=>{
+    const on=STATE[key]===it.v?'on':'';
+    if(it.chip) return `<button class="cp sw ${on}" data-v="${it.v}"><span class="chip" style="background:${it.chip}"></span>${it.l}</button>`;
+    return `<button class="cp ${on}" data-v="${it.v}">${it.l}</button>`;
+  }).join("");
+  el.querySelectorAll(".cp").forEach(b=>b.onclick=()=>{ STATE[key]=b.dataset.v; renderAll(); });
+}
+function renderControls(){
+  ctlGroup("layoutCtl",[{v:"bars",l:"Bars"},{v:"ribbon",l:"Ribbon"},{v:"chips",l:"Chips"},{v:"none",l:"Off"}],"layout");
+  ctlGroup("colorCtl",[{v:"auto",l:"Auto"},{v:"cyan",l:"Cyan",chip:"#3DE0E0"},{v:"amber",l:"Amber",chip:"#FFB02E"},{v:"red",l:"Red",chip:"#FF4D4D"}],"color");
+  ctlGroup("clockCtl",[{v:"on",l:"On"},{v:"off",l:"Off"}],"clock");
+  ctlGroup("textCtl",[{v:"pct",l:"%"},{v:"off",l:"Off"}],"text");
+}
+function renderDevice(){ document.getElementById("device").innerHTML=deviceSVG(); }
+function renderGrid(){
+  document.getElementById("grid").innerHTML = MOODS.map(m=>
+    `<div class="ecard"><div class="estage">${pairSVG(STATE.char,m.key)}</div>`
+    +`<div class="en">${m.en}</div><div class="eru">${m.ru}</div><div class="etr">${m.tr}</div></div>`).join("");
+}
+function renderAll(){ renderCharPills(); renderCharInfo(); renderControls(); renderDevice(); renderGrid(); }
+renderAll();
+
+// device cycles through expressive moods to show life + entry transitions
+const DEV_CYCLE=["neutral","happy","curious","surprised","love","sleepy","angry"];
+let di=0;
+setInterval(()=>{ di=(di+1)%DEV_CYCLE.length; devMood=DEV_CYCLE[di]; renderDevice(); }, 4000);
+</script>
+</body>
+</html>

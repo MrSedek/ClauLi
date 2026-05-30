@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EMO → ClauLi · Предложение по паку эмоций</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;500;700;800&family=Onest:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#070a0b; --bg2:#0c1113; --surface:#0f1518; --surface2:#121a1e;
+    --line:#1c272b; --line2:#26353b;
+    --text:#e7f0f0; --dim:#8aa0a2; --faint:#5d7174;
+    --cyan:#3de0e0; --amber:#e0a33d; --red:#e0533d;
+    --mono:'Azeret Mono',ui-monospace,monospace;
+    --sans:'Onest',system-ui,sans-serif;
+    --r:16px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--text); font-family:var(--sans);
+    line-height:1.55; -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(900px 500px at 12% -8%, rgba(61,224,224,.09), transparent 60%),
+      radial-gradient(800px 520px at 92% 0%, rgba(224,163,61,.07), transparent 55%),
+      radial-gradient(700px 700px at 50% 120%, rgba(61,224,224,.05), transparent 60%);
+    background-attachment:fixed;
+  }
+  /* fine grain overlay */
+  body::before{
+    content:""; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.035;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .wrap{position:relative; z-index:1; max-width:1180px; margin:0 auto; padding:56px 24px 80px}
+
+  /* ───── Header ───── */
+  header{margin-bottom:40px}
+  .kicker{
+    font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:4px;
+    text-transform:uppercase; color:var(--cyan);
+    display:inline-flex; align-items:center; gap:10px; margin-bottom:18px;
+  }
+  .kicker::before{content:""; width:30px; height:1px; background:linear-gradient(90deg,var(--cyan),transparent)}
+  h1{
+    font-family:var(--mono); font-weight:800; font-size:clamp(34px,6vw,62px);
+    line-height:.98; letter-spacing:-1px; margin:0 0 14px;
+  }
+  h1 .arrow{color:var(--faint); font-weight:400; margin:0 .15em}
+  h1 .em{color:var(--cyan)}
+  h1 .cl{color:var(--amber)}
+  .lede{max-width:680px; color:var(--dim); font-size:16px}
+  .lede b{color:var(--text); font-weight:600}
+
+  /* ───── Stat rail ───── */
+  .rail{display:flex; flex-wrap:wrap; gap:14px; margin:30px 0 14px}
+  .stat{
+    flex:1 1 150px; background:var(--surface); border:1px solid var(--line);
+    border-radius:var(--r); padding:16px 18px; position:relative; overflow:hidden;
+  }
+  .stat .n{font-family:var(--mono); font-weight:800; font-size:30px; line-height:1}
+  .stat .l{font-size:12px; color:var(--dim); margin-top:6px}
+  .stat.new .n{color:var(--amber)} .stat.ex .n{color:var(--cyan)} .stat.mo .n{color:#a98fe0}
+
+  /* ───── Controls ───── */
+  .bar{
+    display:flex; flex-wrap:wrap; align-items:center; gap:10px;
+    margin:34px 0 22px; padding-bottom:14px; border-bottom:1px solid var(--line);
+  }
+  .bar .lbl{font-family:var(--mono); font-size:10px; letter-spacing:2px; color:var(--faint); text-transform:uppercase; margin-right:4px}
+  .chip{
+    font-family:var(--mono); font-size:12px; font-weight:600; letter-spacing:.5px;
+    color:var(--dim); background:transparent; border:1px solid var(--line2);
+    padding:7px 14px; border-radius:999px; cursor:pointer; transition:.18s;
+  }
+  .chip:hover{color:var(--text); border-color:var(--faint)}
+  .chip.on{color:var(--bg); background:var(--cyan); border-color:var(--cyan)}
+  .chip.on[data-f="new"]{background:var(--amber); border-color:var(--amber)}
+
+  .legend{margin-left:auto; display:flex; gap:16px; font-size:11.5px; color:var(--dim)}
+  .legend span{display:inline-flex; align-items:center; gap:6px}
+  .dot{width:9px;height:9px;border-radius:50%}
+
+  /* ───── Grid ───── */
+  .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(248px,1fr)); gap:16px}
+  .card{
+    --c:var(--cyan);
+    background:linear-gradient(180deg,var(--surface2),var(--surface));
+    border:1px solid var(--line); border-radius:var(--r); padding:18px 18px 16px;
+    position:relative; overflow:hidden; opacity:0; transform:translateY(14px);
+    animation:rise .5s cubic-bezier(.2,.7,.2,1) forwards; animation-delay:calc(var(--i)*40ms);
+  }
+  @keyframes rise{to{opacity:1; transform:none}}
+  .card::after{ /* top accent hairline */
+    content:""; position:absolute; left:0; right:0; top:0; height:2px;
+    background:linear-gradient(90deg,var(--c),transparent 70%); opacity:.8;
+  }
+  .card:hover{border-color:var(--line2); transform:translateY(-3px); transition:transform .2s, border-color .2s}
+  .card.hide{display:none}
+
+  .eyes{display:flex; justify-content:center; gap:12px; padding:14px 0 16px; color:var(--c)}
+  .eye{width:58px; height:58px; filter:drop-shadow(0 0 7px color-mix(in srgb,var(--c) 70%, transparent))}
+  .eye *{fill:var(--c)}
+  .eye .cut{fill:var(--bg2)}
+  .eye .ln{fill:none; stroke:var(--c); stroke-width:6; stroke-linecap:round}
+  .card:hover .eyes{animation:blink 1.6s ease-in-out}
+  @keyframes blink{45%{transform:scaleY(1)}50%{transform:scaleY(.08)}55%{transform:scaleY(1)}}
+
+  .nm{display:flex; align-items:baseline; gap:8px; flex-wrap:wrap}
+  .nm .ru{font-weight:700; font-size:17px; letter-spacing:-.2px}
+  .nm .en{font-family:var(--mono); font-size:11px; color:var(--faint); font-weight:500}
+  .badge{
+    margin-left:auto; font-family:var(--mono); font-size:9.5px; font-weight:700;
+    letter-spacing:1px; padding:4px 8px; border-radius:6px; white-space:nowrap;
+  }
+  .badge.ex{color:var(--cyan); background:rgba(61,224,224,.1); border:1px solid rgba(61,224,224,.25)}
+  .badge.new{color:var(--amber); background:rgba(224,163,61,.1); border:1px solid rgba(224,163,61,.28)}
+
+  .form{font-family:var(--mono); font-size:12.5px; font-weight:700; color:var(--c); margin:8px 0 2px}
+  .trig{font-size:12.5px; color:var(--dim); margin:6px 0 12px; min-height:34px}
+
+  .meta{display:flex; flex-direction:column; gap:7px; border-top:1px solid var(--line); padding-top:11px}
+  .row{display:flex; align-items:center; gap:8px; font-size:11.5px}
+  .row .k{font-family:var(--mono); font-size:9.5px; letter-spacing:1px; color:var(--faint); text-transform:uppercase; width:62px; flex-shrink:0}
+  .row .v{color:var(--text)}
+  .motion{font-family:var(--mono); font-size:11px; font-weight:600; padding:3px 8px; border-radius:5px; background:rgba(169,143,224,.12); color:#bda6ec; border:1px solid rgba(169,143,224,.22)}
+  .motion.tremble{background:rgba(224,163,61,.12); color:var(--amber); border-color:rgba(224,163,61,.3)}
+  .sw{width:13px; height:13px; border-radius:4px; box-shadow:0 0 8px color-mix(in srgb,var(--c) 60%,transparent)}
+  .hex{font-family:var(--mono); font-size:11px; color:var(--dim)}
+
+  /* ───── Sections ───── */
+  .sec-h{
+    font-family:var(--mono); font-size:12px; font-weight:700; letter-spacing:3px;
+    text-transform:uppercase; color:var(--text); margin:54px 0 18px;
+    display:flex; align-items:center; gap:12px;
+  }
+  .sec-h::after{content:""; flex:1; height:1px; background:var(--line)}
+  .add{display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:14px}
+  .acard{background:var(--surface); border:1px solid var(--line); border-left:2px solid var(--amber); border-radius:12px; padding:14px 16px}
+  .acard.mo{border-left-color:#a98fe0}
+  .acard .idx{font-family:var(--mono); font-size:10px; color:var(--faint); letter-spacing:1px}
+  .acard .sym{font-family:var(--mono); font-weight:700; font-size:14px; color:var(--amber); margin:2px 0 6px}
+  .acard.mo .sym{color:#bda6ec}
+  .acard .why{font-size:12px; color:var(--dim)}
+
+  .note{
+    margin-top:22px; background:var(--surface); border:1px solid var(--line);
+    border-radius:12px; padding:16px 18px; font-size:13px; color:var(--dim);
+  }
+  .note b{color:var(--text)}
+
+  footer{margin-top:48px; padding-top:20px; border-top:1px solid var(--line); font-size:12.5px; color:var(--faint)}
+  footer a{color:var(--dim); text-decoration:none; border-bottom:1px solid var(--line2)}
+  footer a:hover{color:var(--cyan); border-color:var(--cyan)}
+  footer .src{display:flex; flex-wrap:wrap; gap:6px 18px; margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kicker">ClauLi · Группа B · предложение</div>
+    <h1><span class="em">EMO</span><span class="arrow">→</span><span class="cl">ClauLi</span><br>пак эмоций</h1>
+    <p class="lede">Глаза ClauLi воспроизводят эмоции робота <b>EMO (Living.AI)</b>.
+    Ниже — предложенный маппинг каждой эмоции на <b>форму + мотион + цвет</b> ClauLi:
+    что ложится на <b>существующие</b> формы, а что требует <b>новой</b>. Схемы глаз —
+    диаграммы геометрии для ревью, <b>не финальный арт</b>.</p>
+
+    <div class="rail">
+      <div class="stat ex"><div class="n" id="cntEx">0</div><div class="l">на существующих формах</div></div>
+      <div class="stat new"><div class="n" id="cntNew">0</div><div class="l">новых форм нужно</div></div>
+      <div class="stat mo"><div class="n">+1</div><div class="l">новый мотион · DM_TREMBLE</div></div>
+      <div class="stat"><div class="n" id="cntAll">0</div><div class="l">эмоций в каталоге</div></div>
+    </div>
+  </header>
+
+  <div class="bar">
+    <span class="lbl">Фильтр</span>
+    <button class="chip on" data-f="all">Все</button>
+    <button class="chip" data-f="ex">♻ Существующие</button>
+    <button class="chip" data-f="new">✨ Новые формы</button>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--cyan)"></i> существующая</span>
+      <span><i class="dot" style="background:var(--amber)"></i> новая форма</span>
+    </div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <!-- ───── What to add ───── -->
+  <div class="sec-h">Что нужно добавить в прошивку</div>
+  <div class="add" id="addForms"></div>
+
+  <div class="sec-h">Новый мотион</div>
+  <div class="add" id="addMotion"></div>
+
+  <div class="note">
+    <b>Контракт индексов.</b> Новые формы дописываются <b>в конец</b> <code>mood_t</code>
+    (после индекса 20 · M_EXCLAIM), новые мотионы — в конец <code>DiagMotion</code>
+    (после 13 · DM_WARNING). Существующие индексы не сдвигаются — иначе ломается
+    зеркалирование демона (<code>FORM_NAMES</code>/<code>OP_NAMES</code>), веб-коды и
+    сохранённый в NVS выбор. Пак включается/выключается целиком; выключенные формы
+    исключаются из авто-ротации. Подробности — в скилле <code>clauli-forms-pack</code>.
+  </div>
+
+  <footer>
+    <div>Источник дизайна — EMO (Living.AI). Использованы только текстовые описания и
+    ссылки; ассеты Living.AI <b>не копировались</b>. Схемы — собственная иллюстрация
+    геометрии. Документы: <code>docs/emo-emotion-catalog.md</code> (B2),
+    <code>docs/emo-pack-spec.md</code> (B3).</div>
+    <div class="src">
+      <a href="https://living.ai/emo/">living.ai/emo</a>
+      <a href="https://living.ai/voice-commands-english/">voice-commands</a>
+      <a href="https://forums.living.ai/t/voice-commands-list-for-emo-complete/8626">forums (complete list)</a>
+      <a href="https://keyirobot.com/blogs/buying-guide/inside-emo-robots-expressive-design-and-how-it-connects-with-you">expressive design</a>
+    </div>
+  </footer>
+</div>
+
+<script>
+// ── Eye schematic generator (64×64 viewBox, fills currentColor) ──────────────
+function eye(shape, side){
+  const flip = side==='R' ? -1 : 1;
+  const S = {
+    rrect:  `<rect x="14" y="17" width="36" height="30" rx="11"/>`,
+    circle: `<circle cx="32" cy="32" r="21"/>`,
+    spark:  `<circle cx="30" cy="33" r="19"/><path d="M48 13 l2.6 6.4 6.4 2.6 -6.4 2.6 -2.6 6.4 -2.6 -6.4 -6.4 -2.6 6.4 -2.6 z"/>`,
+    smile:  `<path d="M9 23 Q32 50 55 23 Q55 31 55 31 Q32 56 9 31 Z"/>`,
+    frown:  `<path d="M9 41 Q32 14 55 41 Q55 33 55 33 Q32 7 9 33 Z"/>`,
+    heart:  `<path d="M32 50 C 8 33, 12 13, 32 24 C 52 13, 56 33, 32 50 Z"/>`,
+    pupil:  `<circle cx="32" cy="32" r="21"/><circle class="cut" cx="${32+9*flip}" cy="30" r="9"/>`,
+    qmark:  `<circle cx="32" cy="32" r="21"/><text x="32" y="42" text-anchor="middle" font-family="Azeret Mono,monospace" font-weight="800" font-size="30" class="cut">?</text>`,
+    halflid:`<rect x="13" y="30" width="38" height="18" rx="9"/><rect class="cut" x="9" y="22" width="46" height="11" rx="5"/>`,
+    slit:   `<rect x="11" y="28" width="42" height="9" rx="4.5"/>`,
+    angry:  `<g transform="rotate(${10*flip} 32 32)"><path d="M11 26 L53 35 L53 41 Q32 47 11 41 Z"/></g>`,
+    annoyed:`<g transform="rotate(${7*flip} 32 32)"><rect x="13" y="29" width="38" height="14" rx="7"/></g>`,
+    winkO:  `<circle cx="32" cy="32" r="21"/>`,
+    winkC:  `<path class="ln" d="M12 34 Q32 24 52 34"/>`,
+    sleepy: `<path d="M11 31 Q32 45 53 31 Q53 36 53 36 Q32 50 11 36 Z"/>`,
+    closed: `<path class="ln" d="M12 30 Q32 41 52 30"/>`,
+    wavy:   `<path class="ln" d="M10 32 Q17 23 24 32 T38 32 T54 32"/><circle cx="32" cy="32" r="21" fill="none" stroke="currentColor" stroke-width="2.5" opacity=".35"/>`,
+    tall:   `<ellipse cx="32" cy="32" rx="13" ry="23"/>`,
+    laser:  `<rect x="14" y="28" width="36" height="9" rx="4.5"/><path d="M32 32 L62 30 L62 34 Z" opacity=".9"/><circle cx="32" cy="32" r="3.4" class="cut"/>`,
+    vslit:  `<g transform="rotate(${8*flip} 32 32)"><rect x="27" y="9" width="10" height="46" rx="5"/></g>`,
+  };
+  return `<svg class="eye" viewBox="0 0 64 64" aria-hidden="true">${S[shape]||S.rrect}</svg>`;
+}
+
+// ── Data: EMO emotion → ClauLi proposal ─────────────────────────────────────
+const DATA = [
+  {ru:'Нейтрально',   en:'neutral',      st:'ex',  form:'M_NEUTRAL',      shape:'rrect',  mo:'DM_BLINK',     c:'#3de0e0', t:'Базовое ожидание · спокойные открытые глаза, редкий blink'},
+  {ru:'Радость',      en:'happy',        st:'ex',  form:'M_HAPPY',        shape:'smile',  mo:'DM_NONE',      c:'#e0a33d', t:'Похвала, ласка, солнечно · приподнятые «улыбающиеся» дуги'},
+  {ru:'Восторг',      en:'excited',      st:'new', form:'M_EMO_EXCITED',  shape:'spark',  mo:'DM_BOUNCE',    c:'#e8d44d', t:'Игра, сильный позитив · крупный открытый глаз + блик'},
+  {ru:'Влюблённость', en:'love',         st:'ex',  form:'M_LOVE',         shape:'heart',  mo:'DM_PULSE_ALT', c:'#e86fb0', t:'«I love you», объятие · глаза-сердечки, мягкая пульсация'},
+  {ru:'Удивление',    en:'surprised',    st:'ex',  form:'M_CIRCLE',       shape:'circle', mo:'DM_SURPRISE',  c:'#cfe8e8', t:'Внезапное событие · резко раскрытые круглые глаза'},
+  {ru:'Любопытство',  en:'curious',      st:'ex',  form:'M_PUPIL_LEFT',   shape:'pupil',  mo:'DM_SACCADE',   c:'#3de0e0', t:'Новый объект, самоисследование · взгляд в сторону'},
+  {ru:'Замешательство',en:'confused',    st:'ex',  form:'M_Q_EYE',        shape:'qmark',  mo:'DM_CONFUSED',  c:'#3de0e0', t:'Непонятный ввод · намёк «?», покачивание/наклон'},
+  {ru:'Грусть',       en:'sad',          st:'ex',  form:'M_SAD',          shape:'frown',  mo:'DM_NONE',      c:'#5b8def', t:'Игнор, дождь, «I am sad» · опущенные дуги, вялость'},
+  {ru:'Разочарование',en:'disappointed', st:'ex',  form:'M_UPSET',        shape:'halflid',mo:'DM_NONE',      c:'#5b8def', t:'Несбывшееся ожидание · полуопущенные веки'},
+  {ru:'Скука',        en:'bored',        st:'new', form:'M_EMO_BORED',    shape:'slit',   mo:'DM_SACCADE',   c:'#6a8a8a', t:'Долгое бездействие · тяжёлая полуприкрытая щель'},
+  {ru:'Злость',       en:'angry',        st:'ex',  form:'M_ANGRY',        shape:'angry',  mo:'DM_SHAKE',     c:'#e0533d', t:'Резкое обращение, «I am angry» · брови внутрь-вниз'},
+  {ru:'Раздражение',  en:'annoyed',      st:'ex',  form:'M_UPSET',        shape:'annoyed',mo:'DM_SHAKE',     c:'#e0773d', t:'Прерывание занятия · асимметричный «надутый» прищур'},
+  {ru:'Подмигивание', en:'wink',         st:'ex',  form:'M_HAPPY',        shape:'wink',   mo:'DM_WINK',      c:'#e0a33d', t:'Игривый момент · один глаз закрыт дугой (только мотион)'},
+  {ru:'Сонливость',   en:'sleepy',       st:'ex',  form:'M_SLEEP',        shape:'sleepy', mo:'DM_YAWN',      c:'#5b7a9a', t:'Поздно/тихо, «I am tired» · тяжёлые веки, зевок'},
+  {ru:'Сон / дрёма',  en:'sleep',        st:'ex',  form:'M_SLEEP',        shape:'closed', mo:'DM_NONE',      c:'#4a5a6a', t:'«Pretend to nap» · закрытые глаза, ровное «дыхание»'},
+  {ru:'Недомогание',  en:'sick',         st:'new', form:'M_EMO_SICK',     shape:'wavy',   mo:'DM_TREMBLE',   c:'#9db668', t:'Холодная погода (простуда) · неровные «подплывшие» глаза'},
+  {ru:'Испуг',        en:'scared',       st:'new', form:'M_EMO_SCARED',   shape:'tall',   mo:'DM_TREMBLE',   c:'#cfe8e8', t:'Резкая угроза, Хэллоуин · высокий дрожащий овал'},
+  {ru:'Лазер',        en:'laser',        st:'new', form:'M_EMO_LASER',    shape:'laser',  mo:'DM_WARNING',   c:'#e0533d', t:'«Laser eyes / beam» · щель-зрачок + луч'},
+  {ru:'«Демон»',      en:'demon',        st:'ex',  form:'M_PUPIL_SLIT',   shape:'vslit',  mo:'DM_WARNING',   c:'#e0533d', t:'«Unleash the beast» · вертикальный кошачий зрачок'},
+  {ru:'Праздник',     en:'celebrate',    st:'ex',  form:'M_HAPPY',        shape:'spark',  mo:'DM_WAVE',      c:'#e0a33d', t:'День рождения, праздники · happy + фанфары'},
+];
+
+const NEW_FORMS = [
+  {idx:21, sym:'M_EMO_EXCITED', why:'Восторг ≠ ровный happy: крупный открытый глаз + sparkle'},
+  {idx:22, sym:'M_EMO_BORED',   why:'Скука ≠ sleep: тяжёлая полуприкрытая щель, но не закрыт'},
+  {idx:23, sym:'M_EMO_SICK',    why:'Недомогание: неровные «подплывшие» глаза'},
+  {idx:24, sym:'M_EMO_SCARED',  why:'Испуг: высокий дрожащий овал (можно свести к M_OVAL_TALL)'},
+  {idx:25, sym:'M_EMO_LASER',   why:'Лазер: щель + точка-луч — уникальный эффект'},
+];
+const NEW_MOTION = [
+  {idx:14, sym:'DM_TREMBLE', why:'Мелкая высокочастотная дрожь (испуг / недомогание) — отличается от размашистого DM_SHAKE'},
+];
+
+// ── Render ──────────────────────────────────────────────────────────────────
+const grid = document.getElementById('grid');
+DATA.forEach((d,i)=>{
+  const el = document.createElement('article');
+  el.className = 'card'; el.style.setProperty('--c', d.c); el.style.setProperty('--i', i);
+  el.dataset.st = d.st;
+  const eyes = d.shape==='wink'
+    ? eye('winkO','L') + eye('winkC','R')
+    : eye(d.shape,'L') + eye(d.shape,'R');
+  const moClass = d.mo==='DM_TREMBLE' ? 'motion tremble' : 'motion';
+  el.innerHTML = `
+    <div class="eyes">${eyes}</div>
+    <div class="nm">
+      <span class="ru">${d.ru}</span><span class="en">${d.en}</span>
+      <span class="badge ${d.st}">${d.st==='new'?'✨ НОВАЯ':'♻ ЕСТЬ'}</span>
+    </div>
+    <div class="form">${d.form}</div>
+    <div class="trig">${d.t}</div>
+    <div class="meta">
+      <div class="row"><span class="k">Мотион</span><span class="${moClass}">${d.mo}</span></div>
+      <div class="row"><span class="k">Halo</span><i class="sw" style="background:${d.c}"></i><span class="hex">${d.c}</span></div>
+    </div>`;
+  grid.appendChild(el);
+});
+
+document.getElementById('cntAll').textContent = DATA.length;
+document.getElementById('cntNew').textContent = '+'+DATA.filter(d=>d.st==='new').length;
+document.getElementById('cntEx').textContent  = DATA.filter(d=>d.st==='ex').length;
+
+const af = document.getElementById('addForms');
+NEW_FORMS.forEach(f=>{
+  const e=document.createElement('div'); e.className='acard';
+  e.innerHTML=`<div class="idx">mood_t · idx ${f.idx}</div><div class="sym">${f.sym}</div><div class="why">${f.why}</div>`;
+  af.appendChild(e);
+});
+const am = document.getElementById('addMotion');
+NEW_MOTION.forEach(f=>{
+  const e=document.createElement('div'); e.className='acard mo';
+  e.innerHTML=`<div class="idx">DiagMotion · idx ${f.idx}</div><div class="sym">${f.sym}</div><div class="why">${f.why}</div>`;
+  am.appendChild(e);
+});
+
+// ── Filter ──
+document.querySelectorAll('.chip').forEach(c=>{
+  c.addEventListener('click', ()=>{
+    document.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));
+    c.classList.add('on');
+    const f = c.dataset.f;
+    document.querySelectorAll('.card').forEach(card=>{
+      card.classList.toggle('hide', f!=='all' && card.dataset.st!==f);
+    });
+  });
+});
+</script>
+</body>
+</html>

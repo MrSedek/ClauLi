@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ClauLi · герои глаз (грамматика EMO)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;500;600;700;800&family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#05080a; --bg2:#0a1013; --surface:#0e1519; --surface2:#121b20;
+    --line:#1b2730; --line2:#27353f;
+    --text:#e9f1f2; --dim:#8aa1a6; --faint:#5c7177;
+    --cyan:#3de0e0; --amber:#ffb23d; --red:#ff5a4d; --violet:#b69bff; --green:#5bf08a;
+    --mono:'Azeret Mono',ui-monospace,monospace;
+    --sans:'Onest',system-ui,sans-serif;
+    --r:18px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--text); font-family:var(--sans);
+    line-height:1.55; -webkit-font-smoothing:antialiased; overflow-x:hidden;
+    background-image:
+      radial-gradient(1000px 560px at 10% -10%, rgba(61,224,224,.10), transparent 60%),
+      radial-gradient(860px 540px at 96% -4%, rgba(182,155,255,.08), transparent 55%),
+      radial-gradient(760px 760px at 50% 118%, rgba(61,224,224,.05), transparent 60%);
+    background-attachment:fixed;
+  }
+  body::before{
+    content:""; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.04;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .wrap{position:relative; z-index:1; max-width:1200px; margin:0 auto; padding:54px 24px 90px}
+
+  /* ── header ── */
+  .kicker{
+    font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:4px;
+    text-transform:uppercase; color:var(--cyan);
+    display:inline-flex; align-items:center; gap:10px; margin-bottom:16px;
+  }
+  .kicker::before{content:""; width:32px; height:1px; background:linear-gradient(90deg,var(--cyan),transparent)}
+  h1{
+    font-family:var(--mono); font-weight:800; font-size:clamp(32px,5.6vw,58px);
+    line-height:1.0; letter-spacing:-1.2px; margin:0 0 14px;
+  }
+  h1 .g{background:linear-gradient(92deg,var(--cyan),var(--violet)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent}
+  .lede{max-width:720px; color:var(--dim); font-size:16px}
+  .lede b{color:var(--text); font-weight:600}
+
+  /* ── analysis: 4 levers ── */
+  .levers{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin:30px 0 8px}
+  .lever{
+    background:linear-gradient(180deg,var(--surface2),var(--surface)); border:1px solid var(--line);
+    border-radius:14px; padding:15px 16px; position:relative; overflow:hidden;
+  }
+  .lever .no{font-family:var(--mono); font-size:11px; color:var(--faint); letter-spacing:2px}
+  .lever h3{margin:3px 0 5px; font-size:15px; font-weight:700}
+  .lever p{margin:0; font-size:12.5px; color:var(--dim)}
+  .lever .ic{position:absolute; right:12px; top:12px; opacity:.5}
+
+  /* ── stage: device + character picker ── */
+  .stage{
+    display:grid; grid-template-columns:minmax(280px,360px) 1fr; gap:26px; align-items:start;
+    margin:40px 0 14px;
+  }
+  @media(max-width:760px){ .stage{grid-template-columns:1fr} }
+
+  .device{
+    position:relative; aspect-ratio:1/1; border-radius:30px; padding:16px;
+    background:
+      radial-gradient(120% 120% at 50% -10%, #1a242b, #0a0f12 60%);
+    border:1px solid #20303a;
+    box-shadow:0 30px 70px -30px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.04);
+  }
+  .device .screen{
+    position:relative; width:100%; height:100%; border-radius:50%;
+    background:radial-gradient(circle at 50% 45%, #0b0f10, #000 72%);
+    overflow:hidden; box-shadow:inset 0 0 0 2px #0c1417, inset 0 0 60px rgba(0,0,0,.9);
+  }
+  .device .screen canvas{position:absolute; inset:0; width:100%; height:100%}
+  .device .glassln{position:absolute; inset:0; border-radius:50%; pointer-events:none;
+    background:radial-gradient(120% 80% at 30% 18%, rgba(255,255,255,.07), transparent 45%)}
+  .device .cap{
+    position:absolute; left:50%; bottom:6px; transform:translateX(-50%);
+    font-family:var(--mono); font-size:9.5px; letter-spacing:2px; color:var(--faint); text-transform:uppercase;
+  }
+  .nowLbl{display:flex; align-items:baseline; gap:10px; margin-top:14px}
+  .nowLbl .ru{font-size:20px; font-weight:700}
+  .nowLbl .en{font-family:var(--mono); font-size:12px; color:var(--faint)}
+
+  .pick-h{font-family:var(--mono); font-size:10px; letter-spacing:2px; color:var(--faint); text-transform:uppercase; margin:2px 0 12px}
+  .heroes{display:grid; grid-template-columns:repeat(2,1fr); gap:14px}
+  .hero{
+    text-align:left; cursor:pointer; background:linear-gradient(180deg,var(--surface2),var(--surface));
+    border:1px solid var(--line); border-radius:16px; padding:14px; transition:.18s; color:var(--text);
+    position:relative; overflow:hidden;
+  }
+  .hero:hover{border-color:var(--line2); transform:translateY(-2px)}
+  .hero.on{border-color:var(--hc); box-shadow:0 0 0 1px var(--hc), 0 14px 30px -18px var(--hc)}
+  .hero::after{content:""; position:absolute; left:0; top:0; right:0; height:2px; background:linear-gradient(90deg,var(--hc),transparent 75%)}
+  .hero canvas{width:100%; height:74px; display:block; background:#000; border-radius:9px; border:1px solid #0c1316}
+  .hero .hn{display:flex; align-items:baseline; gap:7px; margin-top:10px}
+  .hero .hn b{font-size:15px} .hero .hn span{font-family:var(--mono); font-size:10px; color:var(--faint)}
+  .hero .ht{font-size:11.5px; color:var(--dim); margin-top:3px; min-height:31px}
+  .hero .pal{display:flex; gap:5px; margin-top:9px}
+  .hero .pal i{width:12px;height:12px;border-radius:4px}
+
+  /* ── controls ── */
+  .bar{
+    display:flex; flex-wrap:wrap; align-items:center; gap:14px 18px;
+    margin:36px 0 18px; padding:14px 16px; border:1px solid var(--line);
+    background:var(--surface); border-radius:14px;
+  }
+  .bar .grp{display:flex; align-items:center; gap:10px}
+  .bar .lbl{font-family:var(--mono); font-size:10px; letter-spacing:2px; color:var(--faint); text-transform:uppercase}
+  .toggle{
+    font-family:var(--mono); font-size:11px; font-weight:600; color:var(--dim);
+    background:transparent; border:1px solid var(--line2); padding:7px 13px; border-radius:999px; cursor:pointer; transition:.16s;
+  }
+  .toggle:hover{color:var(--text); border-color:var(--faint)}
+  .toggle.on{color:var(--bg); background:var(--cyan); border-color:var(--cyan)}
+  input[type=range]{ -webkit-appearance:none; appearance:none; width:170px; height:5px; border-radius:5px;
+    background:linear-gradient(90deg,var(--cyan),var(--amber) 55%,var(--red)); outline:none}
+  input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:16px;height:16px;border-radius:50%;
+    background:#fff; border:2px solid #0a0f12; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,.5)}
+  .pctv{font-family:var(--mono); font-size:13px; font-weight:700; min-width:42px}
+
+  /* ── emotion grid ── */
+  .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:14px}
+  .tile{
+    background:#000; border:1px solid var(--line); border-radius:14px; padding:0; cursor:pointer;
+    position:relative; overflow:hidden; transition:.16s; opacity:0; transform:translateY(12px);
+    animation:rise .5s cubic-bezier(.2,.7,.2,1) forwards; animation-delay:calc(var(--i)*32ms);
+  }
+  @keyframes rise{to{opacity:1;transform:none}}
+  .tile:hover{border-color:var(--hc); transform:translateY(-3px)}
+  .tile.sel{border-color:var(--hc); box-shadow:0 0 0 1px var(--hc)}
+  .tile canvas{width:100%; height:118px; display:block}
+  .tile .cap{display:flex; align-items:baseline; justify-content:space-between; gap:6px;
+    padding:9px 11px 10px; background:linear-gradient(180deg,rgba(0,0,0,0),var(--surface) 30%); border-top:1px solid var(--line)}
+  .tile .cap .ru{font-size:13.5px; font-weight:600}
+  .tile .cap .en{font-family:var(--mono); font-size:10px; color:var(--faint)}
+  .tile .mo{position:absolute; left:9px; top:9px; font-family:var(--mono); font-size:9px; letter-spacing:.5px;
+    color:var(--dim); background:rgba(8,14,16,.7); border:1px solid var(--line); padding:2px 6px; border-radius:5px; backdrop-filter:blur(3px)}
+
+  /* ── sections ── */
+  .sec-h{font-family:var(--mono); font-size:12px; font-weight:700; letter-spacing:3px; text-transform:uppercase;
+    color:var(--text); margin:52px 0 18px; display:flex; align-items:center; gap:12px}
+  .sec-h::after{content:""; flex:1; height:1px; background:var(--line)}
+  .note{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:16px 18px; font-size:13px; color:var(--dim)}
+  .note b{color:var(--text)}
+  footer{margin-top:46px; padding-top:20px; border-top:1px solid var(--line); font-size:12.5px; color:var(--faint)}
+  footer a{color:var(--dim); text-decoration:none; border-bottom:1px solid var(--line2)}
+  footer a:hover{color:var(--cyan); border-color:var(--cyan)}
+  footer .src{display:flex; flex-wrap:wrap; gap:6px 18px; margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kicker">ClauLi · группа B · выбор характера</div>
+    <h1>Герои глаз <span class="g">ClauLi</span><br>в грамматике EMO</h1>
+    <p class="lede">EMO не рисует отдельную иконку на каждую эмоцию. Он держит <b>одну пару
+    светящихся глаз</b> и лепит чувства из четырёх рычагов. Ниже — <b>4 живых характера</b>,
+    отрисованных этим способом прямо в браузере (свечение + веки + морфинг + движение на
+    чёрном — как на AMOLED-экране). Выбери героя — посмотри его по всем эмоциям.</p>
+
+    <div class="levers" id="levers"></div>
+  </header>
+
+  <section class="stage">
+    <div>
+      <div class="device">
+        <div class="screen"><canvas id="dev"></canvas><div class="glassln"></div>
+          <div class="cap">480×480 AMOLED</div></div>
+      </div>
+      <div class="nowLbl"><span class="ru" id="nowRu">Нейтрально</span><span class="en" id="nowEn">neutral</span></div>
+    </div>
+    <div>
+      <div class="pick-h">Герой — кликни, чтобы примерить</div>
+      <div class="heroes" id="heroes"></div>
+    </div>
+  </section>
+
+  <div class="bar">
+    <div class="grp"><span class="lbl">Загрузка %</span>
+      <input type="range" id="pct" min="0" max="100" value="22"><span class="pctv" id="pctv">22%</span></div>
+    <div class="grp"><span class="lbl">Набор</span>
+      <button class="toggle" id="tgAll">показать все 20</button></div>
+    <div class="grp"><span class="lbl">Анимация</span>
+      <button class="toggle on" id="tgPlay">пауза</button></div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="sec-h">Как это станет реальными глазами</div>
+  <div class="note">
+    Выбранный герой — это <b>параметры</b> (цвет, скругление, пропорции, блик, текстура).
+    Каждая эмоция — словарь рычагов (веки / морфинг / взгляд / искры). Чтобы это поехало на
+    железе, победивший герой превращается в <b>64×64 A8-кадры</b> (по кадру на эмоцию, веки
+    запечены в силуэт) + веб-vector-пути в <code>drawTileEye</code> и подключается в
+    прошивку/демон/веб через скилл <b>clauli-forms-pack</b>. Движок ClauLi уже даёт тинт
+    cyan→amber→red, specular-блик и halo — ровно то, что рисует эта галерея. Реальный арт —
+    следующий шаг, после твоего выбора.
+  </div>
+
+  <footer>
+    <div>Грамматика глаз — общий язык EMO (Living.AI) и Anki Cozmo/Vector; техника
+    подтверждена опен-сорс проектами robot-eyes. Использованы только идеи/описания —
+    <b>ассеты Living.AI не копировались</b>; все глаза здесь нарисованы кодом с нуля.</div>
+    <div class="src">
+      <a href="https://living.ai/emo/">living.ai/emo</a>
+      <a href="https://github.com/playfultechnology/esp32-eyes">esp32-eyes (Cozmo-style)</a>
+      <a href="https://keyirobot.com/blogs/buying-guide/inside-emo-robots-expressive-design-and-how-it-connects-with-you">EMO expressive design</a>
+      <span style="color:var(--faint)">docs/emo-emotion-catalog.md · docs/emo-pack-spec.md</span>
+    </div>
+  </footer>
+</div>
+
+<script>
+"use strict";
+const DPR = Math.min(2, window.devicePixelRatio||1);
+
+/* ───────── colour helpers ───────── */
+function hex(h){h=h.replace('#','');return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];}
+function rgb(a){return 'rgb('+a[0]+','+a[1]+','+a[2]+')';}
+function mix(a,b,t){return [a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t].map(Math.round);}
+function lighten(a,t){return mix(a,[255,255,255],t);}
+const CY=hex('#3de0e0'), AM=hex('#ffb23d'), RD=hex('#ff5a4d');
+function tintPct(p){ p=Math.max(0,Math.min(100,p));
+  return p<30 ? mix(CY,AM,p/30) : mix(AM,RD,(p-30)/70); }
+
+/* ───────── characters (skins) ───────── */
+// glow: bloom radius; rad: corner radius frac (0..0.5 of min side); tex: surface texture
+const HEROES = {
+  lumi:{ name:'Lumi', tag:'EMO-омаж · мягкое циан-свечение, пружинит', hue:'#3de0e0',
+         baseW:30, baseH:36, rad:.46, glow:16, tex:'smooth', spec:'one', autoTint:true,
+         pal:['#3de0e0','#ffb23d','#ff5a4d'] },
+  glyph:{ name:'Glyph', tag:'Ретро CRT · фосфор, сканлайны, тёплый бленд', hue:'#5bf08a',
+         baseW:32, baseH:34, rad:.30, glow:14, tex:'scan', spec:'one', autoTint:false,
+         pal:['#5bf08a','#9bffb8','#0a1a10'] },
+  pip:{  name:'Pip', tag:'8-bit · крупные пиксели, жёсткие края', hue:'#7cc4ff',
+         baseW:30, baseH:34, rad:.12, glow:8, tex:'pixel', spec:'pixel', autoTint:false,
+         pal:['#7cc4ff','#ffe24a','#ff7ad1'] },
+  vox:{  name:'Vox', tag:'Kawaii · высокие глянцевые глаза, двойной блик', hue:'#b69bff',
+         baseW:30, baseH:42, rad:.48, glow:20, tex:'gloss', spec:'two', autoTint:false,
+         pal:['#b69bff','#ff9bd0','#9bf0ff'] },
+};
+
+/* ───────── emotions (the four-lever dictionary) ─────────
+   w,h        : proportion multipliers
+   topDrop    : 0..1 top lid lowered (frac of eye height)
+   topTilt    : >0 inner-corner down (angry), <0 outer-corner down (sad)
+   botRaise   : 0..1 bottom lid raised (happy squint)
+   botCurve   : 0..1 upward bow of the lower lid edge
+   lookX/Y    : gaze offset (frac)
+   tilt       : whole-eye rotation (deg)
+   asym       : extra topTilt on the right eye only (annoyed/confused)
+   special    : heart|star|slit|closed
+   sparkle    : extra glints (handled by special/star)
+   col        : colour override
+   motion     : idle behaviour                                                   */
+const E = {
+  neutral:      {ru:'Нейтрально',  w:1,   h:1,   topDrop:.04, motion:'idle'},
+  happy:        {ru:'Радость',     w:1,   h:.94, topDrop:.04, botRaise:.34, botCurve:.55, motion:'nod', sparkle:1},
+  excited:      {ru:'Восторг',     w:1.04,h:1.08,topDrop:0,   botRaise:.1, motion:'bounce', special:'star'},
+  love:         {ru:'Влюблённость',w:1,   h:1,   special:'heart', col:'#ff6fb0', motion:'pulse'},
+  surprised:    {ru:'Удивление',   w:1.06,h:1.32,topDrop:0,   motion:'pop'},
+  curious:      {ru:'Любопытство', w:1,   h:1,   lookX:.55, lookY:-.08, tilt:7, motion:'saccade'},
+  confused:     {ru:'Замешательство',w:1, h:1,   tilt:9, topTilt:.18, asym:.5, motion:'sway'},
+  sad:          {ru:'Грусть',      w:1,   h:.86, topDrop:.14, topTilt:-.6, lookY:.22, motion:'slow'},
+  disappointed: {ru:'Разочарование',w:1,  h:.8,  topDrop:.3,  topTilt:-.3, lookY:.12, motion:'slow'},
+  bored:        {ru:'Скука',       w:1.12,h:.55, topDrop:.34, motion:'saccade-heavy'},
+  angry:        {ru:'Злость',      w:1,   h:.96, topDrop:.08, topTilt:.72, col:'#ff5a4d', motion:'shake'},
+  annoyed:      {ru:'Раздражение', w:1,   h:.85, topDrop:.22, topTilt:.35, asym:.45, col:'#ff8a3d', motion:'shake-weak'},
+  wink:         {ru:'Подмигивание',w:1,   h:.94, botRaise:.34, botCurve:.55, motion:'wink', sparkle:1},
+  sleepy:       {ru:'Сонливость',  w:1,   h:.72, topDrop:.5,  lookY:.1, motion:'drowse'},
+  sleep:        {ru:'Сон',         w:1,   h:1,   special:'closed', motion:'breathe'},
+  sick:         {ru:'Недомогание', w:.96, h:.9,  topDrop:.22, topTilt:-.15, col:'#9bd16a', motion:'tremble-sway'},
+  scared:       {ru:'Испуг',       w:.9,  h:1.26,topDrop:0,   col:'#cfe8ea', motion:'tremble'},
+  laser:        {ru:'Лазер',       w:1,   h:.26, special:'slit', col:'#ff4030', motion:'flash'},
+  demon:        {ru:'«Демон»',     w:1,   h:1,   topDrop:.06, topTilt:.6, special:'demon', col:'#ff3326', motion:'menace'},
+  celebrate:    {ru:'Праздник',    w:1,   h:.94, botRaise:.34, botCurve:.55, motion:'bounce', special:'star'},
+};
+const CORE = ['neutral','happy','excited','love','surprised','curious','sad','bored','angry','annoyed','sleepy','sick','scared','demon'];
+const ALL  = Object.keys(E);
+
+/* ───────── eye sprite builder (baked silhouette, like firmware 64×64) ───────── */
+const SP = 120;                       // sprite px box (logical)
+const spriteCache = new Map();
+function roundRect(ctx,x,y,w,h,r){
+  r=Math.min(r,w/2,h/2);
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+function heartPath(ctx,cx,cy,s){
+  ctx.beginPath();
+  ctx.moveTo(cx,cy+s*0.55);
+  ctx.bezierCurveTo(cx-s*1.15,cy-s*0.25, cx-s*0.5,cy-s*0.95, cx,cy-s*0.35);
+  ctx.bezierCurveTo(cx+s*0.5,cy-s*0.95, cx+s*1.15,cy-s*0.25, cx,cy+s*0.55);
+  ctx.closePath();
+}
+function starGlint(ctx,cx,cy,r){
+  ctx.beginPath();
+  for(let i=0;i<8;i++){ const a=i*Math.PI/4; const rr=(i%2?r*0.4:r);
+    ctx[i?'lineTo':'moveTo'](cx+Math.cos(a)*rr, cy+Math.sin(a)*rr); }
+  ctx.closePath();
+}
+
+function buildSprite(heroId, emoId, side, colArr){
+  const key = heroId+'|'+emoId+'|'+side+'|'+colArr.join(',');
+  if(spriteCache.has(key)) return spriteCache.get(key);
+  const sk = HEROES[heroId], em = E[emoId];
+  const cv = document.createElement('canvas');
+  cv.width = SP*DPR; cv.height = SP*DPR;
+  const ctx = cv.getContext('2d'); ctx.scale(DPR,DPR);
+  const cx = SP/2, cy = SP/2;
+  const col = em.col ? hex(em.col) : colArr;
+  const w = sk.baseW*(em.w||1), h = sk.baseH*(em.h||1);
+  const r = Math.min(w,h)*sk.rad;
+
+  // SPECIAL: closed (sleep) — a soft glowing line
+  if(em.special==='closed'){
+    ctx.save(); ctx.shadowColor=rgb(col); ctx.shadowBlur=sk.glow*.8;
+    ctx.strokeStyle=rgb(lighten(col,.15)); ctx.lineWidth=5; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(cx-w*.55,cy); ctx.quadraticCurveTo(cx,cy+5,cx+w*.55,cy); ctx.stroke();
+    ctx.restore(); spriteCache.set(key,cv); return cv;
+  }
+
+  // base silhouette path
+  const drawBase = ()=>{
+    if(em.special==='heart'){ heartPath(ctx,cx,cy,Math.max(w,h)*.62); }
+    else { roundRect(ctx,cx-w/2,cy-h/2,w,h,r); }
+  };
+
+  // 1) glow bloom (follows the silhouette, like halo)
+  ctx.save();
+  ctx.shadowColor=rgb(col); ctx.shadowBlur=sk.glow; ctx.fillStyle=rgb(col);
+  drawBase(); ctx.fill(); ctx.fill();
+  ctx.restore();
+
+  // 2) solid core + vertical gradient brighter near top (lens feel)
+  ctx.save(); drawBase(); ctx.clip();
+  const g=ctx.createLinearGradient(0,cy-h/2,0,cy+h/2);
+  g.addColorStop(0,rgb(lighten(col, sk.tex==='gloss'?.45:.3)));
+  g.addColorStop(.55,rgb(col));
+  g.addColorStop(1,rgb(mix(col,[0,0,0],.18)));
+  ctx.fillStyle=g; ctx.fillRect(cx-w,cy-h,w*2,h*2);
+
+  // texture: scanlines (Glyph)
+  if(sk.tex==='scan'){
+    ctx.globalCompositeOperation='destination-out'; ctx.fillStyle='#000';
+    for(let y=cy-h/2; y<cy+h/2; y+=3){ ctx.fillRect(cx-w, y, w*2, 1.1); }
+    ctx.globalCompositeOperation='source-over';
+  }
+  ctx.restore();
+
+  // 3) eyelids (cut with destination-out so glow is removed too) — skip for heart/slit
+  if(em.special!=='heart' && em.special!=='slit'){
+    ctx.save(); ctx.globalCompositeOperation='destination-out'; ctx.fillStyle='#000';
+    const bigW=w*2, top=cy-h/2;
+    let tilt=(em.topTilt||0); if(side==='R') tilt=-tilt;
+    if(em.asym && side==='R') tilt += (side==='R'? (em.topTilt>=0?em.asym:-em.asym):0);
+    const drop=(em.topDrop||0);
+    if(drop>0 || tilt!==0){
+      const baseY=top+drop*h, tp=tilt*h*0.6;
+      ctx.beginPath();
+      ctx.moveTo(cx-bigW, cy-h*2); ctx.lineTo(cx+bigW, cy-h*2);
+      ctx.lineTo(cx+bigW, baseY-tp); ctx.lineTo(cx-bigW, baseY+tp); ctx.closePath(); ctx.fill();
+    }
+    // demon: vertical slit darkening (narrow pupil) via two side cuts
+    if(em.special==='demon'){
+      ctx.fillRect(cx-w/2-2, cy-h/2, w*0.34, h);
+      ctx.fillRect(cx+w/2-w*0.34+2, cy-h/2, w*0.34, h);
+    }
+    // bottom lid (happy squint) — upward-bowed edge
+    const raise=(em.botRaise||0);
+    if(raise>0){
+      const bot=cy+h/2, edgeY=bot-raise*h, bow=(em.botCurve||0)*h*0.5;
+      ctx.beginPath();
+      ctx.moveTo(cx-bigW, cy+h*2); ctx.lineTo(cx+bigW, cy+h*2);
+      ctx.lineTo(cx+bigW, edgeY);
+      ctx.quadraticCurveTo(cx, edgeY-bow, cx-bigW, edgeY); ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // 4) specular highlight(s)
+  if(sk.spec!=='pixel' && em.h>=.5 && em.special!=='slit'){
+    ctx.save(); ctx.fillStyle='rgba(255,255,255,.92)';
+    const hx=cx-w*0.22, hy=cy-h*0.24;
+    roundRect(ctx,hx-w*.13,hy-h*.13,w*.26,h*.2,Math.min(w,h)*.12); ctx.fill();
+    if(sk.spec==='two'){ ctx.globalAlpha=.7; ctx.beginPath();
+      ctx.arc(cx+w*0.16, cy+h*0.06, Math.min(w,h)*.09,0,7); ctx.fill(); }
+    ctx.restore();
+  }
+
+  // 5) special glints: star (excited/celebrate), heart sheen handled by spec above
+  if(em.special==='star'){
+    ctx.save(); ctx.fillStyle='rgba(255,255,255,.95)'; ctx.shadowColor='#fff'; ctx.shadowBlur=6;
+    starGlint(ctx,cx-w*0.18,cy-h*0.2,Math.min(w,h)*.16); ctx.fill(); ctx.restore();
+  }
+
+  // 6) laser beam dot
+  if(em.special==='slit'){
+    ctx.save(); ctx.fillStyle='#fff'; ctx.shadowColor=rgb(col); ctx.shadowBlur=14;
+    ctx.beginPath(); ctx.arc(cx,cy,3.2,0,7); ctx.fill(); ctx.restore();
+  }
+
+  // pixelation pass (Pip): downsample then nearest-neighbour upscale
+  if(sk.tex==='pixel'){
+    const px=14; const tmp=document.createElement('canvas'); tmp.width=px; tmp.height=px;
+    const tc=tmp.getContext('2d'); tc.imageSmoothingEnabled=false;
+    tc.drawImage(cv,0,0,px,px);
+    ctx.clearRect(0,0,SP,SP); ctx.imageSmoothingEnabled=false;
+    ctx.drawImage(tmp,0,0,px,px,0,0,SP,SP);
+  }
+
+  spriteCache.set(key,cv); return cv;
+}
+
+/* ───────── motion: per-frame transform on the sprite ───────── */
+function motionXf(motion, t, side){
+  const s = side==='R'?1:-1; let dx=0,dy=0,sx=1,sy=1,rot=0;
+  const blink = ()=>{ const p=(t%3.4); return p>3.15 ? Math.max(.08, 1-(p-3.15)/0.12*((p-3.15)<.12? (p-3.15)/.12<.5?1:0:0)) : 1; };
+  // simpler blink: quick close near end of a ~3.4s cycle
+  function bl(period){ const p=t%period; const c=0.16; if(p>period-c){ const k=(p-(period-c))/c; return Math.abs(Math.cos(k*Math.PI))*0.92+0.08;} return 1; }
+  switch(motion){
+    case 'idle':         sy=bl(3.4); dx=Math.sin(t*0.7)*0.6; break;
+    case 'nod':          sy=bl(3.2); dy=Math.sin(t*2.2)*1.1; break;
+    case 'bounce':       dy=-Math.abs(Math.sin(t*4.2))*4.0; sy=bl(2.8); break;
+    case 'pulse':        sx=sy=1+Math.sin(t*3.0)*0.06; break;
+    case 'pop':          sx=sy=1+Math.sin(t*2.4)*0.05; dy=Math.sin(t*2.4)*-1; break;
+    case 'saccade':      dx=(Math.sin(t*0.9)>0?1:-1)*2.0; sy=bl(3.6); break;
+    case 'saccade-heavy':dx=Math.sin(t*0.5)*3.2; sy=bl(5.5); break;
+    case 'sway':         rot=Math.sin(t*1.6)*3*Math.PI/180; dx=Math.sin(t*1.6)*1.2; break;
+    case 'slow':         sy=bl(5.0); dy=Math.sin(t*0.8)*0.6; break;
+    case 'drowse':       sy=bl(4.2)*(0.96+Math.sin(t*0.6)*0.04); break;
+    case 'breathe':      sx=sy=1+Math.sin(t*1.2)*0.04; break;
+    case 'shake':        dx=Math.sin(t*22)*1.3; break;
+    case 'shake-weak':   dx=Math.sin(t*16)*0.8; break;
+    case 'tremble':      dx=Math.sin(t*40)*1.0; dy=Math.cos(t*37)*0.8; break;
+    case 'tremble-sway': dx=Math.sin(t*34)*0.8+Math.sin(t*0.8)*1.4; dy=Math.cos(t*31)*0.6; break;
+    case 'flash':        sx=1+Math.max(0,Math.sin(t*5))*0.04; break;
+    case 'menace':       sx=sy=1+Math.sin(t*1.4)*0.03; dx=Math.sin(t*0.6)*0.5; break;
+    case 'wink':         break; // handled per-eye in drawPair
+    default:             sy=bl(3.4);
+  }
+  return {dx,dy,sx,sy,rot};
+}
+
+/* ───────── draw a pair of eyes onto a canvas ───────── */
+function drawPair(ctx, W, H, heroId, emoId, t, pct){
+  const sk=HEROES[heroId], em=E[emoId];
+  ctx.clearRect(0,0,W,H);
+  const col = sk.autoTint ? tintPct(pct) : hex(sk.hue);
+  const gap = W*0.085;                          // gap between eyes
+  const eyeBox = Math.min(W*0.46, H*0.92);
+  const scale = eyeBox/SP;
+  const cy = H/2;
+  const lookX=(em.lookX||0), lookY=(em.lookY||0);
+  [['L', W/2 - gap/2 - eyeBox/2],['R', W/2 + gap/2 + eyeBox/2]].forEach(([side,ecx])=>{
+    let m = motionXf(em.motion, t, side);
+    // wink: right eye stays open-happy, left closes
+    let useEmo = emoId;
+    if(em.motion==='wink'){ const closing = (t%2.6)>1.2 && (t%2.6)<1.8;
+      if(side==='L'){ m.sy = closing? 0.12 : 1; } }
+    const sprite = buildSprite(heroId, useEmo, side, col);
+    ctx.save();
+    ctx.translate(ecx + lookX*eyeBox*0.16 + m.dx*scale*2,
+                  cy  + lookY*eyeBox*0.16 + m.dy*scale*2);
+    if(em.tilt) ctx.rotate((side==='R'?-1:1)*em.tilt*Math.PI/180);
+    ctx.rotate(m.rot);
+    ctx.scale(m.sx, m.sy);
+    ctx.drawImage(sprite, -eyeBox/2, -eyeBox/2, eyeBox, eyeBox);
+    ctx.restore();
+  });
+}
+
+/* ───────── render the levers ───────── */
+const LEVERS=[
+  {n:'рычаг 01',h:'Веки',p:'Угол и закрытие верхнего/нижнего века: внутрь-вниз = злость, наружу-вниз = грусть, опущено = сон, нижнее вверх = радостный прищур.'},
+  {n:'рычаг 02',h:'Морфинг',p:'Пропорции одного и того же глаза: высокий и узкий = удивление/испуг, низкий и широкий = скука/усталость.'},
+  {n:'рычаг 03',h:'Взгляд',p:'Смещение и наклон: глаза косят в сторону = любопытство, наклон «головы» = замешательство.'},
+  {n:'рычаг 04',h:'Искры',p:'Дополнительные блики и формы: звёзды = восторг, сердце = влюблённость, второй блик = глянцевый kawaii.'},
+];
+const lev=document.getElementById('levers');
+LEVERS.forEach(l=>{const d=document.createElement('div');d.className='lever';
+  d.innerHTML=`<div class="no">${l.n}</div><h3>${l.h}</h3><p>${l.p}</p>`;lev.appendChild(d);});
+
+/* ───────── state ───────── */
+let active='lumi', showAll=false, playing=true, pct=22, emoSel='neutral';
+const canvases=[];   // {ctx,W,H,getEmo}
+function regCanvas(cv, getEmo){
+  const ctx=cv.getContext('2d');
+  function size(){ const r=cv.getBoundingClientRect();
+    cv.width=Math.max(1,r.width*DPR); cv.height=Math.max(1,r.height*DPR);
+    ctx.setTransform(DPR,0,0,DPR,0,0); }
+  size(); const o={cv,ctx,getEmo,W:()=>cv.width/DPR,H:()=>cv.height/DPR,size};
+  canvases.push(o); return o;
+}
+
+/* hero picker cards */
+const heroesEl=document.getElementById('heroes');
+const heroThumbs={};
+Object.entries(HEROES).forEach(([id,sk])=>{
+  const b=document.createElement('button'); b.className='hero'+(id===active?' on':'');
+  b.style.setProperty('--hc',sk.hue); b.dataset.id=id;
+  b.innerHTML=`<canvas></canvas><div class="hn"><b>${sk.name}</b><span>${id}</span></div>
+    <div class="ht">${sk.tag}</div><div class="pal">${sk.pal.map(c=>`<i style="background:${c}"></i>`).join('')}</div>`;
+  heroesEl.appendChild(b);
+  heroThumbs[id]=regCanvas(b.querySelector('canvas'), ()=> 'neutral');
+  heroThumbs[id]._hero=id;
+  b.addEventListener('click',()=>setHero(id));
+});
+
+/* device canvas */
+const devO=regCanvas(document.getElementById('dev'), ()=>emoSel);
+
+/* emotion grid */
+const gridEl=document.getElementById('grid');
+function buildGrid(){
+  gridEl.innerHTML='';
+  const list = showAll?ALL:CORE;
+  list.forEach((id,i)=>{
+    const em=E[id];
+    const t=document.createElement('button'); t.className='tile'+(id===emoSel?' sel':'');
+    t.style.setProperty('--hc',HEROES[active].hue); t.style.setProperty('--i',i); t.dataset.id=id;
+    t.innerHTML=`<span class="mo">${em.motion}</span><canvas></canvas>
+      <div class="cap"><span class="ru">${em.ru}</span><span class="en">${id}</span></div>`;
+    gridEl.appendChild(t);
+    const o=regCanvas(t.querySelector('canvas'), ()=>id); o._grid=true;
+    t.addEventListener('click',()=>{ emoSel=id; document.getElementById('nowRu').textContent=em.ru;
+      document.getElementById('nowEn').textContent=id;
+      document.querySelectorAll('.tile').forEach(x=>x.classList.toggle('sel',x.dataset.id===id)); });
+  });
+}
+function setHero(id){
+  active=id;
+  document.querySelectorAll('.hero').forEach(x=>x.classList.toggle('on',x.dataset.id===id));
+  document.querySelectorAll('.tile').forEach(x=>x.style.setProperty('--hc',HEROES[id].hue));
+}
+buildGrid();
+
+/* controls */
+const pctEl=document.getElementById('pct'), pctv=document.getElementById('pctv');
+pctEl.addEventListener('input',()=>{ pct=+pctEl.value; pctv.textContent=pct+'%'; });
+document.getElementById('tgAll').addEventListener('click',e=>{ showAll=!showAll;
+  e.target.classList.toggle('on',showAll); e.target.textContent=showAll?'только основные':'показать все 20'; buildGrid(); });
+document.getElementById('tgPlay').addEventListener('click',e=>{ playing=!playing;
+  e.target.classList.toggle('on',playing); e.target.textContent=playing?'пауза':'играть'; });
+
+window.addEventListener('resize',()=>{ canvases.forEach(o=>o.size()); });
+
+/* ───────── animation loop ───────── */
+let t0=performance.now()/1000, tAcc=0, last=t0;
+function frame(){
+  const now=performance.now()/1000;
+  if(playing) tAcc += (now-last); last=now;
+  const t=tAcc;
+  canvases.forEach(o=>{
+    const hero = o._hero || active;
+    const emo = o.getEmo();
+    drawPair(o.ctx, o.W(), o.H(), hero, emo, t, pct);
+  });
+  requestAnimationFrame(frame);
+}
+// init device label
+document.getElementById('nowRu').textContent=E[emoSel].ru;
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
