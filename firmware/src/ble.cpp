@@ -92,6 +92,16 @@ static volatile uint16_t conn_handle = BLE_HS_CONN_HANDLE_NONE;
 // that is merely idle — e.g. the daemon is connected but its OAuth token
 // is broken, so no payload is sent — is NOT force-cycled every poll.
 #define LINK_DEAD_MS 300000UL
+// Hard self-heal: once the device has connected at least once, a disconnect
+// that the daemon/macOS can't recover from (CoreBluetooth wedged, the device
+// advertising but undiscoverable) leaves it stuck on "Переподключение" forever.
+// If we stay DISCONNECTED longer than this AFTER a prior connection, reboot to
+// fully reset the radio + emit a fresh advertisement. `was_connected` gates it
+// so a daemon-off / never-connected state can't reboot-loop (it resets on boot
+// and only re-arms on the next real connect → at most one reboot per episode).
+static volatile bool     was_connected = false;
+static volatile uint32_t last_disconnect_ms = 0;
+#define BLE_SELFHEAL_MS 180000UL
 static char rx_buf[BLE_BUF_SIZE];
 static volatile bool data_ready = false;
 // Diagnostic bridge — fires one "[BOOT] …" notify on TX after every
@@ -169,6 +179,13 @@ static bool start_advertising() {
 #endif
     adv->enableScanResponse(true);
     adv->setName(DEVICE_NAME);
+    // Fast advertising interval (100-200 ms, units of 0.625 ms) so macOS
+    // CoreBluetooth rediscovers us quickly after a disconnect. The default is
+    // slower, which (together with macOS missing the first 1-2 scan windows)
+    // stretched every reconnect to 15-30 s of "Переподключение". We're on USB
+    // power, so the extra advertising airtime costs nothing.
+    adv->setMinInterval(0xA0);   // 160 * 0.625 ms = 100 ms
+    adv->setMaxInterval(0x140);  // 320 * 0.625 ms = 200 ms
     bool ok = adv->start();
     // start() can return false if advertising is already running — that's
     // still the desired state, so don't demote to DISCONNECTED in that case.
@@ -181,6 +198,7 @@ static bool start_advertising() {
 class ServerCallbacks : public NimBLEServerCallbacks {
     void onConnect(NimBLEServer* s, NimBLEConnInfo& info) override {
         state = BLE_STATE_CONNECTED;
+        was_connected = true;          // arm the disconnect self-heal
         conn_handle = info.getConnHandle();
         last_activity_ms = millis();
         // Request a short supervision timeout (4.0s) so a dropped link is
@@ -215,6 +233,7 @@ class ServerCallbacks : public NimBLEServerCallbacks {
         state = BLE_STATE_DISCONNECTED;
         conn_handle = BLE_HS_CONN_HANDLE_NONE;
         need_advertise = true;
+        last_disconnect_ms = millis();   // start the self-heal countdown
         Serial.printf("BLE: disconnected (reason=%d)\n", reason);
     }
 
@@ -480,6 +499,19 @@ void ble_tick(void) {
         state = BLE_STATE_DISCONNECTED;
         conn_handle = BLE_HS_CONN_HANDLE_NONE;
         need_advertise = true;
+        last_disconnect_ms = now;
+    }
+
+    // Hard self-heal: disconnected too long AFTER a prior connection → reboot
+    // to fully reset the radio + emit a fresh advertisement. Recovers the
+    // "stuck on Переподключение for hours" state (macOS/daemon can't rediscover
+    // us). `was_connected` resets on boot, so a daemon-off state can't loop.
+    if (was_connected && state != BLE_STATE_CONNECTED &&
+        (now - last_disconnect_ms) > BLE_SELFHEAL_MS) {
+        Serial.println("BLE: disconnected too long — rebooting to reset radio");
+        Serial.flush();
+        delay(40);
+        esp_restart();
     }
 
     // Self-healing watchdog: if we're not connected and the controller is
@@ -519,6 +551,23 @@ void ble_tick(void) {
             tx_char->setValue((uint8_t*)hbuf, (size_t)n);
             tx_char->notify();
         }
+    }
+
+    // Fast keep-alive notify (every 4s while connected). Two jobs:
+    //  1) Liveness for the daemon's stale-link guard: it watches notify arrival
+    //     and reconnects if none for STALE_LINK_S. The 60s [HEAP] is too coarse;
+    //     this gives ~4s granularity → the daemon recovers a dead link in ~15s
+    //     instead of minutes (macOS keeps is_connected=True after a silent drop).
+    //  2) Keeps the link "active" so macOS/CoreBluetooth doesn't park an idle
+    //     connection (parking trips the supervision timeout → reason 520 drop).
+    // 1-byte payload the daemon ignores (its _on_tx only logs [BOOT]/[HEAP]).
+    static uint32_t ka_tx_last_ms = 0;
+    if (state == BLE_STATE_CONNECTED && tx_char &&
+        (now - ka_tx_last_ms) >= 4000UL) {
+        ka_tx_last_ms = now;
+        uint8_t ka = 0x00;
+        tx_char->setValue(&ka, 1);
+        tx_char->notify();
     }
 
     // Diagnostic bridge — fire one "[BOOT] …" notify per connection.

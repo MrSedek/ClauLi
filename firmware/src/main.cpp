@@ -62,6 +62,10 @@ static void my_flush_cb(lv_display_t* disp, const lv_area_t* area, uint8_t* px_m
 // Dump the active screen over Serial in the protocol screenshot.sh expects.
 static void do_screenshot() {
     int32_t w = logical_w(), h = logical_h();
+    // Re-arm BLOCKING tx so the big framebuffer dump can't be dropped by the
+    // non-blocking default set in setup(). A reader (screenshot.sh) is attached
+    // here, so the FIFO drains and this won't actually stall.
+    Serial.setTxTimeoutMs(1000);
     Serial.printf("SCREENSHOT_START %d %d %d\n", (int)w, (int)h, (int)(w * h * 2));
     Serial.flush();
     g_screenshot = true;
@@ -69,6 +73,8 @@ static void do_screenshot() {
     lv_refr_now(lv_display_get_default());
     g_screenshot = false;
     Serial.println("SCREENSHOT_END");
+    Serial.flush();
+    Serial.setTxTimeoutMs(0);   // back to non-blocking for normal operation
 }
 
 // ─── Parse JSON ─────────────────────────────────────────────────────────────
@@ -237,6 +243,15 @@ static void btn_poll(void) {
 // ─── Setup ──────────────────────────────────────────────────────────────────
 void setup() {
     Serial.begin(115200);
+    // Non-blocking USB-CDC TX. The daemon talks BLE, so in normal use NOTHING
+    // drains this serial port. With the default (blocking) timeout, once the
+    // CDC TX FIFO fills, every Serial.print() BLOCKS the single-core loop —
+    // which starves NimBLE (→ supervision-timeout link drops) and faults the
+    // USB-Serial-JTAG peripheral (→ ESP_RST_USB reboots). Both were observed
+    // clustering during config storms (rapid form/anim edits → heavy logging).
+    // 0 = drop when the FIFO is full instead of blocking. do_screenshot()
+    // re-arms a blocking timeout around its framebuffer dump.
+    Serial.setTxTimeoutMs(0);
     delay(300);
     // Boot reason + heap snapshot — first line on every restart so user can
     // grep the serial log when investigating "device keeps reconnecting" bug
@@ -338,6 +353,30 @@ static ble_state_t last_ble_state = BLE_STATE_INIT;
 void loop() {
     lv_timer_handler();
     ui_tick_anim();
+    // Panel-refresh safeguard. Symptom seen in the field: the timer-driven
+    // LVGL refresh stopped pushing updates to the physical ST7789 (clock
+    // frozen, no animation) even though the loop, framebuffer and lv_tick
+    // (millis) were all alive — an explicit lv_refr_now (the same call the
+    // screenshot path uses) DID update the panel. So drive the refresh
+    // explicitly every ~33 ms; the live display then can't freeze regardless
+    // of why the timer refresh stalls. Only dirty areas render → cheap when idle.
+    {
+        static uint32_t _last_refr_ms = 0;
+        uint32_t _refr_ms = millis();
+        if (_refr_ms - _last_refr_ms >= 66) {   // ~15 fps — full-screen render is
+                                                 // heavy on the single-core loop;
+                                                 // keep it modest so it can't starve BLE
+            _last_refr_ms = _refr_ms;
+            // Force the WHOLE screen dirty BEFORE refreshing. lv_refr_now only
+            // renders already-invalidated areas; the live per-object
+            // invalidation path is what broke (panel frozen while framebuffer
+            // updates), so without this the call is a no-op. This is the exact
+            // pair do_screenshot uses — confirmed to update the physical panel.
+            lv_obj_invalidate(lv_screen_active());
+            lv_display_t* _disp = lv_display_get_default();
+            if (_disp) lv_refr_now(_disp);
+        }
+    }
     ble_tick();
     ota_tick();
     splash_tick();
@@ -389,7 +428,40 @@ void loop() {
                       (unsigned)ESP.getFreeHeap());
         ui_update_ble_status(bs, ble_get_device_name(), ble_get_mac_address());
         emo_set_connected(bs == BLE_STATE_CONNECTED);
-        emo2_set_connected(bs == BLE_STATE_CONNECTED);
+        // emo2's connected-state is debounced below (not here) so a brief BLE
+        // drop doesn't flash the loading screen.
+    }
+
+    // --- emo2 connected-state with disconnect debounce ---------------------
+    // A brief BLE drop — e.g. the macOS supervision-timeout blip that can
+    // happen for ~30-60s right after the daemon is (re)started, then
+    // self-heals — reconnects in ~9s. Propagating it straight to emo2 flips
+    // the screen to the "Переподключение" loading animation on every blip, so
+    // the user sees their configured animation "stop working". Instead we HOLD
+    // the connected display for EMO2_DISC_GRACE_MS; the loading screen only
+    // appears if the link stays down longer than that (genuine daemon-off /
+    // out-of-range). Reconnect within the grace is seamless — no boot-in
+    // re-trigger, no loading flash, the animation just keeps running.
+    {
+        static uint32_t emo2_disc_since_ms = 0;
+        static bool     emo2_ui_connected  = false;
+        // 45s: covers a full daemon restart (~25-35s incl. macOS's missed
+        // first scans) so restarting the daemon keeps the animation on screen
+        // instead of flashing "Переподключение". Still well under the 150s
+        // data-stale threshold. (A full ESP power-cycle can't be hidden — the
+        // chip boots with no usage data, so it must show connecting until the
+        // daemon reconnects and pushes fresh data.)
+        const uint32_t  EMO2_DISC_GRACE_MS = 45000UL;
+        if (bs == BLE_STATE_CONNECTED) {
+            emo2_disc_since_ms = 0;
+            if (!emo2_ui_connected) { emo2_ui_connected = true; emo2_set_connected(true); }
+        } else if (emo2_ui_connected) {
+            if (emo2_disc_since_ms == 0) emo2_disc_since_ms = _now_ms;
+            if ((_now_ms - emo2_disc_since_ms) >= EMO2_DISC_GRACE_MS) {
+                emo2_ui_connected = false;
+                emo2_set_connected(false);
+            }
+        }
     }
 
 #ifdef EMO_SELFTEST
@@ -488,6 +560,10 @@ void loop() {
         // Orientation (web toggle persists to NVS — same as BTN_B but explicit)
         case 0x30: action_set_rotation_persisted(0); break;   // portrait
         case 0x31: action_set_rotation_persisted(1); break;   // landscape (90° CW)
+        // Character (skin) selector — ClauLi / Pixl / Old-TV (NVS-persisted; 0x34 Blob removed)
+        case 0x32: emo2_set_character(0); break;   // ClauLi
+        case 0x33: emo2_set_character(1); break;   // Pixl
+        case 0x35: emo2_set_character(3); break;   // Old-TV / CRT
         // Usage text mode (matches daemon CTRL_TEXT_*)
         case 0x44: emo2_set_text_mode(0); break;      // none
         case 0x45: emo2_set_text_mode(1); break;      // pct only
@@ -539,8 +615,12 @@ void loop() {
                 // Form picker — switch to ClauLi if not already showing.
                 if (ui_get_current_screen() != SCREEN_EMO2) ui_show_screen(SCREEN_EMO2);
                 emo2_set_mood_idx(cmd - 0x80);
-            } else if (cmd >= 0xA0 && cmd <= 0xBF) {
-                // Motion op — same routing as forms.
+            } else if (cmd >= 0xB0 && cmd <= 0xCF) {
+                // Complex scripted animation (canim) — 0xB0..0xCF (up to 32).
+                if (ui_get_current_screen() != SCREEN_EMO2) ui_show_screen(SCREEN_EMO2);
+                emo2_play_canim(cmd - 0xB0);
+            } else if (cmd >= 0xA0 && cmd <= 0xAF) {
+                // Motion op — 0xA0..0xAF (DM_NONE + 13 ops).
                 if (ui_get_current_screen() != SCREEN_EMO2) ui_show_screen(SCREEN_EMO2);
                 emo2_trigger_op(cmd - 0xA0);
             }

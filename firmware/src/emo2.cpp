@@ -114,6 +114,14 @@ static lv_obj_t* eye_halo[2]   = {nullptr, nullptr};
 static lv_obj_t* eye_base[2]   = {nullptr, nullptr};
 static lv_obj_t* eye_spec[2]   = {nullptr, nullptr};
 static lv_obj_t* obj_zzz       = nullptr;
+
+// ── Character (skin) selector ───────────────────────────────────────────────
+// Swaps the per-mood eye frame table. ALL other controls (colour, layout,
+// clock, text, timing, forms, motions) are character-agnostic and act on the
+// eye objects regardless of which table is live. NVS key `e2ch`, CTRL 0x32/0x33/0x35.
+typedef const lv_image_dsc_t* const FrameRow[2];
+static uint8_t   current_character = 0;     // 0=ClauLi 1=Pixl 3=Old-TV
+static FrameRow* active_base       = emo2_base_frames;
 static lv_obj_t* obj_status    = nullptr;  // reconnecting / info text
 static lv_obj_t* obj_info_s    = nullptr;  // session % text
 static lv_obj_t* obj_info_w    = nullptr;  // weekly % text
@@ -239,6 +247,13 @@ static bool      sleeping      = false;
 static bool      connected     = false;
 static bool      token_expired = false;     // CTRL 0x18 / 0x19 signal from daemon
 static bool      manual_mode   = false;     // CTRL 0x1A / 0x1B — disables auto schedulers
+// Complex scripted animations (canim): 10 multi-phase sequences fired by
+// CTRL 0xB0..0xB9 / the web "Сложные анимации" panel. Take over the eyes
+// like the diagnostics sequence while running.
+static bool      canim_active   = false;
+static uint8_t   canim_id       = 0;
+static uint32_t  canim_start_ms = 0;
+static int16_t   canim_phase    = -1;
 static bool      ota_active    = false;     // OTA upload in progress (set by ota.cpp via emo2_set_ota_progress)
 // % stats layout: 0=off, 1=bezel_orbit, 2=twin_columns, 3=hud_ribbon.
 // User picks from the gallery in the web UI; daemon pushes the active one on
@@ -461,6 +476,10 @@ struct emo2_state_cfg_t {
     uint8_t lc_r;           // custom layout RGB (when layout_color == 4)
     uint8_t lc_g;
     uint8_t lc_b;
+    // Part C — per-state form-rotation vs complex-animation mode.
+    uint8_t mode;           // 0=rotation (default), 1=canim
+    uint8_t canims[EMO2_MAX_FORMS_PER_STATE];  // canim indices (0..28); round-robin
+    uint8_t n_canims;
 };
 struct emo2_full_cfg_t {
     uint32_t magic;         // 0xE2C0FFEE — for forward-compat detection
@@ -470,11 +489,11 @@ struct emo2_full_cfg_t {
     uint8_t  _pad[3];
 };
 // Magic bumped 0xE2C0FFEE → 0xE2C0FFEF when Phase D added per-state
-// layout / text / layout_color fields to emo2_state_cfg_t. struct sizeof
-// changed too, so the load-time length check independently rejects
-// records from the previous schema. Users see factory defaults on first
-// boot after this firmware and re-pick their per-state visuals.
-#define EMO2_CFG_MAGIC 0xE2C0FFEF
+// layout / text / layout_color fields to emo2_state_cfg_t.
+// Magic bumped 0xE2C0FFEF → 0xE2C0FFF0 when Part C added mode/canims/n_canims
+// fields to emo2_state_cfg_t. The sizeof change independently rejects old NVS
+// records; users see factory defaults on first boot after this firmware.
+#define EMO2_CFG_MAGIC 0xE2C0FFF0
 
 // Sane fallback if NVS is empty and daemon hasn't pushed anything yet.
 static emo2_full_cfg_t emo2_cfg = {
@@ -484,18 +503,19 @@ static emo2_full_cfg_t emo2_cfg = {
         // custom_r/g/b, layout, text_source, text_format, text_placement,
         // layout_color, lc_r/g/b. 0xFF in any Phase-D field = "fall back to
         // global" (state machine resolves at apply time).
+        // Part C: mode=0 (rotation), canims={}, n_canims=0.
         // CONNECTED: neutral/happy/circle + blink/wave, halo=auto, layout=ribbon
         { {M_NEUTRAL, M_HAPPY, M_CIRCLE}, 3, {0/*blink*/, 9/*wave*/}, 2, 0, 0, 0, 0,
-          0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0, 0, 0 },
+          0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0, 0, 0, 0/*mode*/, {}, 0/*n_canims*/ },
         // CONNECTING: circle + pulse_alt, halo=cyan
         { {M_CIRCLE}, 1, {10/*pulse_alt*/}, 1, 1, 0, 0, 0,
-          0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0, 0, 0 },
+          0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0, 0, 0, 0/*mode*/, {}, 0/*n_canims*/ },
         // BLE_OFF: cross + upset + shake, halo=red
         { {M_CROSS, M_UPSET}, 2, {4/*shake*/}, 1, 3, 0, 0, 0,
-          0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0, 0, 0 },
+          0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0, 0, 0, 0/*mode*/, {}, 0/*n_canims*/ },
         // TOKEN_EXPIRED: cross + angry + warning, halo=red
         { {M_CROSS, M_ANGRY}, 2, {12/*warning*/}, 1, 3, 0, 0, 0,
-          0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0, 0, 0 },
+          0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0, 0, 0, 0/*mode*/, {}, 0/*n_canims*/ },
     },
     .active_layout = LAYOUT_BEZEL,
     // index by LAYOUT_*: OFF, BEZEL, COLUMNS, RIBBON, BROWS, PEARLS, CHIP, ECG
@@ -512,7 +532,7 @@ static bool emo2_cfg_loaded = false;       // true once NVS or daemon populated
 #define EMO2_DATA_STALE_MS 150000UL   // 2.5× POLL_INTERVAL (60s)
 static emo2_dstate_t prev_dstate = EST_BLE_OFF;
 static uint32_t      form_next_ms = 0, op_next_ms = 0;
-static uint8_t       rot_form_i   = 0, rot_op_i   = 0;
+static uint8_t       rot_form_i   = 0, rot_op_i   = 0, rot_canim_i = 0;
 
 // Forward decls — implementations live below the public API block.
 static void emo2_load_cfg_from_nvs(void);
@@ -733,11 +753,11 @@ static void apply_colours(void) {
     lv_color_t tint = halo_color(eff_session_pct());
     lv_color_t shadow = shadow_color(tint);
     for (int i = 0; i < 2; i++) {
-        lv_obj_set_style_image_recolor    (eye_base[i], tint,      0);
+        lv_obj_set_style_image_recolor    (eye_base[i], tint,     0);
         lv_obj_set_style_image_recolor_opa(eye_base[i], LV_OPA_COVER, 0);
-        lv_obj_set_style_image_recolor    (eye_halo[i], shadow,    0);
+        lv_obj_set_style_image_recolor    (eye_halo[i], shadow,   0);
         lv_obj_set_style_image_recolor_opa(eye_halo[i], LV_OPA_COVER, 0);
-        lv_obj_set_style_image_recolor    (eye_spec[i], EMO2_SPEC, 0);
+        lv_obj_set_style_image_recolor    (eye_spec[i], EMO2_SPEC, 0);  // white catchlight
         lv_obj_set_style_image_recolor_opa(eye_spec[i], LV_OPA_COVER, 0);
     }
 }
@@ -768,18 +788,26 @@ static bool mood_has_spec(uint8_t m) {
     }
 }
 
+static FrameRow* char_base_table(uint8_t ch) {
+    if (ch == 1) return emo2_base_frames_pixl;
+    if (ch == 3) return emo2_base_frames_tv;     // Old-TV / CRT screen eyes
+    return emo2_base_frames;
+}
+
+static void mood_entry_kick(uint8_t m);   // per-mood "living" signature (defined below)
+
 static void set_mood(uint8_t m) {
     cur_mood = m;
     for (int i = 0; i < 2; i++) {
-        lv_image_set_src(eye_base[i], emo2_base_frames[m][i]);
-        // Halo reuses the SAME silhouette as the base layer so its glow
-        // physically follows the mood contour (CROSS, SLIT, BRACKETS, etc.).
-        // Was: emo2_halo_frames[m][i] — pre-blurred bloom that read circular
-        // for every mood.
-        lv_image_set_src(eye_halo[i], emo2_base_frames[m][i]);
-        if (mood_has_spec(m)) lv_obj_clear_flag(eye_spec[i], LV_OBJ_FLAG_HIDDEN);
-        else                  lv_obj_add_flag  (eye_spec[i], LV_OBJ_FLAG_HIDDEN);
+        lv_image_set_src(eye_base[i], active_base[m][i]);
+        lv_image_set_src(eye_halo[i], active_base[m][i]);
+        bool spec_on = mood_has_spec(m);   // catchlight only on full-bodied shapes
+        if (spec_on) lv_obj_clear_flag(eye_spec[i], LV_OBJ_FLAG_HIDDEN);
+        else         lv_obj_add_flag  (eye_spec[i], LV_OBJ_FLAG_HIDDEN);
     }
+    // "Living" per-emotion signature: kick a fitting motion on every mood
+    // change (but not while a scripted sequence / manual mode owns the eyes).
+    if (active && !diag_active && !canim_active && !manual_mode) mood_entry_kick(m);
 }
 
 // ─── Animation callbacks ──────────────────────────────────────────────────
@@ -793,9 +821,22 @@ static void scale_x_cb(void* obj, int32_t v) {
     lv_image_set_scale_x((lv_obj_t*)obj, v);
 }
 
+// Last applied per-eye visual offset — lets a canim ease IN from the CURRENT
+// pose instead of snapping (points 2/3). Updated by both offset helpers below.
+static int eye_cur_dx[2] = {0, 0}, eye_cur_dy[2] = {0, 0};
+// When set, set_eye_mood keeps the catchlight HIDDEN regardless of mood — used
+// by wake_up2 so the white dot only appears once the wake animation FINISHES
+// (pts Pixl#4 / ClauLi#1). Cleared at canim exit.
+static bool canim_spec_suppress = false;
+
 // Apply a (dx, dy) offset to all three layers of both eyes. Centralised so
 // saccade / eye-roll / look-around / shake never fight over coordinates.
 static void apply_eye_offset(int dx, int dy) {
+    // Per-character easing flavour: Pixl snaps offsets to a coarse grid
+    // (digital/stepped). ClauLi/TV = smooth (unchanged).
+    if (current_character == 1) { dx = (dx / 3) * 3;   dy = (dy / 3) * 3; }
+    eye_cur_dx[0] = eye_cur_dx[1] = dx;   // track for ease-from-current (pts 2/3)
+    eye_cur_dy[0] = eye_cur_dy[1] = dy;
     for (int i = 0; i < 2; i++) {
         int cx = (i == 0) ? EYE_L_CX : EYE_R_CX;
         lv_obj_set_pos(eye_base[i], cx - 32 + dx,                  EYE_CY - 32 + dy);
@@ -806,6 +847,30 @@ static void apply_eye_offset(int dx, int dy) {
         lv_obj_set_pos(eye_spec[i], cx - BASE_PX / 4 - 4 + dx,     EYE_CY - BASE_PX / 3 + dy);
     }
 }
+// ── Per-eye control (asymmetric emotions) ───────────────────────────────────
+// Set ONE eye's silhouette independently (left/right different shapes), and
+// offset ONE eye independently. Used by the asymmetric complex animations.
+static void set_eye_mood(int i, uint8_t m) {
+    if (i < 0 || i > 1) return;
+    lv_image_set_src(eye_base[i], active_base[m][i]);
+    lv_image_set_src(eye_halo[i], active_base[m][i]);
+    // Manage this eye's catchlight per-mood so it ANIMATES with scene sprite
+    // swaps (point 4) and never floats over a thin/clipped shape.
+    if (eye_spec[i]) {
+        bool show = !canim_spec_suppress && mood_has_spec(m);
+        if (show) lv_obj_clear_flag(eye_spec[i], LV_OBJ_FLAG_HIDDEN);
+        else      lv_obj_add_flag  (eye_spec[i], LV_OBJ_FLAG_HIDDEN);
+    }
+}
+static void offset_one_eye(int i, int dx, int dy) {
+    if (i < 0 || i > 1) return;
+    eye_cur_dx[i] = dx; eye_cur_dy[i] = dy;   // track for ease-from-current
+    int cx = (i == 0) ? EYE_L_CX : EYE_R_CX;
+    lv_obj_set_pos(eye_base[i], cx - 32 + dx,                EYE_CY - 32 + dy);
+    lv_obj_set_pos(eye_halo[i], cx - HALO_SRC / 2 + dx,
+                                EYE_CY - HALO_SRC / 2 + dy + HALO_SHADOW_DY);
+    lv_obj_set_pos(eye_spec[i], cx - BASE_PX / 4 - 4 + dx,   EYE_CY - BASE_PX / 3 + dy);
+}
 static void zzz_anim_cb(void* obj, int32_t v) {
     if (!obj) return;
     lv_obj_set_style_translate_y((lv_obj_t*)obj, -v / 3, 0);
@@ -813,16 +878,32 @@ static void zzz_anim_cb(void* obj, int32_t v) {
 }
 
 // Smooth blink: scale_y 1.0 → 0.1 → 1.0 over 180 ms on all three layers.
+// Re-show the catchlight after a blink/wink completes (if the mood wants it).
+static void blink_restore_spec(lv_anim_t* a) {
+    (void)a;
+    for (int i = 0; i < 2; i++) {
+        if (!eye_spec[i]) continue;
+        bool show = mood_has_spec(cur_mood);
+        if (show) lv_obj_clear_flag(eye_spec[i], LV_OBJ_FLAG_HIDDEN);
+    }
+}
 static void do_blink(void) {
     for (int i = 0; i < 2; i++) {
-        lv_obj_t* targets[3] = {eye_base[i], eye_halo[i], eye_spec[i]};
-        for (int k = 0; k < 3; k++) {
+        // Hide the catchlight during the blink: squishing it (its pivot differs
+        // from the eye's) floats the white dot above the closing eye. Restored
+        // on completion.
+        if (eye_spec[i]) lv_obj_add_flag(eye_spec[i], LV_OBJ_FLAG_HIDDEN);
+        lv_obj_t* targets[2] = {eye_base[i], eye_halo[i]};
+        for (int k = 0; k < 2; k++) {
             lv_anim_t a; lv_anim_init(&a);
             lv_anim_set_var(&a, targets[k]);
             lv_anim_set_exec_cb(&a, scale_y_cb);
-            lv_anim_set_values(&a, 256, 32);
+            // Open value MUST be the true base scale (320), not 256 — otherwise
+            // the eye settles ~20% squished after every blink.
+            lv_anim_set_values(&a, BASE_SCALE, BASE_SCALE / 8);
             lv_anim_set_time(&a, 90);
             lv_anim_set_playback_time(&a, 90);
+            if (i == 0 && k == 0) lv_anim_set_completed_cb(&a, blink_restore_spec);
             lv_anim_start(&a);
         }
     }
@@ -866,18 +947,33 @@ static void do_warning_flicker(void) {
         lv_anim_set_time(&b, 220);
         lv_anim_set_playback_time(&b, 420);
         lv_anim_start(&b);
+
+        lv_anim_delete(eye_spec[i], scale_uniform_cb);
+        lv_anim_t c; lv_anim_init(&c);
+        lv_anim_set_var(&c, eye_spec[i]);
+        lv_anim_set_exec_cb(&c, scale_uniform_cb);
+        lv_anim_set_values(&c, SPEC_SCALE, SPEC_SCALE * 130 / 100);
+        lv_anim_set_time(&c, 220);
+        lv_anim_set_playback_time(&c, 420);
+        lv_anim_start(&c);
     }
 }
 
 // Wink: asymmetric blink on one eye only. ~100 ms close + 100 ms open.
 static void do_wink(int idx) {
     if (idx < 0 || idx > 1) return;
-    lv_obj_t* targets[3] = {eye_base[idx], eye_halo[idx], eye_spec[idx]};
+    // Each layer must return to ITS OWN base scale (base/halo 320, spec 402) —
+    // animating all three to a flat 256 left the winked eye ~20% small and it
+    // stayed that way (asymmetric after Flirt). Delete any in-flight scale_y
+    // anim first so repeated winks (Flirt) can't strand a half-applied value.
+    struct { lv_obj_t* o; int32_t open; } L[3] = {
+        { eye_base[idx], BASE_SCALE }, { eye_halo[idx], HALO_SCALE }, { eye_spec[idx], SPEC_SCALE } };
     for (int k = 0; k < 3; k++) {
+        lv_anim_delete(L[k].o, scale_y_cb);
         lv_anim_t a; lv_anim_init(&a);
-        lv_anim_set_var(&a, targets[k]);
+        lv_anim_set_var(&a, L[k].o);
         lv_anim_set_exec_cb(&a, scale_y_cb);
-        lv_anim_set_values(&a, 256, 32);
+        lv_anim_set_values(&a, L[k].open, L[k].open / 8);
         lv_anim_set_time(&a, 100);
         lv_anim_set_playback_time(&a, 100);
         lv_anim_start(&a);
@@ -905,6 +1001,15 @@ static void do_surprised(void) {
         lv_anim_set_time(&h, 180);
         lv_anim_set_playback_time(&h, 220);
         lv_anim_start(&h);
+
+        // Catchlight scales WITH the eye so the white dot doesn't float.
+        lv_anim_t s; lv_anim_init(&s);
+        lv_anim_set_var(&s, eye_spec[i]);
+        lv_anim_set_exec_cb(&s, scale_uniform_cb);
+        lv_anim_set_values(&s, SPEC_SCALE, SPEC_SCALE * 115 / 100);
+        lv_anim_set_time(&s, 180);
+        lv_anim_set_playback_time(&s, 220);
+        lv_anim_start(&s);
     }
 }
 
@@ -936,6 +1041,15 @@ static void do_confused(int idx) {
     lv_anim_set_time(&h, 320);
     lv_anim_set_playback_time(&h, 600);
     lv_anim_start(&h);
+
+    lv_anim_delete(eye_spec[idx], scale_uniform_cb);
+    lv_anim_t s; lv_anim_init(&s);
+    lv_anim_set_var(&s, eye_spec[idx]);
+    lv_anim_set_exec_cb(&s, scale_uniform_cb);
+    lv_anim_set_values(&s, SPEC_SCALE, SPEC_SCALE * 118 / 100);
+    lv_anim_set_time(&s, 320);
+    lv_anim_set_playback_time(&s, 600);
+    lv_anim_start(&s);
 }
 
 // Yawn: horizontal stretch (×1.25) then collapse — runs once when entering
@@ -955,13 +1069,15 @@ static void do_yawn(void) {
 
 // Boot-in: eyes "wake up" from a thin horizontal line to full height.
 static void do_boot_in(void) {
+    const int32_t open[3] = { BASE_SCALE, HALO_SCALE, SPEC_SCALE };
     for (int i = 0; i < 2; i++) {
         lv_obj_t* targets[3] = {eye_base[i], eye_halo[i], eye_spec[i]};
         for (int k = 0; k < 3; k++) {
             lv_anim_t a; lv_anim_init(&a);
             lv_anim_set_var(&a, targets[k]);
             lv_anim_set_exec_cb(&a, scale_y_cb);
-            lv_anim_set_values(&a, 16, 256);
+            // thin line → FULL base height (was 16→256, which left eyes squished)
+            lv_anim_set_values(&a, open[k] / 20, open[k]);
             lv_anim_set_time(&a, 380);
             lv_anim_start(&a);
         }
@@ -1276,8 +1392,10 @@ static void refresh_usage_info(void) {
     }
     // HUD ribbon — horizontal bars + pct labels.
     if (ribbon_seg_s[0] && ribbon_seg_w[0]) {
-        int lit_s = s_pct / 10;            // 0..10
-        int lit_w = w_pct / 10;
+        // Round to nearest segment so the last square fills at ~95%+ not only
+        // at exactly 100% (integer truncation left it permanently unlit at 96%).
+        int lit_s = (int)roundf(s_pct / 10.0f);
+        int lit_w = (int)roundf(w_pct / 10.0f);
         if (lit_s > RIBBON_SEG_COUNT) lit_s = RIBBON_SEG_COUNT;
         if (lit_w > RIBBON_SEG_COUNT) lit_w = RIBBON_SEG_COUNT;
         for (int i = 0; i < RIBBON_SEG_COUNT; i++) {
@@ -1553,7 +1671,7 @@ void emo2_init(void) {
         // sits HALO_SHADOW_DY pixels lower with a darker tint (shadow_color
         // in apply_colours) and HALO_OPA transparency. Effect: subtle 3D
         // emboss / lift, no outer ring.
-        lv_image_set_src(eye_halo[i], emo2_base_frames[M_NEUTRAL][i]);
+        lv_image_set_src(eye_halo[i], active_base[M_NEUTRAL][i]);
         lv_image_set_pivot(eye_halo[i], HALO_SRC / 2, HALO_SRC / 2);
         lv_image_set_scale(eye_halo[i], HALO_SCALE);
         lv_obj_set_pos(eye_halo[i],
@@ -1562,10 +1680,15 @@ void emo2_init(void) {
         lv_obj_set_style_opa(eye_halo[i], HALO_OPA, 0);
 
         eye_base[i] = lv_image_create(container);
-        lv_image_set_src(eye_base[i], emo2_base_frames[M_NEUTRAL][i]);
+        lv_image_set_src(eye_base[i], active_base[M_NEUTRAL][i]);
         lv_image_set_pivot(eye_base[i], 32, 32);
         lv_image_set_scale(eye_base[i], BASE_SCALE);
         lv_obj_set_pos(eye_base[i], cx - 32, EYE_CY - 32);
+        // Pixl: nearest-neighbour scaling → crisp, uniform squares (the AA
+        // upscale softened/distorted the dots). ClauLi/Blob keep antialias.
+        bool px_aa = (current_character != 1);
+        lv_image_set_antialias(eye_base[i], px_aa);
+        lv_image_set_antialias(eye_halo[i], px_aa);
 
         eye_spec[i] = lv_image_create(container);
         lv_image_set_src(eye_spec[i], &emo_img_spec);
@@ -2168,6 +2291,19 @@ void emo2_set_manual_mode(bool m) {
 static volatile bool nvs_dirty         = false;
 static volatile uint32_t nvs_dirty_ms  = 0;
 #define NVS_FLUSH_QUIET_MS 750
+// Don't write flash within this window of a fresh BLE connect. On the
+// single-core C6 a flash erase disables the instruction cache and stalls the
+// BLE controller task; doing it during the post-connect handshake (macOS
+// service discovery + notify-subscribe + the daemon's config burst) starves
+// the link long enough to trip macOS's (clamped ~5-6s) supervision timeout →
+// onDisconnect reason=520 → re-advertise → reconnect → push again → repeat.
+// This is the "stuck on Переподключение" loop. It only bites when the pushed
+// config DIFFERS from NVS (post factory-reset / config edit) so a real flash
+// write happens; identical pushes are NVS no-ops. Holding the flush until the
+// link has been up >8s moves the unavoidable flash stall to a calm moment
+// where a healthy link easily tolerates a sub-second cache-off window.
+#define NVS_POST_CONNECT_HOLDOFF_MS 8000
+static volatile uint32_t connected_at_ms = 0;
 
 static inline void mark_nvs_dirty(void) {
     nvs_dirty    = true;
@@ -2187,6 +2323,25 @@ void emo2_set_layout_color_override(uint8_t mode) {
     if (active) refresh_usage_info();
 }
 uint8_t emo2_get_layout_color_override(void) { return layout_color_override; }
+
+// ── Character (skin) selector — CTRL 0x32/0x33/0x35, NVS `e2ch` ─────────────
+void emo2_set_character(uint8_t id) {
+    if (id > 3 || id == 2 || id == current_character) return;
+    current_character = id;
+    active_base = char_base_table(id);
+    if (active) {
+        set_mood(cur_mood);          // reload eye sprites from new table
+        apply_colours();
+        // Pixl renders nearest-neighbour (crisp squares); others antialias.
+        bool aa = (id != 1);
+        for (int i = 0; i < 2; i++) {
+            lv_image_set_antialias(eye_base[i], aa);
+            lv_image_set_antialias(eye_halo[i], aa);
+        }
+    }
+    mark_nvs_dirty();
+}
+uint8_t emo2_get_character(void) { return current_character; }
 
 // Apply font + colour + position for the current clock_style. Each branch
 // uses a NATIVE bitmap font generated from the exact web TTF (digit-only
@@ -2587,6 +2742,13 @@ static void emo2_load_cfg_from_nvs(void) {
     // Layout colour override + clock style are small single-byte settings
     // — kept outside the bulk emo2_cfg blob so they survive a cfg schema bump.
     if (p.isKey("e2lc")) layout_color_override = p.getUChar("e2lc", 0xFF);
+    if (p.isKey("e2ch")) {
+        uint8_t v = p.getUChar("e2ch", 0);
+        // id 2 was Blob (removed). Clamp old Blob saves and out-of-range values to ClauLi.
+        if (v == 2 || v > 3) v = 0;
+        current_character = v;
+    }
+    active_base = char_base_table(current_character);
     if (p.isKey("e2cs")) {
         uint8_t cs = p.getUChar("e2cs", CS_MONO);
         // Schema version sentinel — `e2csv` was added with the 8-pick
@@ -2675,6 +2837,7 @@ static void emo2_save_cfg_to_nvs(void) {
     if (!p.begin("clawd", false)) return;
     p.putBytes("e2cfg", &emo2_cfg, sizeof(emo2_cfg));
     p.putUChar("e2lc", layout_color_override);
+    p.putUChar("e2ch", current_character);
     p.putUChar("e2cs",  clock_style);
     p.putUChar("e2csv", 2);              // schema version (see load_cfg)
     p.putUChar("e2ap", anim_pace_x10);
@@ -2752,12 +2915,14 @@ static inline void apply_cfg_state(emo2_dstate_t s) {
     // — the daemon no longer sends a per-state `layout`, and we deliberately
     // ignore it if an old config still carries one. Every non-"connected"
     // state shows the loading animation over whatever the global layout is.
-    if (sc.text_source != 0xFF && sc.text_source <= TEXT_SRC_BOTH)
-        emo2_set_text_source(sc.text_source);
-    if (sc.text_format != 0xFF && sc.text_format <= TEXT_FMT_RESET)
-        emo2_set_text_format(sc.text_format);
-    if (sc.text_placement != 0xFF && sc.text_placement <= TEXT_PLACE_BOTTOM)
-        emo2_set_text_placement(sc.text_placement);
+    // Text source/format/placement are PER-LAYOUT now, applied from the
+    // `layouts` section of emo2_apply_cfg_json (the active layout's values).
+    // We deliberately DON'T re-apply them per-state here: this runs on the
+    // forced state re-entry AFTER the layouts section, so a stale per-state
+    // value (e.g. default "middle") would OVERRIDE the per-layout placement
+    // the user set in the layout editor (e.g. hud_ribbon→"top"). The web shows
+    // the per-layout value too, so reading-vs-applied now agree. (layout_color
+    // stays per-state — the web reads/writes it per-state consistently.)
     if (sc.layout_color != 0xFF) {
         // Same encoding as halo color: 0=auto, 1=cyan, 2=amber, 3=red,
         // 4=custom (uses sc.lc_r/g/b → custom_layout_*).
@@ -2797,7 +2962,7 @@ static void emo2_tick_state_machine(void) {
     uint32_t now = millis();
     if (s != prev_dstate) {
         prev_dstate = s;
-        rot_form_i = rot_op_i = 0;
+        rot_form_i = rot_op_i = rot_canim_i = 0;
         form_next_ms = now + EMO2_FORM_ROT_MS;
         op_next_ms   = now + EMO2_OP_ROT_MS;
         apply_cfg_form(s, 0);
@@ -2806,10 +2971,25 @@ static void emo2_tick_state_machine(void) {
         apply_cfg_state(s);   // Phase D: layout / text / layout_color
         return;
     }
-    if ((int32_t)(now - form_next_ms) >= 0) {
-        uint8_t n = emo2_cfg.per_state[s].n_forms;
-        if (n > 0) { rot_form_i = (rot_form_i + 1) % n; apply_cfg_form(s, rot_form_i); }
-        form_next_ms = now + EMO2_FORM_ROT_MS;
+    // Part C: branch on per-state mode.
+    if (emo2_cfg.per_state[s].mode == 1) {
+        // Canim mode: fire a canim from the list on a longer timer (3× form rotation).
+        // Guard with !canim_active so we don't interrupt a running sequence.
+        uint8_t nc = emo2_cfg.per_state[s].n_canims;
+        if (nc > 0 && (int32_t)(now - form_next_ms) >= 0) {
+            if (!canim_active) {
+                emo2_play_canim(emo2_cfg.per_state[s].canims[rot_canim_i]);
+                rot_canim_i = (rot_canim_i + 1) % nc;
+            }
+            form_next_ms = now + EMO2_FORM_ROT_MS * 3;
+        }
+    } else {
+        // Default rotation mode: advance forms on the normal cadence.
+        if ((int32_t)(now - form_next_ms) >= 0) {
+            uint8_t n = emo2_cfg.per_state[s].n_forms;
+            if (n > 0) { rot_form_i = (rot_form_i + 1) % n; apply_cfg_form(s, rot_form_i); }
+            form_next_ms = now + EMO2_FORM_ROT_MS;
+        }
     }
     if ((int32_t)(now - op_next_ms) >= 0) {
         uint8_t n = emo2_cfg.per_state[s].n_ops;
@@ -2969,6 +3149,26 @@ bool emo2_apply_cfg_json(const char* json) {
                         dst.lc_g = (uint8_t)((g1<<4)|g2);
                         dst.lc_b = (uint8_t)((b1<<4)|b2);
                     }
+                }
+            }
+            // Part C: mode ("rotation"/"canim" or int 0/1) + canims array.
+            JsonVariantConst modeVar = st["mode"];
+            if (!modeVar.isNull()) {
+                if (modeVar.is<int>()) {
+                    dst.mode = (modeVar.as<int>() == 1) ? 1 : 0;
+                } else {
+                    const char* ms = modeVar.as<const char*>();
+                    dst.mode = (ms && !strcmp(ms, "canim")) ? 1 : 0;
+                }
+            }
+            JsonArrayConst canims = st["canims"].as<JsonArrayConst>();
+            if (!canims.isNull()) {
+                dst.n_canims = 0;
+                for (JsonVariantConst v : canims) {
+                    if (dst.n_canims >= EMO2_MAX_FORMS_PER_STATE) break;
+                    int idx = v.as<int>();
+                    // Clamp to valid canim range (0..28 as per CANIM_NAMES).
+                    if (idx >= 0 && idx <= 28) dst.canims[dst.n_canims++] = (uint8_t)idx;
                 }
             }
         }
@@ -3316,6 +3516,7 @@ bool emo2_apply_cfg_json(const char* json) {
 void emo2_set_connected(bool c) {
     if (c == connected) return;
     connected = c;
+    if (c) connected_at_ms = millis();   // arm the NVS post-connect flush holdoff
     if (!c) {
         recon_dots = 0; recon_last_ms = millis();
         if (sleeping) { sleeping = false; stop_sleep_anim(); }
@@ -3393,6 +3594,459 @@ void emo2_set_usage(const UsageData* data) {
     }
 }
 
+// ── Living per-emotion signatures ───────────────────────────────────────────
+static bool motion_busy_now(void) {
+    return eyeroll_start_ms || shake_start_ms || bounce_start_ms ||
+           nod_start_ms || wave_start_ms || lookaround_start_ms;
+}
+// Kick a motion that reads as the body language of the new emotion. Reuses the
+// existing tested motion primitives so it stays cheap + crash-free.
+static void mood_entry_kick(uint8_t m) {
+    // Throttle: only kick on a genuine mood change, and never more often than
+    // ~1.2 s, so rapid form rotation can't flood the single-core C6 with
+    // animations and starve the BLE task (was causing supervision-timeout
+    // reconnects when forms changed quickly).
+    static uint8_t  prev_kick_mood = 0xFF;
+    static uint32_t last_kick_ms   = 0;
+    uint32_t now = millis();
+    if (m == prev_kick_mood && (now - last_kick_ms) < 4000) return;
+    if ((now - last_kick_ms) < 1200) return;
+    prev_kick_mood = m; last_kick_ms = now;
+    switch (m) {
+        case M_HAPPY:                          if (!motion_busy_now()) bounce_start_ms     = now; break; // buoyant bob
+        case M_LOVE:                           do_heartbeat();                                     break; // swell
+        case M_CIRCLE: case M_OVAL_TALL:       do_surprised();                                     break; // pop
+        case M_ANGRY:                          if (!motion_busy_now()) shake_start_ms       = now; break; // grr
+        case M_SAD:    case M_UPSET:           if (!motion_busy_now()) nod_start_ms         = now; break; // heavy sigh
+        case M_PUPIL_LEFT: case M_PUPIL_SLIT:  if (!motion_busy_now()) lookaround_start_ms  = now; break; // scan
+        case M_CROSS:                          if (!motion_busy_now()) eyeroll_start_ms     = now; break; // dizzy
+        case M_Q_EYE:  case M_EXCLAIM:         do_confused((int)(esp_random() & 1));               break; // huh?
+        default:                                                                                   break;
+    }
+}
+
+// ── Keyframe complex-emotion SCENARIOS (bold, asymmetric, multi-movement) ────
+// Each scenario is a list of keyframes; every keyframe sets, PER EYE (L and R
+// independently), a target {mood, dx, dy, scaleY%}. scene_run eases position +
+// scaleY between keyframes per eye, so asymmetry, smoothness and "many moves"
+// all come for free. Mood (sprite) swaps happen at keyframes, masked by an
+// authored low-scaleY squish so they never hard-pop.
+typedef struct { uint8_t mood; int8_t dx, dy; uint8_t syq; } EyeKey;  // syq: scaleY %, 100=full
+typedef struct { uint16_t t; EyeKey l, r; } SceneKey;
+typedef struct { const SceneKey* k; uint8_t n; } Scene;
+
+static const SceneKey SC_RAGE2[] = {
+    {   0, {M_NEUTRAL,0,0,100}, {M_NEUTRAL,0,0,100} },
+    { 160, {M_ANGRY,0,3,70},    {M_ANGRY,0,3,70}    },   // brows slam + narrow
+    { 420, {M_ANGRY,-16,-5,75}, {M_ANGRY,16,6,75}   },   // L/R OPPOSITE shake (bigger so it reads on Pixl)
+    { 600, {M_ANGRY,16,6,75},   {M_ANGRY,-16,-5,75} },
+    { 780, {M_ANGRY,-16,-5,75}, {M_ANGRY,16,6,75}   },
+    { 960, {M_ANGRY,16,6,75},   {M_ANGRY,-16,-5,75} },
+    {1180, {M_NEUTRAL,0,-6,132},{M_NEUTRAL,0,-6,132} },  // flare wide (tall squircle, no circle)
+    {1450, {M_ANGRY,0,1,85},    {M_ANGRY,0,1,85}    },
+    {1750, {M_NEUTRAL,0,0,100}, {M_NEUTRAL,0,0,100} },   // settle
+};
+static const SceneKey SC_LOVE2[] = {
+    {   0, {M_NEUTRAL,0,0,100}, {M_NEUTRAL,0,0,100} },
+    { 120, {M_NEUTRAL,0,0,20},  {M_NEUTRAL,0,0,20}  },   // blink
+    { 260, {M_NEUTRAL,4,0,112}, {M_NEUTRAL,4,0,112} },   // dart aside
+    { 440, {M_NEUTRAL,-2,-3,132},{M_NEUTRAL,-2,-3,132}}, // double-take wide
+    { 740, {M_LOVE,0,-2,120},   {M_LOVE,0,-2,120}   },   // hearts bloom
+    {1080, {M_LOVE,0,0,110},    {M_LOVE,0,0,110}    },
+    {1450, {M_HAPPY,8,2,70},    {M_HAPPY,8,2,70}    },   // bashful look-away
+    {1750, {M_HAPPY,8,2,28},    {M_HAPPY,8,2,28}    },   // shy blink
+    {2050, {M_LOVE,0,0,110},    {M_LOVE,0,0,110}    },
+    {2400, {M_NEUTRAL,0,0,100}, {M_NEUTRAL,0,0,100} },
+};
+static const SceneKey SC_SUSPICION[] = {
+    {   0, {M_NEUTRAL,0,0,100}, {M_NEUTRAL,0,0,100} },
+    { 320, {M_UPSET,0,0,55},    {M_NEUTRAL,0,0,100} },   // L narrows (ASYM)
+    { 720, {M_UPSET,-7,0,55},   {M_NEUTRAL,-7,0,100}},   // scan left
+    {1120, {M_UPSET,7,0,55},    {M_NEUTRAL,7,0,100} },   // scan right
+    {1480, {M_UPSET,0,0,50},    {M_UPSET,0,0,50}    },   // both narrow
+    {1780, {M_UPSET,0,-2,72},   {M_UPSET,0,-2,72}   },   // lean in
+    {1980, {M_NEUTRAL,0,-4,122},{M_NEUTRAL,0,-4,122} },  // snap back wide (no circle)
+    {2350, {M_NEUTRAL,0,0,100}, {M_NEUTRAL,0,0,100} },
+};
+static const SceneKey SC_DIZZY2[] = {
+    {   0, {M_NEUTRAL,0,0,100}, {M_NEUTRAL,0,0,100} },
+    { 250, {M_NEUTRAL,6,0,100}, {M_NEUTRAL,-6,0,100} },  // cross inward (ASYM)
+    { 500, {M_NEUTRAL,8,-4,100},{M_NEUTRAL,-8,4,100} },  // OPPOSITE orbits
+    { 760, {M_NEUTRAL,4,4,100}, {M_NEUTRAL,-4,-4,100}},
+    {1020, {M_NEUTRAL,-4,4,100},{M_NEUTRAL,4,-4,100} },
+    {1280, {M_NEUTRAL,-8,-4,100},{M_NEUTRAL,8,4,100} },
+    {1540, {M_NEUTRAL,8,-4,100},{M_NEUTRAL,-8,4,100} },
+    {1820, {M_NEUTRAL,0,4,72},  {M_NEUTRAL,0,4,72}  },   // droop (no form change, pt Pixl3)
+    {2080, {M_NEUTRAL,-4,0,100},{M_NEUTRAL,4,0,100} },   // shake off (asym)
+    {2320, {M_NEUTRAL,4,0,100}, {M_NEUTRAL,-4,0,100}},
+    {2600, {M_NEUTRAL,0,0,100}, {M_NEUTRAL,0,0,100} },
+};
+static const SceneKey SC_PANIC[] = {
+    {   0, {M_NEUTRAL,0,0,100}, {M_NEUTRAL,0,0,100} },
+    { 120, {M_NEUTRAL,0,-3,135},{M_NEUTRAL,0,-3,135} },  // shoot wide (tall squircle)
+    { 350, {M_NEUTRAL,-8,2,130},{M_NEUTRAL,5,-4,130} },  // asym darting
+    { 520, {M_NEUTRAL,7,-3,130},{M_NEUTRAL,-6,3,130} },
+    { 700, {M_NEUTRAL,-5,3,130},{M_NEUTRAL,8,-2,130} },
+    { 900, {M_OVAL_TALL,2,0,120},{M_OVAL_TALL,-2,0,120}},
+    {1050, {M_OVAL_TALL,-2,0,120},{M_OVAL_TALL,2,0,120}},
+    {1300, {M_UPSET,0,2,52},    {M_UPSET,0,2,52}    },   // shrink
+    {1550, {M_UPSET,2,2,52},    {M_UPSET,-2,2,52}   },   // small tremble
+    {1750, {M_UPSET,-2,2,52},   {M_UPSET,2,2,52}    },
+    {2050, {M_NEUTRAL,0,0,100}, {M_NEUTRAL,0,0,100} },
+};
+static const SceneKey SC_MISCHIEF[] = {
+    {   0, {M_NEUTRAL,0,0,100}, {M_NEUTRAL,0,0,100} },
+    { 300, {M_UPSET,0,0,65},    {M_UPSET,0,0,65}    },   // sly narrow
+    { 650, {M_UPSET,7,0,65},    {M_UPSET,7,0,65}    },   // glance aside
+    { 850, {M_HAPPY,7,0,65},    {M_HAPPY,7,0,12}    },   // R winks (ASYM)
+    {1050, {M_HAPPY,7,0,65},    {M_HAPPY,7,0,65}    },
+    {1350, {M_HAPPY,-3,-2,80},  {M_HAPPY,-3,2,80}   },   // smug tilt (asym)
+    {1600, {M_HAPPY,0,-5,95},   {M_HAPPY,0,-5,95}   },   // bounce
+    {1820, {M_HAPPY,0,0,100},   {M_HAPPY,0,0,100}   },
+    {2050, {M_NEUTRAL,0,0,100}, {M_NEUTRAL,0,0,100} },
+};
+static const SceneKey SC_SOB[] = {
+    {   0, {M_NEUTRAL,0,0,100}, {M_NEUTRAL,0,0,100} },
+    { 400, {M_SAD,0,4,80},      {M_SAD,0,4,80}      },   // droop
+    { 800, {M_SAD,0,5,55},      {M_SAD,0,5,55}      },   // heavy lids
+    {1100, {M_SAD,-2,5,55},     {M_SAD,2,5,55}      },   // tremble (asym)
+    {1300, {M_SAD,2,5,55},      {M_SAD,-2,5,55}     },
+    {1500, {M_SAD,-3,3,60},     {M_SAD,3,6,60}      },   // big shake (asym)
+    {1700, {M_SAD,3,6,60},      {M_SAD,-3,3,60}     },
+    {1950, {M_UPSET,0,-2,80},   {M_UPSET,0,-2,80}   },   // hiccup jolt
+    {2200, {M_SAD,0,5,60},      {M_SAD,0,5,60}      },
+    {2850, {M_NEUTRAL,0,0,100}, {M_NEUTRAL,0,0,100} },   // slow settle
+};
+static const SceneKey SC_WAKE2[] = {
+    {   0, {M_SLEEP,0,0,100},   {M_SLEEP,0,0,100}   },   // closed
+    { 480, {M_NEUTRAL,0,0,22},  {M_SLEEP,0,0,100}   },   // L cracks open (ASYM)
+    { 880, {M_NEUTRAL,0,0,40},  {M_NEUTRAL,0,0,30}  },   // both squint
+    {1240, {M_NEUTRAL,0,0,64},  {M_NEUTRAL,0,0,60}  },   // open further (squircle, no oval)
+    {1560, {M_NEUTRAL,0,-2,120},{M_NEUTRAL,0,-2,120}},   // wide stretch (tall squircle)
+    {1880, {M_NEUTRAL,0,0,96},  {M_NEUTRAL,0,0,96}  },   // relax fully open
+    {2180, {M_NEUTRAL,-6,0,100},{M_NEUTRAL,-6,0,100}},   // look around L
+    {2480, {M_NEUTRAL,6,0,100}, {M_NEUTRAL,6,0,100} },   // look around R
+    {2800, {M_NEUTRAL,0,0,100}, {M_NEUTRAL,0,0,100} },   // alert, settle
+};
+static const Scene SCENES[] = {
+    { SC_RAGE2,     9 }, { SC_LOVE2,    10 }, { SC_SUSPICION, 8 }, { SC_DIZZY2, 11 },
+    { SC_PANIC,    11 }, { SC_MISCHIEF,  9 }, { SC_SOB,      10 }, { SC_WAKE2,   9 },
+};
+#define SCENE_COUNT      ((uint8_t)(sizeof(SCENES) / sizeof(SCENES[0])))
+#define CANIM_SCENE_BASE 20      // canim ids 20..27 are pure scenes
+#define CANIM_TV_ID      28      // dedicated old-TV / CRT power-cycle canim
+#define CANIM_STRETCH_PCT 140    // global duration stretch for ALL complex anims (>100 = longer + slower)
+
+static int8_t  scene_key = -1;   // last applied keyframe index (reset per play)
+static uint8_t scene_lm  = 0xFF, scene_rm = 0xFF;   // last applied per-eye mood
+// Pose captured at play start so scene_run eases IN from it (points 2/3).
+static int scene_sdx[2] = {0, 0}, scene_sdy[2] = {0, 0}, scene_ssy[2] = {100, 100};
+#define SCENE_EASE_MS 180.0f
+
+static bool scene_run(const Scene* s, uint32_t dt) {
+    const SceneKey* k = s->k; uint8_t n = s->n;
+    if (dt >= k[n - 1].t) return false;              // finished
+    uint8_t i = 0; while (i < n - 1 && dt >= k[i + 1].t) i++;
+    const SceneKey* a = &k[i]; const SceneKey* b = &k[i + 1];
+    float span = (float)(b->t - a->t);
+    float u = (span > 0.5f) ? (float)(dt - a->t) / span : 1.0f;
+    u = u * u * (3.0f - 2.0f * u);                   // ease-in-out (smooth)
+    if (i != scene_key) {                            // entered a new keyframe → swap sprites
+        scene_key = i;
+        if (a->l.mood != scene_lm) { scene_lm = a->l.mood; set_eye_mood(0, a->l.mood); }
+        if (a->r.mood != scene_rm) { scene_rm = a->r.mood; set_eye_mood(1, a->r.mood); }
+    }
+    int ldx = (int)(a->l.dx + (b->l.dx - a->l.dx) * u), ldy = (int)(a->l.dy + (b->l.dy - a->l.dy) * u);
+    int rdx = (int)(a->r.dx + (b->r.dx - a->r.dx) * u), rdy = (int)(a->r.dy + (b->r.dy - a->r.dy) * u);
+    int lsy = (int)(a->l.syq + (b->l.syq - a->l.syq) * u);
+    int rsy = (int)(a->r.syq + (b->r.syq - a->r.syq) * u);
+    // Entry-ease (points 2/3): for the first SCENE_EASE_MS blend from the pose
+    // captured at play start → the scene pose, so a scenario never SNAPS from
+    // whatever emotion/offset the eyes were already showing.
+    if ((float)dt < SCENE_EASE_MS) {
+        float w = (float)dt / SCENE_EASE_MS; w = w * w * (3.0f - 2.0f * w);
+        ldx = (int)(scene_sdx[0] + (ldx - scene_sdx[0]) * w);
+        ldy = (int)(scene_sdy[0] + (ldy - scene_sdy[0]) * w);
+        rdx = (int)(scene_sdx[1] + (rdx - scene_sdx[1]) * w);
+        rdy = (int)(scene_sdy[1] + (rdy - scene_sdy[1]) * w);
+        lsy = (int)(scene_ssy[0] + (lsy - scene_ssy[0]) * w);
+        rsy = (int)(scene_ssy[1] + (rsy - scene_ssy[1]) * w);
+    }
+    offset_one_eye(0, ldx, ldy); offset_one_eye(1, rdx, rdy);
+    lv_image_set_scale_y(eye_base[0], BASE_SCALE * lsy / 100); lv_image_set_scale_y(eye_halo[0], HALO_SCALE * lsy / 100);
+    lv_image_set_scale_y(eye_base[1], BASE_SCALE * rsy / 100); lv_image_set_scale_y(eye_halo[1], HALO_SCALE * rsy / 100);
+    // Catchlight rides + squashes with each eye (point 4); set_eye_mood already
+    // toggled its visibility for this keyframe's mood.
+    lv_image_set_scale_y(eye_spec[0], SPEC_SCALE * lsy / 100);
+    lv_image_set_scale_y(eye_spec[1], SPEC_SCALE * rsy / 100);
+    return true;
+}
+
+// ── Old-TV / CRT power-cycle canim (id 28) ───────────────────────────────────
+// Both eyes morph to the M_RECT_TV "screen" shape and run a retro CRT cycle:
+//   turn-on  → a bright horizontal scan-line blooms open vertically (overshoot)
+//   live     → faint vertical roll + scan-line flicker
+//   turn-off → collapse to a bright line, then a centre dot
+//   recover  → re-bloom back as the normal neutral eyes (smooth, no snap)
+// Drives scaleX + scaleY DIRECTLY (the keyframe scene engine only does scaleY),
+// so it's a dedicated inline handler. The canim-exit restores scaleX/Y.
+static void tv_apply(int sx, int sy, int dy) {   // sx, sy in % of base
+    if (sx < 1) sx = 1; if (sy < 1) sy = 1;
+    for (int i = 0; i < 2; i++) {
+        lv_image_set_scale_x(eye_base[i], BASE_SCALE * sx / 100);
+        lv_image_set_scale_y(eye_base[i], BASE_SCALE * sy / 100);
+        lv_image_set_scale_x(eye_halo[i], HALO_SCALE * sx / 100);
+        lv_image_set_scale_y(eye_halo[i], HALO_SCALE * sy / 100);
+    }
+    apply_eye_offset(0, dy);
+}
+static bool canim_tv(uint32_t dt) {
+    const float f = (float)dt;
+    if (canim_phase < 0) { canim_phase = 0; set_mood(M_RECT_TV);
+        for (int i = 0; i < 2; i++) if (eye_spec[i]) lv_obj_add_flag(eye_spec[i], LV_OBJ_FLAG_HIDDEN); }
+    if (dt < 140) {                         // bright scan-line snaps in (thin, widening)
+        tv_apply(60 + (int)(40.0f * f / 140.0f), 6, 0);
+    } else if (dt < 420) {                  // bloom open vertically, overshoot
+        float u = (f - 140) / 280.0f;       tv_apply(100, (int)(6 + (120 - 6) * u), 0);
+    } else if (dt < 560) {                  // settle to full screen
+        float u = (f - 420) / 140.0f;       tv_apply(100, (int)(120 - 20 * u), 0);
+    } else if (dt < 1900) {                 // LIVE: vertical roll + scan-line flicker
+        float r = f - 560;
+        int dy  = (int)(4.0f * sinf(r / 480.0f * 6.2832f));      // gentle picture roll
+        int dip = (((int)(r / 80)) % 6 == 0) ? 22 : 0;           // periodic scan-line dip
+        int sy  = 100 - dip + (int)(2.0f * sinf(r * 0.05f));
+        tv_apply(100, sy, dy);
+    } else if (dt < 2180) {                 // turn-off: collapse to a bright line
+        float u = (f - 1900) / 280.0f;      tv_apply(100, (int)(100 - 92 * u), 0);
+    } else if (dt < 2360) {                 // line collapses to a centre dot
+        float u = (f - 2180) / 180.0f;      tv_apply((int)(100 - 84 * u), 8, 0);
+    } else if (dt < 2430) {                 // off — dot held
+        tv_apply(16, 8, 0);
+    } else if (dt < 2750) {                 // recover: re-bloom as the normal eyes
+        if (canim_phase != 1) { canim_phase = 1; set_mood(M_NEUTRAL);
+            for (int i = 0; i < 2; i++) if (eye_spec[i]) lv_obj_add_flag(eye_spec[i], LV_OBJ_FLAG_HIDDEN); }
+        float u = (f - 2430) / 320.0f;      tv_apply((int)(16 + 84 * u), (int)(8 + 92 * u), 0);
+    } else {
+        return false;
+    }
+    return true;
+}
+
+// ── 10 complex scripted animations ──────────────────────────────────────────
+// canim_run drives mood + eye offset + one-shot scale anims over time. Returns
+// false when the sequence is finished. Phase one-shots are gated by canim_phase
+// (reset to -1 each emo2_play_canim). Eyes are driven directly via
+// apply_eye_offset so we don't depend on the random position-chain scheduler.
+static bool canim_run(uint32_t dt, uint32_t now) {
+    (void)now;
+    // Global duration stretch — scale elapsed time down so every canim/scene
+    // runs longer + a touch slower (Pixl#5 / ClauLi#2). Applies uniformly to
+    // the end-checks AND the motion formulas, so nothing speeds up.
+    dt = (uint32_t)((uint64_t)dt * 100 / CANIM_STRETCH_PCT);
+    if (canim_id == CANIM_TV_ID) return canim_tv(dt);   // old-TV / CRT cycle
+    // Scene engine: ids 20+ are pure keyframe scenarios. (The old 'rage' id-15
+    // reroute was removed — rage lives only as the rage2 scene now, point 11.)
+    if (canim_id >= CANIM_SCENE_BASE && canim_id < CANIM_SCENE_BASE + SCENE_COUNT) {
+        uint8_t si = (uint8_t)(canim_id - CANIM_SCENE_BASE);
+        return (si < SCENE_COUNT) ? scene_run(&SCENES[si], dt) : false;
+    }
+    const float f = (float)dt;
+    switch (canim_id) {
+    case 0: {  // wakeup — open from a slit, double-blink, glance around
+        int ph = (dt < 500) ? 0 : (dt < 1100) ? 1 : (dt < 1500) ? 2 : 3;
+        if (ph != canim_phase) { canim_phase = ph;
+            if      (ph == 0) set_mood(M_SLEEP);
+            else if (ph == 1) { set_mood(M_NEUTRAL); do_boot_in();
+                // Hide the catchlight while the eye GROWS in — it must not pop
+                // in before the eye is drawn (point 5). The ph2 blink's
+                // completed-cb restores it, sized to the now-full eye.
+                for (int i = 0; i < 2; i++) if (eye_spec[i]) lv_obj_add_flag(eye_spec[i], LV_OBJ_FLAG_HIDDEN); }
+            else if (ph == 2) do_blink();
+        }
+        if (dt >= 1500) apply_eye_offset((int)(7.0f * sinf((f - 1500) / 700.0f * 6.2832f)), 0);
+        return dt < 2300;
+    }
+    case 1: {  // sneeze — squint build, eyes pop, "achoo" recoil + shake
+        int ph = (dt < 650) ? 0 : (dt < 880) ? 1 : (dt < 1250) ? 2 : 3;
+        if (ph != canim_phase) { canim_phase = ph;
+            if      (ph == 0) set_mood(M_UPSET);
+            else if (ph == 1) { set_mood(M_NEUTRAL); do_surprised(); }  // pop wide (no circle, pt 1)
+            else if (ph == 2) set_mood(M_HAPPY);
+            else              set_mood(M_NEUTRAL);
+        }
+        int dx = 0, dy = 0;
+        if      (dt < 650)  dy = -(int)(f / 650.0f * 6.0f);
+        else if (dt < 880)  dy = -6;
+        else if (dt < 1250) { dy = 8; dx = (int)(9.0f * sinf((f - 880) * 0.09f) * (1.0f - (f - 880) / 370.0f)); }
+        apply_eye_offset(dx, dy);
+        return dt < 1700;
+    }
+    case 2: {  // laugh — happy + rhythmic bobbing + blinks
+        if (canim_phase < 0) { set_mood(M_HAPPY); canim_phase = 0; }
+        int beat = (int)(dt / 600);
+        if (beat != canim_phase) { canim_phase = beat; do_blink(); }
+        apply_eye_offset(0, -(int)(8.0f * fabsf(sinf(f / 300.0f * 3.14159f))));
+        return dt < 2400;
+    }
+    case 3: {  // cry — sad droop + tremble + slow blinks
+        if (canim_phase < 0) { set_mood(M_SAD); canim_phase = 0; }
+        apply_eye_offset((int)(1.5f * sinf(f * 0.04f)), 6 + (int)(2.0f * sinf(f * 0.05f)));
+        int beat = (int)(dt / 900);
+        if (beat != canim_phase) { canim_phase = beat; do_blink(); }
+        return dt < 2600;
+    }
+    case 4: {  // dizzy — eyes orbit, then settle
+        if (canim_phase < 0) { set_mood(M_CROSS); canim_phase = 0; }
+        if (dt >= 1900 && canim_phase != 99) { canim_phase = 99; set_mood(M_NEUTRAL); }
+        float a = f / 650.0f * 6.2832f;
+        apply_eye_offset((int)(8.0f * cosf(a)), (int)(6.0f * sinf(a)));
+        return dt < 2400;
+    }
+    case 5: {  // sleep — slow droop, drowsy blinks, gentle nod-off, then close
+        // Longer + more movement + smoother (point 6): the eyes sink down and
+        // sway faintly (head nodding off) while progressively heavier blinks
+        // lead into the closed M_SLEEP.
+        int ph = (dt < 700) ? 0 : (dt < 1500) ? 1 : (dt < 2400) ? 2 : (dt < 3300) ? 3 : 4;
+        if (ph != canim_phase) { canim_phase = ph;
+            if      (ph == 0) set_mood(M_NEUTRAL);
+            else if (ph <= 3) do_blink();            // 3 progressively drowsy blinks
+            else              set_mood(M_SLEEP);      // eyes close
+        }
+        if (dt < 3300) {
+            int dy = (int)(f / 3300.0f * 9.0f);                       // sink slowly
+            int dx = (int)(3.0f * sinf(f / 1000.0f * 3.14159f));      // faint nod sway
+            apply_eye_offset(dx, dy);
+        }
+        return dt < 4200;
+    }
+    case 6: {  // happy dance — sway + bob
+        if (canim_phase < 0) { set_mood(M_HAPPY); canim_phase = 0; }
+        apply_eye_offset((int)(10.0f * sinf(f / 500.0f * 6.2832f)),
+                         -(int)(5.0f * fabsf(sinf(f / 250.0f * 3.14159f))));
+        return dt < 2600;
+    }
+    case 7: {  // shock — instant pop wide, recoil, then tremble (no circle, pt 7)
+        if (canim_phase < 0) { set_mood(M_NEUTRAL); do_surprised(); canim_phase = 0; }
+        int dy = (dt < 160) ? -(int)(12.0f * f / 160.0f)
+                            : -12 + (int)(12.0f * (1.0f - expf(-((f - 160) / 300.0f))));
+        int dx = (dt > 500) ? (int)(1.5f * sinf(f * 0.06f)) : 0;
+        apply_eye_offset(dx, dy);
+        return dt < 1800;
+    }
+    case 8: {  // scan — methodical left → right → down sweep (no pupil dot, pt 8)
+        if (canim_phase < 0) { set_mood(M_NEUTRAL); canim_phase = 0; }
+        int dx = 0, dy = 0;
+        if      (dt < 250)  dx = -(int)(dt * 8 / 250);   // ease out to -8 (no snap)
+        else if (dt < 500)  dx = -8;
+        else if (dt < 700)  dx = -8 + (int)((dt - 500) * 16 / 200);
+        else if (dt < 1200) dx = 8;
+        else if (dt < 1400) dx = 8 - (int)((dt - 1200) * 8 / 200);
+        else if (dt < 1800) dy = (int)((dt - 1400) * 6 / 400);
+        else                dy = 6 - (int)((dt - 1800) * 6 / 400);
+        apply_eye_offset(dx, dy);
+        return dt < 2300;
+    }
+    case 9: {  // lovestruck — heart eyes, double-thump heartbeat + gentle bob
+        if (canim_phase < 0) { set_mood(M_LOVE); canim_phase = 0; }
+        int beat = (int)(dt / 650);
+        if (beat != canim_phase) { canim_phase = beat; do_heartbeat(); }
+        apply_eye_offset(0, -(int)(3.0f * fabsf(sinf(f / 400.0f * 3.14159f))));
+        return dt < 2600;
+    }
+    case 10: {  // suspicious — ASYMMETRIC: one eye narrows, slow side glance
+        if (canim_phase < 0) { set_eye_mood(0, M_NEUTRAL); set_eye_mood(1, M_SLEEP); canim_phase = 0; }
+        int dx = (int)(7.0f * sinf(f / 850.0f * 6.2832f));
+        offset_one_eye(0, dx, 0); offset_one_eye(1, dx, 1);
+        return dt < 2600;
+    }
+    case 11: {  // flirt — ASYMMETRIC: happy + repeated single-eye wink + bob
+        if (canim_phase < 0) { set_mood(M_HAPPY); canim_phase = 0; }
+        int ph = (int)(dt / 650);
+        if (ph != canim_phase) { canim_phase = ph; do_wink(1); }
+        apply_eye_offset((int)(3.0f * sinf(f / 500.0f * 6.2832f)),
+                         -(int)(4.0f * fabsf(sinf(f / 320.0f * 3.14159f))));
+        return dt < 2100;
+    }
+    case 12: {  // peek — dart FAR to one side, hold, sweep, centre (no pupil dot, pt 10)
+        if (canim_phase < 0) { set_mood(M_NEUTRAL); canim_phase = 0; }
+        int dx;
+        if      (dt < 450)  dx = -(int)(15.0f * dt / 450);
+        else if (dt < 1050) dx = -15;
+        else if (dt < 1450) dx = -15 + (int)((dt - 1050) * 30 / 400);
+        else if (dt < 2000) dx = 15;
+        else                dx = 15 - (int)((dt - 2000) * 15 / 400);
+        apply_eye_offset(dx, 0);
+        return dt < 2400;
+    }
+    case 13: {  // roll — annoyed full eye-roll (up-and-around)
+        if (canim_phase < 0) { set_mood(M_UPSET); canim_phase = 0; }
+        float a = f / 780.0f * 6.2832f;          // ~3 rolls
+        apply_eye_offset((int)(8.0f * sinf(a)), -3 - (int)(5.0f * cosf(a)));
+        return dt < 2400;
+    }
+    case 14: {  // giggle — ASYMMETRIC out-of-phase bounces + happy + blinks
+        if (canim_phase < 0) { set_mood(M_HAPPY); canim_phase = 0; }
+        offset_one_eye(0, 0, -(int)(7.0f * fabsf(sinf(f / 190.0f * 3.14159f))));
+        offset_one_eye(1, 0, -(int)(7.0f * fabsf(sinf((f + 95.0f) / 190.0f * 3.14159f))));
+        int beat = (int)(dt / 760); if (beat != canim_phase) { canim_phase = beat; do_blink(); }
+        return dt < 2400;
+    }
+    case 15: {  // rage — angry + violent high-freq jitter (whole head shakes)
+        if (canim_phase < 0) { set_mood(M_ANGRY); canim_phase = 0; }
+        apply_eye_offset((int)(4.0f * sinf(f * 0.55f)), (int)(3.0f * sinf(f * 0.61f)));
+        return dt < 2200;
+    }
+    case 16: {  // ponder — ASYMMETRIC: one eye squints, gaze drifts up-aside
+        if (canim_phase < 0) { set_eye_mood(0, M_UPSET); set_eye_mood(1, M_NEUTRAL); canim_phase = 0; }
+        int up = -5 + (int)(2.0f * sinf(f * 1.4f));
+        offset_one_eye(0, -4, up); offset_one_eye(1, -4, up - 1);
+        return dt < 2600;
+    }
+    case 17: {  // agree — happy vertical nod (yes)
+        if (canim_phase < 0) { set_mood(M_HAPPY); canim_phase = 0; }
+        apply_eye_offset(0, (int)(7.0f * sinf(f / 300.0f * 6.2832f)));
+        return dt < 2200;
+    }
+    case 18: {  // disagree — sad horizontal head-shake (no)
+        if (canim_phase < 0) { set_mood(M_SAD); canim_phase = 0; }
+        apply_eye_offset((int)(10.0f * sinf(f / 250.0f * 6.2832f)), 0);
+        return dt < 2200;
+    }
+    case 19: {  // melt — sad, eyes sink + droop progressively (deflate)
+        if (canim_phase < 0) { set_mood(M_SAD); canim_phase = 0; }
+        int dy = (int)(f / 2800.0f * 15.0f);   // sink down over the run
+        apply_eye_offset((int)(1.5f * sinf(f * 0.04f)), dy);
+        return dt < 2800;
+    }
+    }
+    return false;
+}
+
+void emo2_play_canim(uint8_t id) {
+    if (id > CANIM_TV_ID) return;   // 0..19 inline + 20..27 scenes + 28 old-TV
+    diag_active   = false;        // canim preempts diagnostics
+    canim_active  = true;
+    canim_id      = id;
+    canim_start_ms = millis();
+    canim_phase   = -1;
+    scene_key = -1; scene_lm = 0xFF; scene_rm = 0xFF;   // reset scene interpolation
+    // wake_up2 (scene 7 → id 27): keep the catchlight hidden for the whole wake
+    // sequence; it reappears only when the canim ENDS (exit → set_mood).
+    canim_spec_suppress = (id == CANIM_SCENE_BASE + 7);
+    if (canim_spec_suppress)
+        for (int i = 0; i < 2; i++) if (eye_spec[i]) lv_obj_add_flag(eye_spec[i], LV_OBJ_FLAG_HIDDEN);
+    // Capture the CURRENT pose so scene_run can ease IN from it (points 2/3) —
+    // no snap from whatever emotion the eyes were already showing. The catchlight
+    // is NOT force-hidden any more: set_eye_mood manages it per keyframe so it
+    // animates (point 4).
+    for (int i = 0; i < 2; i++) {
+        scene_sdx[i] = eye_cur_dx[i];
+        scene_sdy[i] = eye_cur_dy[i];
+        int32_t sc = lv_image_get_scale_y(eye_base[i]);
+        scene_ssy[i] = (BASE_SCALE > 0) ? (int)(sc * 100 / BASE_SCALE) : 100;
+    }
+}
+
 void emo2_tick(void) {
     if (!active) return;
     uint32_t now = millis();
@@ -3410,10 +4064,16 @@ void emo2_tick(void) {
     if (clock_style != CS_OFF) update_clock(false);
 
     // Deferred-NVS flush. Setters mark the dirty flag + a timestamp; we
-    // commit once the user has been idle for NVS_FLUSH_QUIET_MS. Cheap —
-    // one branch when clean. Runs in the Arduino main-loop context (not
-    // the BLE callback), so the flash erase doesn't block the BLE stack.
-    if (nvs_dirty && (now - nvs_dirty_ms) >= NVS_FLUSH_QUIET_MS) {
+    // commit once edits have been quiet for NVS_FLUSH_QUIET_MS. Cheap —
+    // one branch when clean. NOTE: even in main-loop context, a flash erase
+    // disables the cache and stalls the single-core BLE controller, so we
+    // also HOLD OFF the flush for the first NVS_POST_CONNECT_HOLDOFF_MS of a
+    // connection — otherwise the write lands inside the post-connect
+    // handshake and trips macOS's supervision timeout (reason=520 →
+    // reconnect loop). After ~8s the link is stable and tolerates the stall.
+    bool in_post_connect = connected && connected_at_ms != 0 &&
+                           (now - connected_at_ms) < NVS_POST_CONNECT_HOLDOFF_MS;
+    if (nvs_dirty && (now - nvs_dirty_ms) >= NVS_FLUSH_QUIET_MS && !in_post_connect) {
         nvs_dirty = false;
         emo2_save_cfg_to_nvs();
     }
@@ -3506,6 +4166,33 @@ void emo2_tick(void) {
     }
     if (ota_active) return;
 
+    // --- Complex scripted animation (canim) owns the eyes while running ---
+    if (canim_active) {
+        if (!canim_run(now - canim_start_ms, now)) {
+            canim_active = false;
+            apply_eye_offset(0, 0);
+            // Restore scale X+Y (scenes drive scaleY; the TV canim drives both)
+            // so the eyes don't stay squished/collapsed.
+            for (int i = 0; i < 2; i++) {
+                lv_image_set_scale_x(eye_base[i], BASE_SCALE);
+                lv_image_set_scale_y(eye_base[i], BASE_SCALE);
+                lv_image_set_scale_x(eye_halo[i], HALO_SCALE);
+                lv_image_set_scale_y(eye_halo[i], HALO_SCALE);
+                lv_image_set_scale_y(eye_spec[i], SPEC_SCALE);   // catchlight too (pt 4)
+            }
+            canim_spec_suppress = false;     // wake_up2: let the catchlight reappear now
+            set_mood(M_NEUTRAL);
+            // Re-apply the configured colour (gradient/override). set_mood only
+            // swaps the sprite — it doesn't re-tint — so without this the eyes
+            // kept whatever tint they had mid-animation instead of reverting to
+            // the user's color_stops/per-state colour ("цвет для анимации не
+            // применяется"). Mirrors the diagnostics-exit which already does this.
+            apply_colours();
+            blink_next_ms = now + 1500;
+        }
+        return;
+    }
+
     // --- Diagnostics scripted sequence: cycles form + colour + motion ---
     // Unlike the old behaviour, we DON'T return here — motion handlers
     // (position chain + pulse_alt) below still run so eye-roll / wave /
@@ -3566,6 +4253,7 @@ void emo2_tick(void) {
             for (int i = 0; i < 2; i++) {
                 lv_image_set_scale(eye_base[i], BASE_SCALE);
                 lv_image_set_scale(eye_halo[i], HALO_SCALE);
+                lv_image_set_scale(eye_spec[i], SPEC_SCALE);
             }
         } else {
             float u = (float)dt / PULSE_ALT_DUR_MS;
@@ -3574,8 +4262,10 @@ void emo2_tick(void) {
             float rScale = 1.0f + 0.12f * sinf(phase + 3.14159f);  // right opposite
             lv_image_set_scale(eye_base[0], (int)(BASE_SCALE * lScale));
             lv_image_set_scale(eye_halo[0], (int)(HALO_SCALE * lScale));
+            lv_image_set_scale(eye_spec[0], (int)(SPEC_SCALE * lScale));  // catchlight follows
             lv_image_set_scale(eye_base[1], (int)(BASE_SCALE * rScale));
             lv_image_set_scale(eye_halo[1], (int)(HALO_SCALE * rScale));
+            lv_image_set_scale(eye_spec[1], (int)(SPEC_SCALE * rScale));
         }
     }
 

@@ -96,6 +96,18 @@ ROTATION_CTRL = {
     "vertical":   CTRL_ROTATION_PORTRAIT,
     "horizontal": CTRL_ROTATION_LANDSCAPE,
 }
+
+# Active splash/emo character selector.
+# Allocated byte range: 0x32–0x35 (0x34 Blob removed; id 2 slot kept but unused).
+# Persisted host-side in CHARACTER_FILE; sent on connect and on web change.
+CTRL_CHARACTER_CLAULI = 0x32
+CTRL_CHARACTER_PIXL   = 0x33
+CTRL_CHARACTER_TV     = 0x35
+CHARACTER_CTRL = {
+    "clauli": CTRL_CHARACTER_CLAULI,
+    "pixl":   CTRL_CHARACTER_PIXL,
+    "tv":     CTRL_CHARACTER_TV,
+}
 STATS_LAYOUT_CTRL = {
     "none":         CTRL_STATS_OFF,
     "bezel_orbit":  CTRL_STATS_BEZEL,
@@ -287,18 +299,50 @@ OP_NAMES = ["blink", "wink", "saccade", "eyeroll", "shake", "confused",
 # Op CTRL range moved to 0xA0..0xBF (was 0x70..0x7F which is fine, but
 # keeping forms+ops in adjacent ranges above 0x7F keeps future settings
 # free below). DiagMotion starts at DM_BLINK=1 (DM_NONE=0).
+# Allocated ranges summary (do not reuse without updating firmware too):
+#   0x32/0x33/0x35  character selector (clauli/pixl/tv); 0x34 (blob) removed
+#   0x80–0x9F  emo2 form select (32 slots)
+#   0xA0–0xBF  emo2 op trigger (DM_NONE=0xA0 unused; ops at 0xA1+)
+#   0xB0–0xB9  complex animations (wakeup/sneeze/laugh/cry/dizzy/sleep/dance/shock/scan/lovestruck)
 for _i, _n in enumerate(OP_NAMES):
     ACTION_MAP[f"op_{_n}"] = 0xA0 + 1 + _i
+
+# Complex (multi-step) character animations — fired via canim_<name> action.
+# Allocated byte range: 0xB0–0xB9. Firmware triggers a scripted sequence for
+# each; exact behaviour depends on the active character.
+CANIM_NAMES = ["wakeup", "sneeze", "laugh", "cry", "dizzy",
+               "sleep",  "dance",  "shock", "scan", "lovestruck",
+               # asymmetric / shape+position morph (index-aligned w/ firmware canim_run)
+               "suspicious", "flirt", "peek", "roll", "giggle",
+               "rage", "ponder", "agree", "disagree", "melt",
+               # rich keyframe scenarios (index 20-27 → SCENES[] in firmware)
+               "rage2", "lovestruck2", "suspicion", "dizzy_spell",
+               "panic", "mischief", "sob", "wake_up2",
+               # index 28 → dedicated old-TV / CRT power-cycle canim
+               "tv_crt"]
+for _i, _n in enumerate(CANIM_NAMES):
+    ACTION_MAP[f"canim_{_n}"] = 0xB0 + _i
 
 POLL_INTERVAL = 60
 TICK = 5
 SCAN_TIMEOUT = 8.0
+# If no device telemetry notify arrives for this long, treat the BLE link as
+# stale — macOS/CoreBluetooth keeps is_connected=True after the device silently
+# drops + re-advertises, so the connect loop never exits and all config/CTRL/
+# reboot writes vanish into the dead link. The firmware sends a 1-byte keep-alive
+# notify every 4s while connected, so ~3-4 missed keep-alives = dead link → we
+# recover in ~15s instead of minutes. (Must stay well above 4s to avoid false
+# positives from jitter.)
+STALE_LINK_S = 15.0
 HTTP_PORT = 8765
 
 LANG_FILE = Path.home() / ".config" / "claude-usage-monitor" / "lang"
 # Last web-chosen display orientation. Mirrors LANG_FILE (host-side memory of a
 # device-NVS-owned setting) so a page reload restores the right aspect.
 ORIENT_FILE = Path.home() / ".config" / "claude-usage-monitor" / "orient"
+# Last web-chosen character. Same pattern: firmware NVS owns truth, daemon
+# caches the last pick so a page reload restores it without a BLE round-trip.
+CHARACTER_FILE = Path.home() / ".config" / "claude-usage-monitor" / "character"
 EMO2_CONFIG_FILE = Path.home() / ".config" / "claude-usage-monitor" / "emo2_states.json"
 # % layout picks (picked in emo2-stats.html gallery). One default + 0..N extras.
 EMO2_STATS_FILE = Path.home() / ".config" / "claude-usage-monitor" / "emo2_stats.json"
@@ -547,6 +591,27 @@ def log(msg: str) -> None:
 # Daemon state — shared between BLE loop and HTTP server
 # ---------------------------------------------------------------------------
 
+class WakeQueue(asyncio.Queue):
+    """asyncio.Queue that fires a `.wake` Event on every enqueue.
+
+    The BLE connect loop drains this queue at the top of each iteration, then
+    blocks up to TICK(=5s) waiting for a device refresh. Without a wake signal,
+    a control command (animation, color, orientation, …) queued DURING that wait
+    sat idle for up to 5s — the "очень долгий отклик" the user saw. The loop now
+    ALSO waits on `.wake`, so a queued command wakes it within milliseconds,
+    giving control its own fast/prioritized path decoupled from the 60s poll.
+    `Queue.put()` calls `put_nowait()` internally (unbounded → never full), so
+    overriding put_nowait catches every enqueue without touching call sites.
+    """
+    def __init__(self, *a, **k):
+        super().__init__(*a, **k)
+        self.wake = asyncio.Event()
+
+    def put_nowait(self, item):
+        super().put_nowait(item)
+        self.wake.set()
+
+
 @dataclass
 class DaemonState:
     """Shared mutable state accessible from both BLE and HTTP contexts."""
@@ -572,7 +637,10 @@ class DaemonState:
     # but tracking the last web pick lets a page reload restore the correct
     # aspect + placement-allowed set instead of always defaulting to portrait.
     orientation: str = "vertical"
-    ctrl_queue: asyncio.Queue = field(default_factory=asyncio.Queue)
+    # Last web-chosen character ("clauli"|"pixl"|"tv"). Same pattern as
+    # orientation — cached here so a page reload restores the picker state.
+    character: str = "clauli"
+    ctrl_queue: asyncio.Queue = field(default_factory=WakeQueue)
     ws_clients: set = field(default_factory=set)
     api_client: Optional[Anthropic] = None
     auth_error: bool = False
@@ -815,8 +883,16 @@ class Session:
         self.client = client
         self.state = state
         self.refresh_requested = asyncio.Event()
+        # Liveness: monotonic time of the last NOTIFY received from the device
+        # ([BOOT]/[HEAP] on TX, or a refresh request). Used to detect a stale
+        # link (see STALE_LINK_S). Init to "now" so a fresh connect isn't stale.
+        self.last_rx = time.monotonic()
+        # Central→peripheral keep-alive: last time we wrote anything to the device.
+        # Tracked to send periodic writes that prevent macOS from parking the link.
+        self.last_ka_write = time.monotonic()
 
     def _on_refresh(self, _char, _data: bytearray) -> None:
+        self.last_rx = time.monotonic()
         log("Refresh requested by device")
         self.refresh_requested.set()
 
@@ -831,6 +907,8 @@ class Session:
           for cfg pushes (kept for back-compat; we just drop these so
           they don't spam the log).
         """
+        # Any TX notify means the device is alive on this link — liveness signal.
+        self.last_rx = time.monotonic()
         try:
             txt = bytes(data).decode("utf-8", errors="replace").strip()
         except Exception:
@@ -934,6 +1012,7 @@ class Session:
                     RX_CHAR_UUID, bytes([0x02]) + chunk, response=True
                 )
                 offset += len(chunk)
+            self.last_ka_write = time.monotonic()  # reset keep-alive timer on any real write
             return True
         except BleakError as e:
             log(f"Write failed: {e}")
@@ -950,7 +1029,9 @@ class Session:
             return False
         try:
             await self.client.write_gatt_char(CTRL_CHAR_UUID, bytes([cmd]), response=False)
-            log(f"CTRL: sent 0x{cmd:02X}")
+            self.last_ka_write = time.monotonic()  # reset keep-alive timer on any real write
+            if cmd != 0x00:  # suppress keep-alive pings from the log
+                log(f"CTRL: sent 0x{cmd:02X}")
             return True
         except BleakError as e:
             log(f"CTRL write failed: {e}")
@@ -1209,6 +1290,10 @@ async def connect_and_run(
     # the "Re-auth needed" overlay unless we tell it to.
     await session.write_ctrl(CTRL_TOKEN_EXPIRED if state.auth_error else CTRL_TOKEN_RECOVERED)
     await session.write_ctrl(CTRL_MANUAL_ON    if state.manual_mode  else CTRL_MANUAL_OFF)
+    # Sync the active character (ClauLi/Pixl/Blob) on every connect so the device
+    # matches the daemon's persisted pick — and a stale NVS `e2ch` can't leave it
+    # stuck on the wrong character (e.g. after a QA flash).
+    await session.write_ctrl(CHARACTER_CTRL.get(state.character, CTRL_CHARACTER_CLAULI))
     # Phase B: instead of streaming individual CTRL bytes for layout/text
     # and then per-TICK form/op pushes, ship the whole config (per-state
     # forms/ops/colors + active layout + per-layout text mode) as one JSON
@@ -1276,10 +1361,53 @@ async def connect_and_run(
             # traffic from the daemon).
             emo2_state_changed_ws(state)
 
+            # Wait for the next wakeup — whichever comes first:
+            #   • device refresh request   • a queued control command (fast path)
+            #   • TICK timeout (drives the periodic poll/keep-alive)
+            # Waking on ctrl_queue.wake gives web control its own prioritized
+            # path: a CTRL queued during this wait is processed on the very next
+            # iteration (~ms) instead of waiting up to TICK(5s).
+            state.ctrl_queue.wake.clear()
+            _refr = asyncio.ensure_future(session.refresh_requested.wait())
+            _wake = asyncio.ensure_future(state.ctrl_queue.wake.wait())
             try:
-                await asyncio.wait_for(session.refresh_requested.wait(), timeout=TICK)
-            except asyncio.TimeoutError:
-                pass
+                await asyncio.wait({_refr, _wake}, timeout=TICK,
+                                   return_when=asyncio.FIRST_COMPLETED)
+            finally:
+                _refr.cancel()
+                _wake.cancel()
+
+            now_mono = time.monotonic()
+
+            # Central→peripheral keep-alive write (every 3 s during idle).
+            # Purpose: prevent macOS from PARKING the BLE connection. A parked
+            # link stops sending LL-layer acknowledgments → peripheral detects
+            # supervision timeout (reason=520) → link drops. Peripheral-side
+            # notifies (our 4s firmware keep-alive) alone aren't enough to stop
+            # parking; a write FROM the central IS. We use CTRL 0x00 which the
+            # firmware switch-default silently ignores (safe no-op). Response=False
+            # so it doesn't wait for an ATT ACK — cheap but effective.
+            KA_WRITE_INTERVAL = 3.0
+            if now_mono - session.last_ka_write >= KA_WRITE_INTERVAL:
+                if client.is_connected and session._services_ok():
+                    try:
+                        await client.write_gatt_char(CTRL_CHAR_UUID, bytes([0x00]),
+                                                     response=False)
+                        session.last_ka_write = now_mono
+                    except Exception:
+                        pass  # stale-link guard below will catch persistent failures
+
+            # Stale-link guard. macOS/CoreBluetooth can keep is_connected=True
+            # after the device silently drops + re-advertises, so this loop
+            # never exits and web config/CTRL/reboot writes vanish into a dead
+            # link (= "web control stopped"). The firmware sends a keep-alive
+            # notify every 4s + [HEAP] every 60s; if NO telemetry has arrived for
+            # STALE_LINK_S, the link is dead — force a clean reconnect.
+            stale_s = now_mono - session.last_rx
+            if stale_s > STALE_LINK_S:
+                await session._drop_for_reconnect(
+                    f"no device telemetry for {stale_s:.0f}s — stale link")
+                break
     finally:
         # Telemetry: compute this connection's uptime + reason hint.
         # `client.is_connected` flips false BEFORE this finally runs when the
@@ -1516,8 +1644,14 @@ async def _handle_emo2_config(request: web.Request) -> web.Response:
         save_emo2_config(state.emo2_config)
         # Phase B: push the whole config blob in one JSON-write. ESP applies
         # + persists to NVS + force-applies the active state's visuals.
+        # DEBOUNCED (was an immediate await): rapid web edits (slider drags,
+        # multi-field Apply) used to fire a separate full ~1300-byte chunked
+        # push PER POST, flooding the BLE link (slow + a likely supervision-
+        # timeout trigger). _schedule_push_emo2 coalesces a burst into ONE push,
+        # matching the stats handler. The manual-mode CTRL above still goes
+        # immediately so ordering (manual-off before the cfg) is preserved.
         if state.session is not None and state.ble_connected:
-            await push_emo2_full_config(state.session, state)
+            _schedule_push_emo2(state, delay=0.4)
     return web.json_response({"ok": True, "config": state.emo2_config,
                               "manual": state.manual_mode})
 
@@ -1926,6 +2060,42 @@ async def _handle_orientation(request: web.Request) -> web.Response:
     return web.json_response({"ok": True, "value": val, "delivered": delivered})
 
 
+async def _handle_character(request: web.Request) -> web.Response:
+    """GET /api/character → {"character": <name>}.
+    POST /api/character  body: {"character": "clauli" | "pixl" | "tv"}.
+    Sends the CTRL byte; ESP persists to NVS. Host caches the pick so a web
+    reload restores the picker without a BLE round-trip.
+    "blob" was removed — a stored/posted "blob" silently falls back to "clauli"."""
+    state: DaemonState = request.app["state"]
+
+    if request.method == "GET":
+        return web.json_response({"character": state.character})
+
+    try:
+        body = await request.json()
+    except Exception:
+        return web.json_response({"error": "invalid JSON"}, status=400)
+    name = body.get("character")
+    # Silently remap the removed "blob" character to "clauli" so old persisted
+    # or externally-scripted values don't crash the handler.
+    if name == "blob":
+        name = "clauli"
+    cmd = CHARACTER_CTRL.get(name)
+    if cmd is None:
+        return web.json_response(
+            {"error": f"character must be one of {list(CHARACTER_CTRL.keys())}"}, status=400)
+    # Record the pick host-side so a web reload restores the right character,
+    # then push the CTRL byte to the ESP if BLE is connected.
+    state.character = name
+    save_character(name)
+    await _broadcast_ws(state, {"type": "character", "value": name})
+    delivered = state.ble_connected
+    if delivered:
+        await state.ctrl_queue.put(cmd)
+    log(f"character: {name} → CTRL 0x{cmd:02X}" + ("" if delivered else " (not delivered — BLE offline)"))
+    return web.json_response({"ok": True, "character": name, "delivered": delivered})
+
+
 async def _handle_emo2_stats_config(request: web.Request) -> web.Response:
     """GET → current %-layout picks. POST → {default, extras} validated + persisted."""
     state: DaemonState = request.app["state"]
@@ -2240,6 +2410,11 @@ def _op_name_idx(name: str) -> int:
     return OP_NAMES.index(name) if name in OP_NAMES else -1
 
 
+def _canim_name_idx(name: str) -> int:
+    """Canim name → 0-based index into CANIM_NAMES (= firmware canim id). -1 if unknown."""
+    return CANIM_NAMES.index(name) if name in CANIM_NAMES else -1
+
+
 def build_emo2_cfg_blob(state: "DaemonState") -> dict:
     """Assemble the single JSON config blob the ESP-side state machine
     consumes. Daemon converts string names → name-list indices to keep
@@ -2248,20 +2423,32 @@ def build_emo2_cfg_blob(state: "DaemonState") -> dict:
     for sid, sc in (state.emo2_config or {}).items():
         if not isinstance(sc, dict):
             continue
-        forms = [_form_name_idx(n) for n in (sc.get("forms") or [])]
-        ops   = [_op_name_idx(n)   for n in (sc.get("ops")   or [])]
+        forms  = [_form_name_idx(n)  for n in (sc.get("forms")  or [])]
+        ops    = [_op_name_idx(n)    for n in (sc.get("ops")    or [])]
+        canims = [_canim_name_idx(n) for n in (sc.get("canims") or [])]
+        # Part C: per-state mode (0=rotation, 1=canim). Default rotation.
+        raw_mode = sc.get("mode", "rotation")
+        if isinstance(raw_mode, int):
+            mode_int = 1 if raw_mode == 1 else 0
+        else:
+            mode_int = 1 if raw_mode == "canim" else 0
         # Phase D: ship the full per-state visual stack to firmware. New
         # keys are OPTIONAL — old firmware ignores unknown keys, so this
         # is safe to send unconditionally.
         out = {
-            "forms": [i for i in forms if i >= 0],
-            "ops":   [i for i in ops   if i >= 0],
-            "color": sc.get("color", "auto"),
+            "forms":   [i for i in forms  if i >= 0],
+            "ops":     [i for i in ops    if i >= 0],
+            "color":   sc.get("color", "auto"),
+            "mode":    mode_int,
+            "canims":  [i for i in canims if i >= 0],
         }
-        # Layout is GLOBAL now (layouts.active below) — no per-state layout.
-        if "text_source" in sc:    out["text_source"]    = sc["text_source"]
-        if "text_format" in sc:    out["text_format"]    = sc["text_format"]
-        if "text_placement" in sc: out["text_placement"] = sc["text_placement"]
+        # Layout + text (source/format/placement) are GLOBAL/per-layout now
+        # (sent in layouts.* below) — NOT per-state. We deliberately do NOT
+        # send the per-state text fields: firmware applied them LAST (forced
+        # state re-entry), so a stale per-state "middle" OVERRODE the per-layout
+        # placement the user actually set in the layout editor (hud_ribbon→top).
+        # Dropping them makes the per-layout value authoritative + applied, and
+        # matches what the web displays. (layout_color stays per-state.)
         if "layout_color" in sc:   out["layout_color"]   = sc["layout_color"]
         states_out[sid] = out
     stats = state.emo2_stats or {}
@@ -2416,6 +2603,14 @@ def save_orient(value: str) -> None:
         log(f"Could not persist orientation: {e}")
 
 
+def save_character(name: str) -> None:
+    try:
+        CHARACTER_FILE.parent.mkdir(parents=True, exist_ok=True)
+        CHARACTER_FILE.write_text(name)
+    except OSError as e:
+        log(f"Could not persist character: {e}")
+
+
 async def _handle_lang(request: web.Request) -> web.Response:
     """POST /api/lang  body: {"lang": "en"|"ru"}  → persist + CTRL set byte."""
     state: DaemonState = request.app["state"]
@@ -2452,6 +2647,7 @@ async def _handle_ws(request: web.Request) -> web.WebSocketResponse:
     }))
     await ws.send_str(json.dumps({"type": "lang", "lang": state.firmware_lang}))
     await ws.send_str(json.dumps({"type": "orient", "value": state.orientation}))
+    await ws.send_str(json.dumps({"type": "character", "value": state.character}))
     await ws.send_str(json.dumps({"type": "auth", "ok": not state.auth_error}))
     await ws.send_str(json.dumps({"type": "emo2_state", "state": state.emo2_state}))
 
@@ -2518,6 +2714,8 @@ def create_http_app(state: DaemonState) -> web.Application:
     app.router.add_post("/api/emo2-stats-config", _handle_emo2_stats_config)
     app.router.add_post("/api/emo2-test-pct",     _handle_emo2_test_pct)
     app.router.add_post("/api/orientation",       _handle_orientation)
+    app.router.add_get ("/api/character",         _handle_character)
+    app.router.add_post("/api/character",         _handle_character)
     app.router.add_post("/api/ota/upload",        _handle_ota_upload)
     app.router.add_post("/api/lang", _handle_lang)
     app.router.add_get("/api/ws", _handle_ws)
@@ -2675,6 +2873,14 @@ async def daemon_main(
         saved_orient = ORIENT_FILE.read_text().strip().lower()
         if saved_orient in ("vertical", "horizontal"):
             state.orientation = saved_orient
+    # Restore the last web-chosen character so a page reload restores the picker.
+    # "blob" was removed — remap old persisted values to "clauli".
+    if CHARACTER_FILE.exists():
+        saved_char = CHARACTER_FILE.read_text().strip().lower()
+        if saved_char == "blob":
+            saved_char = "clauli"
+        if saved_char in CHARACTER_CTRL:
+            state.character = saved_char
     state.emo2_config = load_emo2_config()
     state.emo2_stats = load_emo2_stats()
 
@@ -2701,7 +2907,15 @@ async def daemon_main(
     backoff = 1
     try:
         while not stop_event.is_set():
-            device = await scan_for_device()
+            # Hard timeout: macOS CoreBluetooth can leave BleakScanner.discover()
+            # hung far past its own timeout (observed 15-18 min stalls), which
+            # froze the whole reconnect loop. Cap it so we keep rescanning on
+            # schedule instead of stalling.
+            try:
+                device = await asyncio.wait_for(scan_for_device(), timeout=SCAN_TIMEOUT + 6)
+            except asyncio.TimeoutError:
+                log("Scan exceeded hard timeout (CoreBluetooth wedged?) — retrying")
+                device = None
             if device is None:
                 log(f"Device not found, retrying in {backoff}s...")
                 try:

@@ -48,6 +48,11 @@ void emo2_set_mood_idx(uint8_t idx);
 // in emo2.cpp). Used by the op buttons on the web UI via CTRL 0x60 + idx.
 void emo2_trigger_op(uint8_t op);
 
+// Play one of 10 complex scripted "living" animations (id 0..9: wakeup,
+// sneeze, laugh, cry, dizzy, sleep, dance, shock, scan, lovestruck).
+// CTRL 0xB0..0xB9 / web "Сложные анимации" panel.
+void emo2_play_canim(uint8_t id);
+
 // State signals from the daemon. The daemon owns auth state and the manual
 // toggle; the firmware just reacts to the CTRL bytes.
 void emo2_set_token_expired(bool expired);   // CTRL 0x18 / 0x19
@@ -62,6 +67,13 @@ void emo2_set_color_override(uint8_t mode);  // 0=cyan 1=amber 2=red 0xFF=auto
 // 0xFF=auto by pct). CTRL 0x4D/0x4E/0x4F/0x50. Persisted in NVS (`e2lc`).
 void emo2_set_layout_color_override(uint8_t mode);
 uint8_t emo2_get_layout_color_override(void);
+
+// Character (skin) selector — 0=ClauLi 1=Pixl 3=Old-TV. CTRL 0x32/0x33/0x35,
+// persisted in NVS (`e2ch`). Swaps the per-mood eye frame table; all other
+// controls (colour/layout/clock/text/timing/forms/motions) stay shared.
+// id 2 (Blob) is removed — callers passing 2 are silently ignored.
+void emo2_set_character(uint8_t id);
+uint8_t emo2_get_character(void);
 
 // Clock-style picker. 0=off 1=minimal 2=big 3=mono 4=dot. CTRL 0x48-0x4C.
 // Persisted in NVS (`e2cs`). off ⇒ clock never shown; else V_CLOCK still

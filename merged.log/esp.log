@@ -1,0 +1,770 @@
+[09:41:32.975] BLE: advertising start=OK
+[09:41:32.978] [BLE] state -> ADVERTISING (uptime=92s free_heap=268628)
+[09:41:34.255] BLE: connected from 98:dd:60:7f:75:8a
+[09:41:34.323] [BLE] state -> CONNECTED (uptime=93s free_heap=266348)
+[09:41:36.354] BLE: sent diag → [BOOT] reason=SOFTWARE(3) free=266460 min=264244 up=95
+[09:41:40.446] [CFG] len=24 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[09:41:40.513] emo2: cfg applied + saved
+[09:41:40.514] JSON parse error: IncompleteInput
+[09:41:42.252] [CFG] len=1054 err=Ok cfg=1 st=1 ly=1 cs=1 lc=1 cl=1
+[09:41:42.277] [CSTOPS] n=3 override=255 eff_pct=9.0 active=1
+[09:41:42.280]   stop[0] pct=0  #E0F4FF
+[09:41:42.284]   stop[1] pct=60  #62AAEA
+[09:41:42.284]   stop[2] pct=85  #FF4D4D
+[09:41:42.285]   → halo_color = #E0F4FF
+[09:41:42.364] emo2: cfg applied + saved
+[09:41:43.502] [CFG] len=82 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[09:42:00.878] [HEAP] free=266196 min=262584 largest=245748 uptime=120s
+[09:42:44.320] [CFG] len=82 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[09:43:00.950] [HEAP] free=266196 min=262584 largest=245748 uptime=180s
+[09:43:45.486] [CFG] len=82 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[09:44:01.037] [HEAP] free=266196 min=262584 largest=245748 uptime=240s
+[09:44:46.741] [CFG] len=82 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[09:45:01.130] [HEAP] free=266196 min=262584 largest=245748 uptime=300s
+[09:45:48.775] [CFG] len=82 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[09:46:01.140] [HEAP] free=266196 min=262584 largest=245748 uptime=360s
+[09:46:50.134] [CFG] len=82 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[09:47:01.230] [HEAP] free=266196 min=262584 largest=245748 uptime=420s
+[09:47:51.335] [CFG] len=82 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[09:48:52.792] [HEAP] free=266196 min=262584 largest=245748 uptime=480s
+[09:48:52.797] [CFG] len=82 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[09:49:01.334] [HEAP] free=266196 min=262584 largest=245748 uptime=540s
+[09:49:53.865] [CFG] len=82 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[09:50:01.372] [HEAP] free=266196 min=262584 largest=245748 uptime=600s
+[09:50:55.029] [CFG] len=82 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[09:51:01.426] [HEAP] free=266196 min=262584 largest=245748 uptime=660s
+[09:51:56.221] [CFG] len=82 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[09:52:01.447] [HEAP] free=266196 min=262584 largest=245748 uptime=720s
+[09:52:20.629] [CFG] len=24 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[09:52:20.686] emo2: cfg applied + saved
+[09:52:22.829] [CFG] len=24 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[09:52:22.888] emo2: cfg applied + saved
+[09:52:24.642] [CFG] len=1054 err=Ok cfg=1 st=1 ly=1 cs=1 lc=1 cl=1
+[09:52:24.667] [CSTOPS] n=3 override=255 eff_pct=9.0 active=1
+[09:52:24.667]   stop[0] pct=0  #E0F4FF
+[09:52:24.668]   stop[1] pct=60  #62AAEA
+[09:52:24.668]   stop[2] pct=85  #FF4D4D
+[09:52:24.668]   → halo_color = #E0F4FF
+[09:52:24.735] emo2: cfg applied + saved
+[09:52:33.975] [CFG] len=24 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[09:52:34.038] emo2: cfg applied + saved
+[09:52:40.436] [CFG] len=1054 err=Ok cfg=1 st=1 ly=1 cs=1 lc=1 cl=1
+[09:52:40.457] [CSTOPS] n=3 override=255 eff_pct=9.0 active=1
+[09:52:40.457]   stop[0] pct=0  #E0F4FF
+[09:52:40.457]   stop[1] pct=60  #62AAEA
+[09:52:40.457]   stop[2] pct=85  #FF4D4D
+[09:52:40.458]   → halo_color = #E0F4FF
+[09:52:40.524] emo2: cfg applied + saved
+[09:52:46.305] [CFG] len=24 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[09:52:46.363] emo2: cfg applied + saved
+[09:52:49.268] [CFG] len=1055 err=Ok cfg=1 st=1 ly=1 cs=1 lc=1 cl=1
+[09:52:49.275] [CSTOPS] n=3 override=255 eff_pct=9.0 active=1
+[09:52:49.276]   stop[0] pct=0  #E0F4FF
+[09:52:49.276]   stop[1] pct=60  #62AAEA
+[09:52:49.278]   stop[2] pct=85  #FF4D4D
+[09:52:49.278]   → halo_color = #E0F4FF
+[09:52:49.296] emo2: cfg applied + saved
+[09:52:51.140] [CFG] len=24 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[09:52:51.158] emo2: cfg applied + saved
+[09:52:52.697] [CFG] len=1054 err=Ok cfg=1 st=1 ly=1 cs=1 lc=1 cl=1
+[09:52:52.720] [CSTOPS] n=3 override=255 eff_pct=9.0 active=1
+[09:52:52.720]   stop[0] pct=0  #E0F4FF
+[09:52:52.721]   stop[1] pct=60  #62AAEA
+[09:52:52.721]   stop[2] pct=85  #FF4D4D
+[09:52:52.721]   → halo_color = #E0F4FF
+[09:52:52.787] emo2: cfg applied + saved
+[09:52:58.709] [CFG] len=82 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[09:53:01.006] [CFG] len=1054 err=Ok cfg=1 st=1 ly=1 cs=1 lc=1 cl=1
+[09:53:01.028] [CSTOPS] n=3 override=255 eff_pct=9.0 active=1
+[09:53:01.029]   stop[0] pct=0  #E0F4FF
+[09:53:01.029]   stop[1] pct=60  #62AAEA
+[09:53:01.029]   stop[2] pct=85  #FF4D4D
+[09:53:01.029]   → halo_color = #E0F4FF
+[09:53:01.098] emo2: cfg applied + saved
+[09:53:23.431] [HEAP] free=266052 min=262440 largest=245748 uptime=780s
+[09:53:23.432] [CFG] len=24 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[09:53:23.491] emo2: cfg applied + saved
+[09:53:51.707] [CFG] len=24 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[09:53:51.766] emo2: cfg applied + saved
+[09:54:00.747] [CFG] len=24 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[09:54:00.802] emo2: cfg applied + saved
+[09:54:01.660] [HEAP] free=266052 min=262440 largest=245748 uptime=840s
+[09:54:01.998] [CFG] len=82 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[09:54:11.776] [CFG] len=24 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[09:54:11.833] emo2: cfg applied + saved
+[09:54:12.480] [CFG] len=24 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[09:54:12.537] emo2: cfg applied + saved
+[09:54:15.376] [CFG] len=1017 err=Ok cfg=1 st=1 ly=1 cs=1 lc=1 cl=1
+[09:54:15.398] [CSTOPS] n=4 override=255 eff_pct=9.0 active=1
+[09:54:15.398]   stop[0] pct=0  #00E5E5
+[09:54:15.398]   stop[1] pct=20  #00FF66
+[09:54:15.399]   stop[2] pct=50  #FFD200
+[09:54:15.399]   stop[3] pct=80  #FF1818
+[09:54:15.399]   → halo_color = #00E5E5
+[09:54:15.469] emo2: cfg applied + saved
+[09:54:18.569] [CFG] len=24 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[09:54:18.627] emo2: cfg applied + saved
+[09:54:26.680] [CFG] len=24 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[09:54:26.738] emo2: cfg applied + saved
+[09:54:32.541] [CFG] len=24 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[09:54:32.601] emo2: cfg applied + saved
+[09:54:40.757] [CFG] len=24 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[09:54:40.810] emo2: cfg applied + saved
+[09:54:48.110] [CFG] len=24 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[09:54:48.169] emo2: cfg applied + saved
+[09:54:54.613] [CFG] len=24 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[09:54:54.672] emo2: cfg applied + saved
+[09:55:01.682] [HEAP] free=266052 min=262328 largest=245748 uptime=900s
+[09:55:04.248] [CFG] len=24 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[09:55:04.304] emo2: cfg applied + saved
+[09:55:05.651] [CFG] len=1012 err=Ok cfg=1 st=1 ly=1 cs=1 lc=1 cl=1
+[09:55:05.665] [CSTOPS] n=4 override=255 eff_pct=9.0 active=1
+[09:55:05.666]   stop[0] pct=0  #00E5E5
+[09:55:05.666]   stop[1] pct=20  #00FF66
+[09:55:05.666]   stop[2] pct=50  #FFD200
+[09:55:05.666]   stop[3] pct=80  #FF1818
+[09:55:05.667]   → halo_color = #00E5E5
+[09:55:05.727] emo2: cfg applied + saved
+[09:55:05.961] [CFG] len=82 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[09:55:11.632] [CFG] len=1012 err=Ok cfg=1 st=1 ly=1 cs=1 lc=1 cl=1
+[09:55:11.649] [CSTOPS] n=4 override=255 eff_pct=9.0 active=1
+[09:55:11.650]   stop[0] pct=0  #00E5E5
+[09:55:11.650]   stop[1] pct=20  #00FF66
+[09:55:11.651]   stop[2] pct=50  #FFD200
+[09:55:11.651]   stop[3] pct=80  #FF1818
+[09:55:11.651]   → halo_color = #00E5E5
+[09:55:11.693] emo2: cfg applied + saved
+[09:55:29.737] [CFG] len=24 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[09:55:29.782] emo2: cfg applied + saved
+[09:55:32.643] [CFG] len=24 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[09:55:32.687] emo2: cfg applied + saved
+[09:55:34.870] [CFG] len=24 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[09:55:34.913] emo2: cfg applied + saved
+[09:55:38.786] [CFG] len=24 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[09:55:38.832] emo2: cfg applied + saved
+[09:55:40.077] [CFG] len=24 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[09:55:40.120] emo2: cfg applied + saved
+[09:55:41.891] [CFG] len=24 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[09:55:41.935] emo2: cfg applied + saved
+[09:55:44.451] [CFG] len=1008 err=Ok cfg=1 st=1 ly=1 cs=1 lc=1 cl=1
+[09:55:44.476] [CSTOPS] n=4 override=255 eff_pct=9.0 active=1
+[09:55:44.477]   stop[0] pct=0  #00E5E5
+[09:55:44.477]   stop[1] pct=20  #00FF66
+[09:55:44.478]   stop[2] pct=50  #FFD200
+[09:55:44.479]   stop[3] pct=80  #FF1818
+[09:55:44.480]   → halo_color = #00E5E5
+[09:55:44.532] emo2: cfg applied + saved
+[09:55:53.246] [CFG] len=24 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[09:55:53.304] emo2: cfg applied + saved
+[09:55:54.543] [CFG] len=24 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[09:55:54.601] emo2: cfg applied + saved
+[09:56:01.778] [HEAP] free=266044 min=262328 largest=245748 uptime=961s
+[09:56:10.582] [CFG] len=82 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[09:56:16.919] [CFG] len=24 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[09:56:16.977] emo2: cfg applied + saved
+[09:56:19.274] [CFG] len=24 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[09:56:19.331] emo2: cfg applied + saved
+[09:56:20.896] [CFG] len=1013 err=Ok cfg=1 st=1 ly=1 cs=1 lc=1 cl=1
+[09:56:20.919] [CSTOPS] n=4 override=255 eff_pct=9.0 active=1
+[09:56:20.919]   stop[0] pct=0  #00E5E5
+[09:56:20.919]   stop[1] pct=20  #00FF66
+[09:56:20.919]   stop[2] pct=50  #FFD200
+[09:56:20.919]   stop[3] pct=80  #FF1818
+[09:56:20.919]   → halo_color = #00E5E5
+[09:56:20.979] emo2: cfg applied + saved
+[09:56:33.020] [CFG] len=24 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[09:56:33.078] emo2: cfg applied + saved
+[09:56:47.154] [CFG] len=24 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[09:56:47.209] emo2: cfg applied + saved
+[09:56:48.311] [CFG] len=24 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[09:56:48.371] emo2: cfg applied + saved
+[09:56:49.911] [CFG] len=24 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[09:56:49.969] emo2: cfg applied + saved
+[09:56:53.742] [CFG] len=24 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[09:56:53.802] emo2: cfg applied + saved
+[09:57:11.957] [HEAP] free=265932 min=262328 largest=245748 uptime=1021s
+[09:57:11.959] [CFG] len=82 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[09:58:01.915] [HEAP] free=266044 min=262328 largest=245748 uptime=1081s
+[09:58:13.135] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[09:59:02.011] [HEAP] free=266044 min=262328 largest=245748 uptime=1141s
+[09:59:14.344] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[09:59:15.363] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[09:59:15.422] emo2: cfg applied + saved
+[10:00:15.478] [HEAP] free=266044 min=262328 largest=245748 uptime=1201s
+[10:00:15.480] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:01:02.131] [HEAP] free=266044 min=262328 largest=245748 uptime=1261s
+[10:01:16.839] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:01:42.723] BLE: disconnected (reason=520)
+[10:01:42.725] BLE: advertising start=OK
+[10:01:42.726] [BLE] state -> ADVERTISING (uptime=1301s free_heap=268284)
+[10:01:54.724] BLE: connected from 98:dd:60:7f:75:8a
+[10:01:54.726] [BLE] state -> CONNECTED (uptime=1313s free_heap=266076)
+[10:01:56.757] BLE: sent diag → [BOOT] reason=SOFTWARE(3) free=266132 min=262328 up=1316
+[10:01:56.758] [CFG] len=1013 err=Ok cfg=1 st=1 ly=1 cs=1 lc=1 cl=1
+[10:01:56.777] [CSTOPS] n=4 override=255 eff_pct=18.0 active=1
+[10:01:56.777]   stop[0] pct=0  #00E5E5
+[10:01:56.777]   stop[1] pct=20  #00FF66
+[10:01:56.777]   stop[2] pct=50  #FFD200
+[10:01:56.777]   stop[3] pct=80  #FF1818
+[10:01:56.777]   → halo_color = #00E5E5
+[10:01:56.837] emo2: cfg applied + saved
+[10:01:57.268] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:01:57.338] emo2: cfg applied + saved
+[10:01:57.863] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:02:02.232] [HEAP] free=266164 min=262328 largest=245748 uptime=1321s
+[10:02:19.788] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:02:19.846] emo2: cfg applied + saved
+[10:02:22.287] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:02:22.339] emo2: cfg applied + saved
+[10:02:27.988] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:02:28.047] emo2: cfg applied + saved
+[10:02:28.918] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:02:28.976] emo2: cfg applied + saved
+[10:02:29.191] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:02:29.247] emo2: cfg applied + saved
+[10:02:38.687] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:02:38.750] emo2: cfg applied + saved
+[10:02:45.300] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:02:45.355] emo2: cfg applied + saved
+[10:02:51.469] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:02:51.528] emo2: cfg applied + saved
+[10:02:51.840] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:02:51.896] emo2: cfg applied + saved
+[10:02:54.286] [CFG] len=1013 err=Ok cfg=1 st=1 ly=1 cs=1 lc=1 cl=1
+[10:02:54.297] [CSTOPS] n=4 override=255 eff_pct=18.0 active=1
+[10:02:54.297]   stop[0] pct=0  #00E5E5
+[10:02:54.297]   stop[1] pct=20  #00FF66
+[10:02:54.297]   stop[2] pct=50  #FFD200
+[10:02:54.298]   stop[3] pct=80  #FF1818
+[10:02:54.298]   → halo_color = #00E5E5
+[10:02:54.318] emo2: cfg applied + saved
+[10:02:58.007] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:02:58.029] emo2: cfg applied + saved
+[10:02:58.833] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:02:58.850] emo2: cfg applied + saved
+[10:03:00.404] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:03:03.347] [HEAP] free=266160 min=262328 largest=245748 uptime=1381s
+[10:03:03.348] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:03:03.373] emo2: cfg applied + saved
+[10:03:03.488] BLE: disconnected (reason=531)
+[10:03:03.546] BLE: advertising start=OK
+[10:03:03.546] [BLE] state -> ADVERTISING (uptime=1382s free_heap=268272)
+[10:03:16.737] BLE: connected from 98:dd:60:7f:75:8a
+[10:03:16.739] [BLE] state -> CONNECTED (uptime=1395s free_heap=266024)
+[10:03:18.724] BLE: sent diag → [BOOT] reason=SOFTWARE(3) free=266148 min=262328 up=1397
+[10:03:20.060] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:03:20.079] [RX] orphan continuation (no active frame)
+[10:03:20.079] emo2: cfg applied + saved
+[10:03:20.125] [RX] orphan continuation (no active frame)
+[10:03:20.191] [RX] orphan continuation (no active frame)
+[10:03:20.248] [RX] orphan continuation (no active frame)
+[10:03:20.307] [RX] orphan continuation (no active frame)
+[10:03:20.355] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:03:20.374] emo2: cfg applied + saved
+[10:03:21.383] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:04:02.293] [HEAP] free=266148 min=262328 largest=245748 uptime=1441s
+[10:04:22.419] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:04:28.730] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:04:28.752] emo2: cfg applied + saved
+[10:04:30.516] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:04:30.538] emo2: cfg applied + saved
+[10:04:31.913] [CFG] len=1013 err=Ok cfg=1 st=1 ly=1 cs=1 lc=1 cl=1
+[10:04:31.952] [CSTOPS] n=4 override=255 eff_pct=19.0 active=1
+[10:04:31.953]   stop[0] pct=0  #00E5E5
+[10:04:31.953]   stop[1] pct=20  #00FF66
+[10:04:31.953]   stop[2] pct=50  #FFD200
+[10:04:31.953]   stop[3] pct=80  #FF1818
+[10:04:31.954]   → halo_color = #00E5E5
+[10:04:32.015] emo2: cfg applied + saved
+[10:05:02.315] [HEAP] free=266148 min=262328 largest=245748 uptime=1501s
+[10:05:14.473] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:05:14.532] emo2: cfg applied + saved
+[10:05:16.686] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:05:16.744] emo2: cfg applied + saved
+[10:05:21.917] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:05:21.981] emo2: cfg applied + saved
+[10:05:27.437] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:05:27.494] emo2: cfg applied + saved
+[10:05:27.911] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:05:29.545] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:05:29.605] emo2: cfg applied + saved
+[10:05:44.331] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:05:44.392] emo2: cfg applied + saved
+[10:05:47.340] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:05:47.399] emo2: cfg applied + saved
+[10:06:31.182] [HEAP] free=266160 min=262328 largest=245748 uptime=1561s
+[10:06:31.192] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:06:59.117] [CFG] len=1013 err=Ok cfg=1 st=1 ly=1 cs=1 lc=1 cl=1
+[10:06:59.139] [CSTOPS] n=4 override=255 eff_pct=20.0 active=1
+[10:06:59.140]   stop[0] pct=0  #00E5E5
+[10:06:59.140]   stop[1] pct=20  #00FF66
+[10:06:59.140]   stop[2] pct=50  #FFD200
+[10:06:59.140]   stop[3] pct=80  #FF1818
+[10:06:59.140]   → halo_color = #00FF66
+[10:06:59.201] emo2: cfg applied + saved
+[10:07:35.113] [HEAP] free=266148 min=262328 largest=245748 uptime=1621s
+[10:07:35.114] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:08:02.515] [HEAP] free=266160 min=262328 largest=245748 uptime=1681s
+[10:08:36.150] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:09:02.580] [HEAP] free=266148 min=262328 largest=245748 uptime=1741s
+[10:09:37.078] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:10:20.771] [HEAP] free=266160 min=262328 largest=245748 uptime=1801s
+[10:10:20.773] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:10:20.828] emo2: cfg applied + saved
+[10:10:22.307] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:10:22.364] emo2: cfg applied + saved
+[10:10:22.809] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:10:22.872] emo2: cfg applied + saved
+[10:10:24.326] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:10:24.387] emo2: cfg applied + saved
+[10:10:38.150] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:10:53.342] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:10:53.400] emo2: cfg applied + saved
+[10:11:02.748] [HEAP] free=266040 min=262328 largest=245748 uptime=1861s
+[10:11:12.152] [CFG] len=1012 err=Ok cfg=1 st=1 ly=1 cs=1 lc=1 cl=1
+[10:11:12.171] [CSTOPS] n=4 override=255 eff_pct=21.0 active=1
+[10:11:12.184]   stop[0] pct=0  #00E5E5
+[10:11:12.185]   stop[1] pct=20  #00FF66
+[10:11:12.185]   stop[2] pct=50  #FFD200
+[10:11:12.185]   stop[3] pct=80  #FF1818
+[10:11:12.185]   → halo_color = #00FF66
+[10:11:12.214] emo2: cfg applied + saved
+[10:11:12.469] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:11:12.511] emo2: cfg applied + saved
+[10:11:36.930] [CFG] len=1013 err=Ok cfg=1 st=1 ly=1 cs=1 lc=1 cl=1
+[10:11:36.948] [CSTOPS] n=4 override=255 eff_pct=21.0 active=1
+[10:11:36.948]   stop[0] pct=5  #00E5E5
+[10:11:36.948]   stop[1] pct=20  #00FF66
+[10:11:36.948]   stop[2] pct=50  #FFD200
+[10:11:36.948]   stop[3] pct=80  #FF1818
+[10:11:36.948]   → halo_color = #00FF66
+[10:11:36.972] [GMODE] -> smooth
+[10:11:37.006] emo2: cfg applied + saved
+[10:11:37.289] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:11:37.335] emo2: cfg applied + saved
+[10:11:43.010] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:11:52.358] [CFG] len=1013 err=Ok cfg=1 st=1 ly=1 cs=1 lc=1 cl=1
+[10:11:52.378] [CSTOPS] n=4 override=255 eff_pct=21.0 active=1
+[10:11:52.378]   stop[0] pct=0  #00E5E5
+[10:11:52.378]   stop[1] pct=20  #00FF66
+[10:11:52.378]   stop[2] pct=50  #FFD200
+[10:11:52.378]   stop[3] pct=80  #FF1818
+[10:11:52.378]   → halo_color = #08FD62
+[10:11:52.408] [GMODE] -> step
+[10:11:52.453] emo2: cfg applied + saved
+[10:12:02.787] [HEAP] free=266004 min=262328 largest=245748 uptime=1922s
+[10:12:11.305] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:12:11.365] emo2: cfg applied + saved
+[10:12:48.486] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:13:49.634] [HEAP] free=266004 min=262328 largest=245748 uptime=1982s
+[10:13:49.635] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:14:02.963] [HEAP] free=266016 min=262328 largest=245748 uptime=2042s
+[10:14:50.944] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:15:02.994] [HEAP] free=265896 min=262328 largest=245748 uptime=2102s
+[10:15:52.470] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:16:03.031] [HEAP] free=266004 min=262328 largest=245748 uptime=2162s
+[10:16:53.486] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:17:03.090] [HEAP] free=266016 min=262328 largest=245748 uptime=2222s
+[10:17:54.500] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:18:03.172] [HEAP] free=266004 min=262328 largest=245748 uptime=2282s
+[10:18:55.683] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:19:03.192] [HEAP] free=266016 min=262328 largest=245748 uptime=2342s
+[10:19:15.672] BLE: link dead — forcing reconnect
+[10:19:15.674] BLE: advertising start=OK
+[10:19:15.675] [BLE] state -> ADVERTISING (uptime=2354s free_heap=264400)
+[10:19:15.762] BLE: disconnected (reason=534)
+[10:19:15.793] [BLE] state -> DISCONNECTED (uptime=2355s free_heap=268064)
+[10:19:16.719] BLE: advertising start=OK
+[10:19:16.720] [BLE] state -> ADVERTISING (uptime=2355s free_heap=268132)
+[10:19:30.913] BLE: connected from 98:dd:60:7f:75:8a
+[10:19:30.931] [BLE] state -> CONNECTED (uptime=2370s free_heap=265904)
+[10:19:32.991] BLE: sent diag → [BOOT] reason=SOFTWARE(3) free=265996 min=262328 up=2372
+[10:19:32.992] [CFG] len=1013 err=Ok cfg=1 st=1 ly=1 cs=1 lc=1 cl=1
+[10:19:33.014] [CSTOPS] n=4 override=255 eff_pct=23.0 active=1
+[10:19:33.015]   stop[0] pct=0  #00E5E5
+[10:19:33.015]   stop[1] pct=20  #00FF66
+[10:19:33.015]   stop[2] pct=50  #FFD200
+[10:19:33.015]   stop[3] pct=80  #FF1818
+[10:19:33.015]   → halo_color = #00FF66
+[10:19:33.074] emo2: cfg applied + saved
+[10:19:33.313] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:19:33.372] emo2: cfg applied + saved
+[10:19:33.590] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:19:33.647] emo2: cfg applied + saved
+[10:19:33.967] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:20:03.260] [HEAP] free=266028 min=262264 largest=245748 uptime=2402s
+[10:20:35.168] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:21:03.323] [HEAP] free=266032 min=262264 largest=245748 uptime=2462s
+[10:21:36.086] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:22:03.307] [HEAP] free=266028 min=262264 largest=245748 uptime=2522s
+[10:22:37.090] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:23:03.346] [HEAP] free=266032 min=262264 largest=245748 uptime=2582s
+[10:23:38.076] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:24:03.460] [HEAP] free=266028 min=262264 largest=245748 uptime=2642s
+[10:24:38.982] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:25:03.472] [HEAP] free=266028 min=262264 largest=245748 uptime=2702s
+[10:25:07.234] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:25:07.293] emo2: cfg applied + saved
+[10:25:41.285] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:26:03.567] [HEAP] free=266028 min=262264 largest=245748 uptime=2762s
+[10:26:42.290] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:27:30.266] [HEAP] free=266032 min=262264 largest=245748 uptime=2822s
+[10:27:30.269] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:27:30.329] emo2: cfg applied + saved
+[10:27:43.332] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:28:03.709] [HEAP] free=266032 min=262264 largest=245748 uptime=2882s
+[10:28:45.830] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:29:24.356] [HEAP] free=266028 min=262264 largest=245748 uptime=2943s
+[10:29:24.358] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:29:24.421] emo2: cfg applied + saved
+[10:29:47.042] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:30:03.832] [HEAP] free=266032 min=262264 largest=245748 uptime=3003s
+[10:30:48.410] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:31:03.866] [HEAP] free=266028 min=262264 largest=245748 uptime=3063s
+[10:31:33.300] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:31:33.357] emo2: cfg applied + saved
+[10:31:49.554] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:32:03.907] [HEAP] free=266028 min=262264 largest=245748 uptime=3123s
+[10:32:50.605] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:33:03.941] [HEAP] free=266032 min=262264 largest=245748 uptime=3183s
+[10:33:27.335] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[10:33:27.396] emo2: cfg applied + saved
+[10:33:51.649] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:34:04.017] [HEAP] free=266028 min=262264 largest=245748 uptime=3243s
+[10:34:52.795] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:35:53.848] [HEAP] free=266032 min=262264 largest=245748 uptime=3303s
+[10:35:53.849] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:36:04.122] [HEAP] free=266028 min=262264 largest=245748 uptime=3363s
+[10:36:54.817] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:37:04.162] [HEAP] free=266032 min=262264 largest=245748 uptime=3423s
+[10:37:55.816] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:38:04.209] [HEAP] free=266028 min=262264 largest=245748 uptime=3483s
+[10:38:56.730] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:39:57.900] [HEAP] free=266028 min=262264 largest=245748 uptime=3543s
+[10:39:57.901] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:40:04.297] [HEAP] free=266032 min=262264 largest=245748 uptime=3603s
+[10:40:58.984] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:41:04.335] [HEAP] free=266028 min=262264 largest=245748 uptime=3663s
+[10:42:00.057] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:42:04.442] [HEAP] free=266032 min=262264 largest=245748 uptime=3723s
+[10:43:01.254] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:44:02.627] [HEAP] free=266028 min=262264 largest=245748 uptime=3783s
+[10:44:02.629] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:44:04.496] [HEAP] free=266028 min=262264 largest=245748 uptime=3843s
+[10:45:03.588] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:46:04.584] [HEAP] free=266032 min=262264 largest=245748 uptime=3903s
+[10:46:04.585] [HEAP] free=266032 min=262264 largest=245748 uptime=3963s
+[10:46:04.586] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:47:04.618] [HEAP] free=266028 min=262264 largest=245748 uptime=4023s
+[10:47:05.656] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:48:06.757] [HEAP] free=266028 min=262264 largest=245748 uptime=4083s
+[10:48:06.758] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:49:04.687] [HEAP] free=266032 min=262264 largest=245748 uptime=4143s
+[10:49:07.856] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:50:04.774] [HEAP] free=266028 min=262264 largest=245748 uptime=4204s
+[10:50:10.777] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:51:04.870] [HEAP] free=266032 min=262264 largest=245748 uptime=4264s
+[10:51:12.083] [CFG] len=82 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:52:04.981] [HEAP] free=266028 min=262264 largest=245748 uptime=4324s
+[10:52:14.407] [CFG] len=82 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:53:04.981] [HEAP] free=266028 min=262264 largest=245748 uptime=4384s
+[10:53:15.407] [CFG] len=82 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:54:05.089] [HEAP] free=266032 min=262264 largest=245748 uptime=4444s
+[10:54:16.692] [CFG] len=82 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:55:17.685] [HEAP] free=266028 min=262264 largest=245748 uptime=4504s
+[10:55:17.688] [CFG] len=82 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:56:05.258] [HEAP] free=266032 min=262264 largest=245748 uptime=4564s
+[10:56:18.715] [CFG] len=82 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:57:05.277] [HEAP] free=266032 min=262264 largest=245748 uptime=4624s
+[10:57:20.986] [CFG] len=82 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:58:05.335] [HEAP] free=266032 min=262264 largest=245748 uptime=4684s
+[10:58:22.335] [CFG] len=82 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[10:59:05.376] [HEAP] free=266028 min=262264 largest=245748 uptime=4744s
+[10:59:23.473] [CFG] len=82 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[11:00:24.505] [HEAP] free=266032 min=262264 largest=245748 uptime=4804s
+[11:00:24.506] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[11:01:05.524] [HEAP] free=266028 min=262264 largest=245748 uptime=4864s
+[11:01:25.669] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[11:02:05.600] [HEAP] free=266032 min=262264 largest=245748 uptime=4924s
+[11:02:26.715] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[11:03:05.669] [HEAP] free=266032 min=262264 largest=245748 uptime=4984s
+[11:03:27.700] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[11:04:05.692] [HEAP] free=266028 min=262264 largest=245748 uptime=5044s
+[11:04:28.778] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[11:05:05.701] [HEAP] free=266032 min=262264 largest=245748 uptime=5104s
+[11:05:29.761] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[11:06:05.708] [HEAP] free=266028 min=262264 largest=245748 uptime=5164s
+[11:06:18.411] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:06:18.469] emo2: cfg applied + saved
+[11:06:30.878] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[11:06:55.904] BLE: disconnected (reason=531)
+[11:06:55.968] BLE: advertising start=OK
+[11:06:55.969] [BLE] state -> ADVERTISING (uptime=5215s free_heap=268096)
+[11:07:06.871] [HEAP] free=268096 min=262264 largest=245748 uptime=5225s
+[11:07:06.872] BLE: connected from 98:dd:60:7f:75:8a
+[11:07:06.898] [BLE] state -> CONNECTED (uptime=5226s free_heap=265916)
+[11:07:08.855] [CFG] len=1013 err=Ok cfg=1 st=1 ly=1 cs=1 lc=1 cl=1
+[11:07:08.878] [CSTOPS] n=4 override=255 eff_pct=27.0 active=1
+[11:07:08.880]   stop[0] pct=0  #00E5E5
+[11:07:08.880]   stop[1] pct=20  #00FF66
+[11:07:08.880]   stop[2] pct=50  #FFD200
+[11:07:08.880]   stop[3] pct=80  #FF1818
+[11:07:08.880]   → halo_color = #00FF66
+[11:07:08.940] emo2: cfg applied + saved
+[11:07:09.209] BLE: sent diag → [BOOT] reason=SOFTWARE(3) free=266024 min=262264 up=5228
+[11:07:09.214] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:07:09.268] emo2: cfg applied + saved
+[11:07:09.492] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:07:09.547] emo2: cfg applied + saved
+[11:07:09.774] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[11:07:10.090] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:07:10.151] emo2: cfg applied + saved
+[11:07:11.580] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:07:11.630] emo2: cfg applied + saved
+[11:07:15.498] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:07:15.550] emo2: cfg applied + saved
+[11:07:17.796] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:07:17.855] emo2: cfg applied + saved
+[11:07:20.437] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:07:20.500] emo2: cfg applied + saved
+[11:07:22.488] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:07:22.546] emo2: cfg applied + saved
+[11:07:24.302] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:07:24.365] emo2: cfg applied + saved
+[11:07:27.001] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:07:27.059] emo2: cfg applied + saved
+[11:07:27.421] [CFG] len=1013 err=Ok cfg=1 st=1 ly=1 cs=1 lc=1 cl=1
+[11:07:27.443] [CSTOPS] n=4 override=255 eff_pct=27.0 active=1
+[11:07:27.444]   stop[0] pct=0  #00E5E5
+[11:07:27.444]   stop[1] pct=20  #00FF66
+[11:07:27.444]   stop[2] pct=50  #FFD200
+[11:07:27.445]   stop[3] pct=80  #FF1818
+[11:07:27.445]   → halo_color = #00FF66
+[11:07:27.511] emo2: cfg applied + saved
+[11:07:29.023] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:07:29.085] emo2: cfg applied + saved
+[11:07:31.240] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:07:31.299] emo2: cfg applied + saved
+[11:07:31.762] [CFG] len=1016 err=Ok cfg=1 st=1 ly=1 cs=1 lc=1 cl=1
+[11:07:31.785] [CSTOPS] n=4 override=255 eff_pct=27.0 active=1
+[11:07:31.786]   stop[0] pct=0  #00E5E5
+[11:07:31.786]   stop[1] pct=20  #00FF66
+[11:07:31.786]   stop[2] pct=50  #FFD200
+[11:07:31.787]   stop[3] pct=80  #FF1818
+[11:07:31.787]   → halo_color = #00FF66
+[11:07:31.844] emo2: cfg applied + saved
+[11:07:39.992] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:07:40.051] emo2: cfg applied + saved
+[11:07:51.653] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:07:51.718] emo2: cfg applied + saved
+[11:08:05.873] [HEAP] free=266024 min=262264 largest=245748 uptime=5285s
+[11:08:08.197] [CFG] len=1019 err=Ok cfg=1 st=1 ly=1 cs=1 lc=1 cl=1
+[11:08:08.219] [CSTOPS] n=4 override=255 eff_pct=27.0 active=1
+[11:08:08.219]   stop[0] pct=0  #00E5E5
+[11:08:08.219]   stop[1] pct=20  #00FF66
+[11:08:08.220]   stop[2] pct=50  #FFD200
+[11:08:08.220]   stop[3] pct=80  #FF1818
+[11:08:08.221]   → halo_color = #00FF66
+[11:08:08.280] emo2: cfg applied + saved
+[11:08:13.328] [CFG] len=1016 err=Ok cfg=1 st=1 ly=1 cs=1 lc=1 cl=1
+[11:08:13.350] [CSTOPS] n=4 override=128 eff_pct=27.0 active=1
+[11:08:13.350]   stop[0] pct=0  #00E5E5
+[11:08:13.350]   stop[1] pct=20  #00FF66
+[11:08:13.350]   stop[2] pct=50  #FFD200
+[11:08:13.350]   stop[3] pct=80  #FF1818
+[11:08:13.350]   → halo_color = #2500F9
+[11:08:13.409] emo2: cfg applied + saved
+[11:08:14.218] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[11:08:26.318] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:08:26.377] emo2: cfg applied + saved
+[11:08:27.534] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:08:27.595] emo2: cfg applied + saved
+[11:08:28.050] [CFG] len=1013 err=Ok cfg=1 st=1 ly=1 cs=1 lc=1 cl=1
+[11:08:28.070] [CSTOPS] n=4 override=255 eff_pct=27.0 active=1
+[11:08:28.071]   stop[0] pct=0  #00E5E5
+[11:08:28.071]   stop[1] pct=20  #00FF66
+[11:08:28.071]   stop[2] pct=50  #FFD200
+[11:08:28.071]   stop[3] pct=80  #FF1818
+[11:08:28.071]   → halo_color = #00FF66
+[11:08:28.142] emo2: cfg applied + saved
+[11:08:36.467] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:08:36.528] emo2: cfg applied + saved
+[11:08:37.573] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:08:37.633] emo2: cfg applied + saved
+[11:08:38.206] [CFG] len=1016 err=Ok cfg=1 st=1 ly=1 cs=1 lc=1 cl=1
+[11:08:38.226] [CSTOPS] n=4 override=255 eff_pct=27.0 active=1
+[11:08:38.232]   stop[0] pct=0  #00E5E5
+[11:08:38.233]   stop[1] pct=20  #00FF66
+[11:08:38.233]   stop[2] pct=50  #FFD200
+[11:08:38.233]   stop[3] pct=80  #FF1818
+[11:08:38.236]   → halo_color = #00FF66
+[11:08:38.298] emo2: cfg applied + saved
+[11:08:45.809] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:08:45.872] emo2: cfg applied + saved
+[11:08:48.202] [CFG] len=987 err=Ok cfg=1 st=1 ly=1 cs=1 lc=1 cl=1
+[11:08:48.226] [CSTOPS] n=3 override=255 eff_pct=27.0 active=1
+[11:08:48.232]   stop[0] pct=0  #E0F4FF
+[11:08:48.233]   stop[1] pct=60  #62AAEA
+[11:08:48.234]   stop[2] pct=85  #FF4D4D
+[11:08:48.234]   → halo_color = #E0F4FF
+[11:08:48.297] emo2: cfg applied + saved
+[11:09:05.982] [HEAP] free=265876 min=262264 largest=245748 uptime=5345s
+[11:09:09.780] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:09:09.843] emo2: cfg applied + saved
+[11:09:19.495] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[11:09:42.982] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:09:43.052] emo2: cfg applied + saved
+[11:09:59.329] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:09:59.394] emo2: cfg applied + saved
+[11:10:00.932] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:10:00.993] emo2: cfg applied + saved
+[11:10:06.074] [HEAP] free=265880 min=262264 largest=245748 uptime=5405s
+[11:10:12.540] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:10:12.594] emo2: cfg applied + saved
+[11:10:20.731] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[11:11:16.352] [HEAP] free=265876 min=262264 largest=245748 uptime=5465s
+[11:11:16.354] BLE: refresh requested
+[11:11:17.597] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[11:11:34.878] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:11:34.938] emo2: cfg applied + saved
+[11:11:50.555] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:11:50.620] emo2: cfg applied + saved
+[11:12:06.141] [HEAP] free=265876 min=262264 largest=245748 uptime=5525s
+[11:12:07.079] [CFG] len=987 err=Ok cfg=1 st=1 ly=1 cs=1 lc=1 cl=1
+[11:12:07.100] [CSTOPS] n=3 override=255 eff_pct=27.0 active=1
+[11:12:07.101]   stop[0] pct=0  #E0F4FF
+[11:12:07.101]   stop[1] pct=60  #62AAEA
+[11:12:07.101]   stop[2] pct=85  #FF4D4D
+[11:12:07.101]   → halo_color = #E0F4FF
+[11:12:07.174] emo2: cfg applied + saved
+[11:12:23.117] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[11:12:26.009] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:12:26.075] emo2: cfg applied + saved
+[11:13:06.241] [HEAP] free=265880 min=262264 largest=245748 uptime=5585s
+[11:13:11.348] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:13:11.415] emo2: cfg applied + saved
+[11:13:24.216] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[11:14:08.808] [HEAP] free=265880 min=262264 largest=245748 uptime=5645s
+[11:14:08.809] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:14:08.868] emo2: cfg applied + saved
+[11:14:25.203] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[11:14:32.341] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:14:32.404] emo2: cfg applied + saved
+[11:14:34.733] [CFG] len=987 err=Ok cfg=1 st=1 ly=1 cs=1 lc=1 cl=1
+[11:14:34.757] [CSTOPS] n=3 override=255 eff_pct=27.0 active=1
+[11:14:34.757]   stop[0] pct=0  #E0F4FF
+[11:14:34.757]   stop[1] pct=60  #62AAEA
+[11:14:34.758]   stop[2] pct=85  #FF4D4D
+[11:14:34.759]   → halo_color = #E0F4FF
+[11:14:34.830] emo2: cfg applied + saved
+[11:15:06.365] [HEAP] free=265876 min=262264 largest=245748 uptime=5705s
+[11:15:27.093] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[11:15:33.243] [CFG] len=987 err=Ok cfg=1 st=1 ly=1 cs=1 lc=1 cl=1
+[11:15:33.265] [CSTOPS] n=3 override=255 eff_pct=27.0 active=1
+[11:15:33.266]   stop[0] pct=0  #E0F4FF
+[11:15:33.266]   stop[1] pct=60  #62AAEA
+[11:15:33.266]   stop[2] pct=85  #FF4D4D
+[11:15:33.269]   → halo_color = #E0F4FF
+[11:15:33.341] emo2: cfg applied + saved
+[11:15:35.206] [CFG] len=987 err=Ok cfg=1 st=1 ly=1 cs=1 lc=1 cl=1
+[11:15:35.229] [CSTOPS] n=3 override=255 eff_pct=27.0 active=1
+[11:15:35.229]   stop[0] pct=0  #E0F4FF
+[11:15:35.229]   stop[1] pct=60  #62AAEA
+[11:15:35.230]   stop[2] pct=85  #FF4D4D
+[11:15:35.231]   → halo_color = #E0F4FF
+[11:15:35.303] emo2: cfg applied + saved
+[11:15:36.911] [CFG] len=31 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:15:36.962] emo2: cfg applied + saved
+[11:15:41.872] [CFG] len=31 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:15:41.922] emo2: cfg applied + saved
+[11:15:54.849] [CFG] len=987 err=Ok cfg=1 st=1 ly=1 cs=1 lc=1 cl=1
+[11:15:54.874] [CSTOPS] n=3 override=255 eff_pct=27.0 active=1
+[11:15:54.874]   stop[0] pct=0  #E0F4FF
+[11:15:54.875]   stop[1] pct=60  #62AAEA
+[11:15:54.875]   stop[2] pct=85  #FF4D4D
+[11:15:54.875]   → halo_color = #E0F4FF
+[11:15:54.947] emo2: cfg applied + saved
+[11:16:06.433] [HEAP] free=265880 min=262220 largest=245748 uptime=5765s
+[11:16:31.334] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[11:16:37.349] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:16:37.410] emo2: cfg applied + saved
+[11:16:42.548] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:16:42.612] emo2: cfg applied + saved
+[11:16:43.299] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:16:43.368] emo2: cfg applied + saved
+[11:16:47.442] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:16:47.502] emo2: cfg applied + saved
+[11:16:47.833] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:16:47.888] emo2: cfg applied + saved
+[11:17:06.442] [HEAP] free=265880 min=262220 largest=245748 uptime=5825s
+[11:17:33.724] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[11:18:06.475] [HEAP] free=265876 min=262220 largest=245748 uptime=5885s
+[11:18:34.833] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[11:19:00.747] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:19:00.807] emo2: cfg applied + saved
+[11:19:29.837] [HEAP] free=265876 min=262220 largest=245748 uptime=5945s
+[11:19:29.838] BLE: disconnected (reason=531)
+[11:19:29.890] BLE: advertising start=OK
+[11:19:29.891] [BLE] state -> ADVERTISING (uptime=5969s free_heap=267904)
+[11:20:06.551] [HEAP] free=267904 min=262220 largest=245748 uptime=6005s
+[11:22:06.575] [HEAP] free=267904 min=262220 largest=245748 uptime=6065s
+[11:22:06.576] [HEAP] free=267904 min=262220 largest=245748 uptime=6125s
+[11:22:14.491] BLE: connected from 98:dd:60:7f:75:8a
+[11:22:14.491] BLE: advertising start=OK
+[11:22:16.192] [RX] orphan continuation (no active frame)
+[11:22:16.243] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:22:16.295] [RX] orphan continuation (no active frame)
+[11:22:16.297] emo2: cfg applied + saved
+[11:22:16.307] [RX] orphan continuation (no active frame)
+[11:22:16.364] [RX] orphan continuation (no active frame)
+[11:22:16.423] [RX] orphan continuation (no active frame)
+[11:22:16.449] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:22:16.501] emo2: cfg applied + saved
+[11:22:17.433] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[11:22:29.946] BLE: disconnected too long — rebooting to reset radioESP-ROM:esp32c6-20220919
+[11:22:29.948] Build:Sep 19 2022
+[11:22:29.949] rst:0xc (SW_CPU),boot:0x6d (SPI_FAST_FLASH_BOOT)
+[11:22:29.951] Saved PC:0x4001975a
+[11:22:29.952] SPIWP:0xee
+[11:22:29.952] mode:DIO, clock div:2
+[11:22:29.953] load:0x40875730,len:0x1278
+[11:22:29.955] load:0x4086b910,len:0xdd0
+[11:22:29.955] load:0x4086e610,len:0x3154
+[11:22:29.964] entry 0x4086b910
+[11:22:30.856] [BOOT] reason=SOFTWARE (3) free_heap=316100 min_heap=311112
+[11:22:30.860] {"ready":true}
+[11:22:31.588] BLE: advertising start=OK
+[11:22:31.588] BLE: init complete, MAC=20:6E:F1:09:34:EE
+[11:22:31.623] emo2: NVS config loaded
+[11:22:31.799] Dashboard ready
+[11:22:32.056] [BLE] state -> ADVERTISING (uptime=1s free_heap=268904)
+[11:22:41.039] BLE: connected from 98:dd:60:7f:75:8a
+[11:22:41.095] [BLE] state -> CONNECTED (uptime=10s free_heap=266612)
+[11:22:42.177] BLE: refresh requested
+[11:22:42.390] [CFG] len=356 err=IncompleteInput
+[11:22:42.391] emo2 cfg JSON err: IncompleteInput
+[11:22:42.391] JSON parse error: IncompleteInput
+[11:22:42.659] [CFG] len=987 err=Ok cfg=1 st=1 ly=1 cs=1 lc=1 cl=1
+[11:22:42.680] [CSTOPS] n=3 override=0 eff_pct=0.0 active=1
+[11:22:42.680]   stop[0] pct=0  #E0F4FF
+[11:22:42.680]   stop[1] pct=60  #62AAEA
+[11:22:42.681]   stop[2] pct=85  #FF4D4D
+[11:22:42.681]   → halo_color = #3DE0E0
+[11:22:42.749] emo2: cfg applied + saved
+[11:22:43.169] BLE: sent diag → [BOOT] reason=SOFTWARE(3) free=266612 min=263060 up=12
+[11:22:43.315] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:22:43.373] emo2: cfg applied + saved
+[11:22:43.641] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[11:23:28.003] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:23:28.061] emo2: cfg applied + saved
+[11:23:30.561] [HEAP] free=266464 min=263060 largest=249844 uptime=60s
+[11:23:44.752] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[11:23:59.497] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:23:59.560] emo2: cfg applied + saved
+[11:24:30.609] [HEAP] free=266464 min=263060 largest=249844 uptime=120s
+[11:24:48.194] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[11:24:56.028] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[11:24:56.032] emo2: cfg applied + saved
+[11:25:30.693] [HEAP] free=266464 min=263060 largest=249844 uptime=180s
+[11:25:50.205] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[11:26:30.740] [HEAP] free=266464 min=263060 largest=249844 uptime=240s
