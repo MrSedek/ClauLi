@@ -405,3 +405,172 @@
 [ESP]    [11:25:30.693] [HEAP] free=266464 min=263060 largest=249844 uptime=180s
 [ESP]    [11:25:50.205] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
 [ESP]    [11:26:30.740] [HEAP] free=266464 min=263060 largest=249844 uptime=240s
+[ESP]    [11:26:51.227] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:27:30.804] [HEAP] free=266464 min=263060 largest=249844 uptime=300s
+[ESP]    [11:27:52.170] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:28:30.696] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:28:31.018] [HEAP] free=266464 min=263060 largest=249844 uptime=360s
+[ESP]    [11:28:37.135] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:28:53.301] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:29:07.234] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:29:27.871] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:29:31.133] [HEAP] free=266464 min=263060 largest=249844 uptime=420s
+[ESP]    [11:29:41.330] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:29:54.875] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:30:31.216] [HEAP] free=266464 min=263060 largest=249844 uptime=480s
+[ESP]    [11:30:48.316] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:30:49.325] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:30:55.882] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:31:31.257] [HEAP] free=266464 min=263060 largest=249844 uptime=540s
+[ESP]    [11:31:57.289] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:32:58.631] [HEAP] free=266464 min=263060 largest=249844 uptime=600s
+[ESP]    [11:32:58.632] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:33:59.656] [HEAP] free=266464 min=263060 largest=249844 uptime=660s
+[ESP]    [11:33:59.659] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:35:00.711] [HEAP] free=266464 min=263060 largest=249844 uptime=720s
+[ESP]    [11:35:00.713] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:35:31.486] [HEAP] free=266464 min=263060 largest=249844 uptime=780s
+[ESP]    [11:36:01.721] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:36:31.587] [HEAP] free=266464 min=263060 largest=249844 uptime=841s
+[ESP]    [11:37:02.720] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:37:31.659] [HEAP] free=266464 min=263060 largest=249844 uptime=901s
+[ESP]    [11:38:03.824] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:38:31.769] [HEAP] free=266464 min=263060 largest=249844 uptime=961s
+[ESP]    [11:39:04.761] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:39:31.837] [HEAP] free=266464 min=263060 largest=249844 uptime=1021s
+[ESP]    [11:40:05.781] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:40:31.947] [HEAP] free=266464 min=263060 largest=249844 uptime=1081s
+[ESP]    [11:41:07.070] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:42:08.065] [HEAP] free=266464 min=263060 largest=249844 uptime=1141s
+[ESP]    [11:42:08.066] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:42:32.059] [HEAP] free=266464 min=263060 largest=249844 uptime=1201s
+[ESP]    [11:43:09.213] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:44:10.186] [HEAP] free=266464 min=263060 largest=249844 uptime=1261s
+[ESP]    [11:44:10.188] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:44:32.148] [HEAP] free=266464 min=263060 largest=249844 uptime=1321s
+[ESP]    [11:45:11.259] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:45:32.159] [HEAP] free=266464 min=263060 largest=249844 uptime=1381s
+[ESP]    [11:46:12.499] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:47:13.463] [HEAP] free=266464 min=263060 largest=249844 uptime=1441s
+[ESP]    [11:47:13.469] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:47:32.210] [HEAP] free=266464 min=263060 largest=249844 uptime=1501s
+[ESP]    [11:48:14.591] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:48:32.293] [HEAP] free=266464 min=263060 largest=249844 uptime=1561s
+[ESP]    [11:49:15.809] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:49:32.346] [HEAP] free=266380 min=263060 largest=249844 uptime=1621s
+[ESP]    [11:50:17.001] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:50:32.431] [HEAP] free=266464 min=263060 largest=249844 uptime=1681s
+[ESP]    [11:51:19.683] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:51:32.473] [HEAP] free=266464 min=263060 largest=249844 uptime=1741s
+[ESP]    [11:52:20.862] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:53:21.850] [HEAP] free=266464 min=263060 largest=249844 uptime=1801s
+[ESP]    [11:53:21.854] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:53:32.500] [HEAP] free=266464 min=263060 largest=249844 uptime=1861s
+[ESP]    [11:54:23.174] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:55:24.382] [HEAP] free=266464 min=263060 largest=249844 uptime=1921s
+[ESP]    [11:55:24.385] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:55:32.611] [HEAP] free=266464 min=263060 largest=249844 uptime=1982s
+[ESP]    [11:56:25.531] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:56:32.711] [HEAP] free=266464 min=263060 largest=249844 uptime=2042s
+[ESP]    [11:57:26.469] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:57:32.737] [HEAP] free=266464 min=263060 largest=249844 uptime=2102s
+[ESP]    [11:58:27.546] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [11:58:32.849] [HEAP] free=266464 min=263060 largest=249844 uptime=2162s
+[ESP]    [11:59:28.636] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:00:30.142] [HEAP] free=266464 min=263060 largest=249844 uptime=2222s
+[ESP]    [12:00:30.144] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:00:32.888] [HEAP] free=266464 min=263060 largest=249844 uptime=2282s
+[ESP]    [12:01:31.190] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:01:32.966] [HEAP] free=266464 min=263060 largest=249844 uptime=2342s
+[ESP]    [12:02:32.764] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:02:32.996] [HEAP] free=266464 min=263060 largest=249844 uptime=2402s
+[ESP]    [12:03:33.097] [HEAP] free=266464 min=263060 largest=249844 uptime=2462s
+[ESP]    [12:03:34.055] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:04:36.200] [HEAP] free=266464 min=263060 largest=249844 uptime=2522s
+[ESP]    [12:04:36.201] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:05:33.111] [HEAP] free=266464 min=263060 largest=249844 uptime=2582s
+[ESP]    [12:05:37.475] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:06:33.203] [HEAP] free=266464 min=263060 largest=249844 uptime=2642s
+[ESP]    [12:06:39.452] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:07:33.318] [HEAP] free=266464 min=263060 largest=249844 uptime=2702s
+[ESP]    [12:07:40.913] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:08:33.415] [HEAP] free=266464 min=263060 largest=249844 uptime=2762s
+[ESP]    [12:08:42.460] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:09:43.735] [HEAP] free=266464 min=263060 largest=249844 uptime=2822s
+[ESP]    [12:09:43.738] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:10:33.541] [HEAP] free=266464 min=263060 largest=249844 uptime=2882s
+[ESP]    [12:10:44.716] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:11:33.546] [HEAP] free=266464 min=263060 largest=249844 uptime=2942s
+[ESP]    [12:11:45.820] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:12:33.592] [HEAP] free=266464 min=263060 largest=249844 uptime=3002s
+[ESP]    [12:12:46.956] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:13:33.669] [HEAP] free=266464 min=263060 largest=249844 uptime=3063s
+[ESP]    [12:13:47.949] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:14:33.763] [HEAP] free=266464 min=263060 largest=249844 uptime=3123s
+[ESP]    [12:14:49.133] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:15:33.767] [HEAP] free=266464 min=263060 largest=249844 uptime=3183s
+[ESP]    [12:15:50.378] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:16:33.807] [HEAP] free=266464 min=263060 largest=249844 uptime=3243s
+[ESP]    [12:16:51.284] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:17:33.857] [HEAP] free=266464 min=263060 largest=249844 uptime=3303s
+[ESP]    [12:17:52.307] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:18:53.164] [HEAP] free=266464 min=263060 largest=249844 uptime=3363s
+[ESP]    [12:18:53.171] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:19:33.924] [HEAP] free=266464 min=263060 largest=249844 uptime=3423s
+[ESP]    [12:19:54.562] [CFG] len=85 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:20:55.632] [HEAP] free=266464 min=263060 largest=249844 uptime=3483s
+[ESP]    [12:20:55.634] [CFG] len=84 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:21:33.984] [HEAP] free=266464 min=263060 largest=249844 uptime=3543s
+[ESP]    [12:21:56.655] [CFG] len=84 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:22:33.998] [HEAP] free=266464 min=263060 largest=249844 uptime=3603s
+[ESP]    [12:22:57.644] [CFG] len=84 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:23:34.086] [HEAP] free=266464 min=263060 largest=249844 uptime=3663s
+[ESP]    [12:23:59.239] [CFG] len=84 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:24:34.158] [HEAP] free=266464 min=263060 largest=249844 uptime=3723s
+[ESP]    [12:25:00.190] [CFG] len=84 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:25:34.216] [HEAP] free=266464 min=263060 largest=249844 uptime=3783s
+[ESP]    [12:26:02.855] [CFG] len=84 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:26:34.216] [HEAP] free=266464 min=263060 largest=249844 uptime=3843s
+[ESP]    [12:27:03.852] [CFG] len=84 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:27:34.236] [HEAP] free=266464 min=263060 largest=249844 uptime=3903s
+[ESP]    [12:28:04.957] [CFG] len=84 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:29:05.986] [HEAP] free=266464 min=263060 largest=249844 uptime=3963s
+[ESP]    [12:29:05.988] [CFG] len=84 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:29:34.440] [HEAP] free=266464 min=263060 largest=249844 uptime=4023s
+[ESP]    [12:30:07.080] [CFG] len=84 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:30:34.465] [HEAP] free=266464 min=263060 largest=249844 uptime=4083s
+[ESP]    [12:31:08.353] [CFG] len=84 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:32:09.355] [HEAP] free=266464 min=263060 largest=249844 uptime=4143s
+[ESP]    [12:32:09.358] [CFG] len=84 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:32:34.603] [HEAP] free=266464 min=263060 largest=249844 uptime=4203s
+[ESP]    [12:33:10.436] [CFG] len=84 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:34:11.402] [HEAP] free=266464 min=263060 largest=249844 uptime=4263s
+[ESP]    [12:34:11.403] [CFG] len=84 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:34:34.698] [HEAP] free=266464 min=263060 largest=249844 uptime=4324s
+[ESP]    [12:35:13.550] [CFG] len=84 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:35:34.763] [HEAP] free=266464 min=263060 largest=249844 uptime=4384s
+[ESP]    [12:36:14.574] [CFG] len=84 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:36:34.783] [HEAP] free=266464 min=263060 largest=249844 uptime=4444s
+[ESP]    [12:37:15.448] [CFG] len=84 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:37:34.857] [HEAP] free=266464 min=263060 largest=249844 uptime=4504s
+[ESP]    [12:38:05.279] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:38:07.852] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:38:17.066] [CFG] len=84 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:38:54.186] [HEAP] free=266464 min=263060 largest=249844 uptime=4564s
+[ESP]    [12:38:54.188] [CFG] len=25 err=Ok cfg=1 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:39:18.009] [CFG] len=84 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:39:35.057] [HEAP] free=266464 min=263060 largest=249844 uptime=4624s
+[ESP]    [12:40:19.052] [CFG] len=84 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:40:35.084] [HEAP] free=266464 min=263060 largest=249844 uptime=4684s
+[ESP]    [12:41:20.127] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:42:21.160] [HEAP] free=266464 min=263060 largest=249844 uptime=4744s
+[ESP]    [12:42:21.162] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:42:35.147] [HEAP] free=266464 min=263060 largest=249844 uptime=4804s
+[ESP]    [12:43:22.124] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:43:35.192] [HEAP] free=266464 min=263060 largest=249844 uptime=4864s
+[ESP]    [12:44:23.601] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:45:24.625] [HEAP] free=266464 min=263060 largest=249844 uptime=4924s
+[ESP]    [12:45:24.626] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:45:35.286] [HEAP] free=266464 min=263060 largest=249844 uptime=4984s
+[ESP]    [12:46:26.038] [CFG] len=83 err=Ok cfg=0 st=0 ly=0 cs=0 lc=0 cl=0
+[ESP]    [12:46:35.399] [HEAP] free=266464 min=263060 largest=249844 uptime=5044s

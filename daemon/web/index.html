@@ -89,24 +89,7 @@ body{
 /* Animations stripped — page renders statically. Restore once we confirm
    the black-screen issue was animation-related. */
 .title{font-family:'Azeret Mono',monospace;font-size:13px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--dim)}
-.gauge-wrap{position:relative;width:260px;height:260px}
-.gauge-svg{width:100%;height:100%;overflow:visible}
-.gauge-svg circle{fill:none}
-.glow-s,.glow-w{transition:stroke-dasharray .8s ease-out,stroke .3s ease;filter:blur(6px);opacity:.45}
-.glow-s{stroke-width:14px}.glow-w{stroke-width:10px}
-.track-s,.track-w{stroke:var(--track);stroke-linecap:round}
-.track-s{stroke-width:12px}.track-w{stroke-width:8px}
-.ind-s,.ind-w{stroke-linecap:round;transition:stroke-dasharray .8s ease-out,stroke .3s ease}
-.ind-s{stroke-width:12px}.ind-w{stroke-width:8px}
-.center-group{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
-.pct-main{font-family:'Azeret Mono',monospace;font-size:52px;font-weight:700;line-height:1;letter-spacing:-2px;transition:color .3s ease}
-.pct-sub{font-family:'Azeret Mono',monospace;font-size:18px;font-weight:400;color:var(--dim);margin-top:4px;transition:color .3s ease}
-.pct-sub span{font-size:13px;opacity:.5;margin-right:2px}
-@keyframes pulse{0%{transform:scale(1)}40%{transform:scale(1.025)}100%{transform:scale(1)}}
-.gauge-wrap.pulse{animation:pulse .4s ease-out}
-.resets{display:flex;flex-direction:column;align-items:center;gap:4px}
-.reset-line{font-family:'Onest',sans-serif;font-size:12px;color:var(--dim);display:flex;align-items:center;gap:6px}
-.reset-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+/* Usage gauge + reset-readout styles removed with the gauge block. */
 .status-row{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--dim)}
 .status-dot{width:7px;height:7px;border-radius:50%;background:var(--red);flex-shrink:0}
 .status-dot.on{background:var(--green);animation:breathe 2.5s ease-in-out infinite}
@@ -230,11 +213,7 @@ body{
 .text-subpill.active{background:rgba(61,224,224,.08);border-color:rgba(61,224,224,.45)}
 .text-subpill.active canvas{box-shadow:inset 0 0 0 1px var(--cyan),0 0 10px rgba(61,224,224,.25)}
 .text-subpill.active .pname{color:var(--cyan)}
-/* Settings screen-tabs at the top of the settings drawer */
-.screen-tab{padding:7px 14px;font-family:'Azeret Mono',monospace;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:7px;cursor:pointer;user-select:none;transition:all .15s;position:relative}
-.screen-tab:hover{background:rgba(255,255,255,.07);color:var(--text)}
-.screen-tab.active{background:rgba(61,224,224,.10);border-color:var(--cyan);color:var(--cyan)}
-.screen-tab.live::after{content:'●';position:absolute;top:-4px;right:-4px;font-size:9px;color:var(--cyan);text-shadow:0 0 6px var(--cyan)}
+/* (screen-tab styles removed — single settings screen) */
 /* Sub-pills under active layout for per-layout text mode */
 .text-subpill{display:inline-flex;align-items:center;padding:5px 9px;font-family:'Azeret Mono',monospace;font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;border-radius:5px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);color:var(--text);cursor:pointer;user-select:none;transition:all .15s}
 .text-subpill:hover{background:rgba(255,255,255,.08)}
@@ -456,34 +435,8 @@ body{
 <div class="shell">
   <div class="col-left">
   <div class="title">ClauLi</div>
-  <div class="gauge-wrap" id="gauge">
-    <svg class="gauge-svg" viewBox="0 0 260 260">
-      <defs>
-        <linearGradient id="gs" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="var(--green)"/>
-          <stop offset="100%" stop-color="var(--accent)"/>
-        </linearGradient>
-        <linearGradient id="gw" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#6a7f52"/>
-          <stop offset="100%" stop-color="#a0885a"/>
-        </linearGradient>
-      </defs>
-      <circle class="glow-s" cx="130" cy="130" r="110" transform="rotate(135 130 130)" stroke="var(--green)"/>
-      <circle class="glow-w" cx="130" cy="130" r="85"  transform="rotate(135 130 130)" stroke="#6a7f52"/>
-      <circle class="track-s" cx="130" cy="130" r="110" transform="rotate(135 130 130)" stroke-dasharray="518.36 172.79"/>
-      <circle class="track-w" cx="130" cy="130" r="85"  transform="rotate(135 130 130)" stroke-dasharray="400.74 133.58"/>
-      <circle class="ind-s" id="ind-s" cx="130" cy="130" r="110" transform="rotate(135 130 130)" stroke="url(#gs)" stroke-dasharray="0 691.15"/>
-      <circle class="ind-w" id="ind-w" cx="130" cy="130" r="85"  transform="rotate(135 130 130)" stroke="url(#gw)" stroke-dasharray="0 534.32"/>
-    </svg>
-    <div class="center-group">
-      <div class="pct-main" id="s-num">--%</div>
-      <div class="pct-sub" id="w-num"><span id="w-pre">W</span> --%</div>
-    </div>
-  </div>
-  <div class="resets">
-    <div class="reset-line"><span class="reset-dot" id="dot-s"></span><span id="s-reset">---</span></div>
-    <div class="reset-line"><span class="reset-dot" id="dot-w"></span><span id="w-reset">---</span></div>
-  </div>
+  <!-- Usage gauge + reset readouts removed — the web UI is now a character
+       configurator; live usage lives on the device screen. -->
   <div class="status-row">
     <span class="status-dot" id="ble-dot"></span>
     <span id="ble-status">Disconnected</span>
@@ -509,8 +462,9 @@ body{
        screens. Kept only the Refresh + BOOT shortcuts on the dashboard. -->
   <div class="controls">
     <button class="btn accent" data-i18n="refresh" onclick="sendRefresh()">↻ Refresh</button>
-    <button class="btn" title="Same as a single BOOT-button press: cycles the eye view-mode (text/bars/clock)." data-i18n="boot1" onclick="sendAction('anim')">BOOT</button>
-    <button class="btn" title="Same as double BOOT-button press: triggers a new random animation/mood." data-i18n="boot2" onclick="sendAction('view')">BOOT ×2</button>
+    <button class="btn" title="Cycle the device view-mode (text / bars / clock)" data-i18n="boot1" onclick="sendAction('anim')">Cycle view</button>
+    <button class="btn" title="Trigger a random emotion on the device" data-i18n="boot2" onclick="sendAction('view')">Random emotion</button>
+    <button class="btn" id="dbgBtn" title="Show live state / mode / animation name on the device screen (debug mode)" data-i18n="debug_off" onclick="toggleDebugOverlay()">🐞 Debug</button>
   </div>
   <!-- Phase L5 — live device-screen mockup. Item 4: wrapped in labeled preview card. -->
   <div class="mockup-card" id="deviceMockupWrap">
@@ -544,22 +498,18 @@ body{
   <!-- ───────── Settings (collapsible) ───────── -->
   <details id="settings" open style="width:100%;margin-top:14px;background:var(--surface);border:1px solid var(--line);border-radius:10px">
     <summary style="cursor:pointer;padding:10px 14px;font-size:13px;color:var(--text);user-select:none;list-style:none">⚙ <span data-i18n="settings">Настройки</span></summary>
-    <div id="screenTabs" style="display:flex;gap:6px;flex-wrap:wrap;padding:8px 14px 0">
-      <div class="screen-tab active" data-screen="emo2">ClauLi</div>
-      <div class="screen-tab" data-screen="usage" data-i18n="usage">Usage</div>
-      <div class="screen-tab" data-screen="splash" data-i18n="anim">Claude</div>
-      <div class="screen-tab" data-screen="bluetooth">Bluetooth</div>
-    </div>
+    <!-- screenTabs removed — the ClauLi character configurator is the only
+         settings screen (Usage / Claude / Bluetooth screens were dropped). -->
     <div id="screenPaneClauli" class="screen-pane" data-screen="emo2" style="padding:8px 14px 14px;font-size:12px">
       <!-- Orientation toggle — applies to whole device, persists in NVS. -->
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:6px 0;border-bottom:1px solid var(--line)">
-        <span style="font-family:'Azeret Mono',monospace;font-size:10px;letter-spacing:1.5px;color:var(--dim);font-weight:700;flex-shrink:0">ORIENT</span>
+        <span data-i18n="orient_label" style="font-family:'Azeret Mono',monospace;font-size:10px;letter-spacing:1.5px;color:var(--dim);font-weight:700;flex-shrink:0">ORIENT</span>
         <div id="orientPills" style="display:flex;gap:6px"></div>
       </div>
 
       <!-- Character selector (ClauLi / Pixl / Blob) -->
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:6px 0;border-bottom:1px solid var(--line)">
-        <span style="font-family:'Azeret Mono',monospace;font-size:10px;letter-spacing:1.5px;color:var(--dim);font-weight:700;flex-shrink:0">ГЕРОЙ</span>
+        <span data-i18n="character_label" style="font-family:'Azeret Mono',monospace;font-size:10px;letter-spacing:1.5px;color:var(--dim);font-weight:700;flex-shrink:0">ГЕРОЙ</span>
         <div id="characterPills" style="display:flex;gap:6px"></div>
       </div>
 
@@ -777,9 +727,9 @@ body{
             <div class="mhint" data-i18n="manual_hint">Auto-rotation off · preview only · motions cycle on tap</div>
           </div>
         </label>
-        <div class="section-label">Forms</div>
+        <div class="section-label" data-i18n="forms_label">Forms</div>
         <div class="tile-grid" id="previewForms"></div>
-        <div class="section-label">Motions</div>
+        <div class="section-label" data-i18n="motions_label">Motions</div>
         <div class="tile-grid" id="previewOps"></div>
         <div class="section-label" data-i18n="color_settings">Color settings</div>
         <div class="color-row" id="previewColors"></div>
@@ -813,35 +763,6 @@ body{
         <button class="btn" data-i18n="reboot" onclick="if(confirm(t('reboot_confirm')||'Reboot the device now? The BLE link will drop and reconnect.'))sendAction('reboot')">Reboot</button>
       </div>
     </div><!-- /#screenPaneClauli -->
-
-    <!-- ─── Usage pane (stub for now) ──────────────────────────────────────── -->
-    <div id="screenPaneUsage" class="screen-pane" data-screen="usage" style="display:none;padding:14px;font-size:12px;color:var(--dim);line-height:1.6">
-      <div style="font-family:'Azeret Mono',monospace;font-size:10px;letter-spacing:1.5px;color:var(--text);font-weight:700;margin-bottom:8px">USAGE SCREEN</div>
-      <p style="margin-bottom:10px">Концентрические дуги — session (внешняя) и weekly (внутренняя). Цвет дуги меняется по %: <span style="color:#3DE0E0">cyan</span> → <span style="color:#FFA000">amber</span> → <span style="color:#FF1818">red</span>.</p>
-      <p style="margin-bottom:10px;font-size:11px;color:#888">Дополнительные настройки (палитра, шрифт, glow) — в следующей итерации.</p>
-      <div class="controls" style="margin-top:8px"><button class="btn" onclick="sendScreen('usage')">Открыть на ESP</button></div>
-    </div>
-
-    <!-- ─── Claude pane (stub for now — animation picker comes later) ──────── -->
-    <div id="screenPaneClaude" class="screen-pane" data-screen="splash" style="display:none;padding:14px;font-size:12px;color:var(--dim);line-height:1.6">
-      <div style="font-family:'Azeret Mono',monospace;font-size:10px;letter-spacing:1.5px;color:var(--text);font-weight:700;margin-bottom:8px">CLAUDE SCREEN</div>
-      <p style="margin-bottom:10px">Pixel-art анимации (Claude character). Выбор группы (Idle / Excited / Sleepy / Working) и цветовой override — в следующей итерации.</p>
-      <p style="margin-bottom:10px;font-size:11px;color:#888">Сейчас auto-cycle через все группы.</p>
-      <div class="controls" style="margin-top:8px"><button class="btn" onclick="sendScreen('splash')">Открыть на ESP</button></div>
-    </div>
-
-    <!-- ─── Bluetooth pane ─────────────────────────────────────────────────── -->
-    <div id="screenPaneBluetooth" class="screen-pane" data-screen="bluetooth" style="display:none;padding:14px;font-size:12px;color:var(--dim);line-height:1.6">
-      <div style="font-family:'Azeret Mono',monospace;font-size:10px;letter-spacing:1.5px;color:var(--text);font-weight:700;margin-bottom:8px">BLUETOOTH</div>
-      <div style="display:flex;flex-direction:column;gap:6px;font-family:'Azeret Mono',monospace;font-size:11px;color:#cfcfcf;margin-bottom:10px">
-        <div>Status: <span id="bt-status-text" style="color:var(--cyan)">—</span></div>
-        <div>Address: <span id="bt-address-text" style="color:#aaa">—</span></div>
-      </div>
-      <div class="controls" style="margin-top:8px;gap:6px">
-        <button class="btn" onclick="sendScreen('bluetooth')">Открыть на ESP</button>
-        <button class="btn" onclick="sendRefresh()" title="Force-rescan / reconnect" data-i18n="refresh">↻ Refresh</button>
-      </div>
-    </div>
   </details>
   </div><!-- /.col-right -->
 
@@ -1511,8 +1432,8 @@ const ARC_FRAC=.75,ARC_S=CIRC_S*ARC_FRAC,ARC_W=CIRC_W*ARC_FRAC;
 let curS=0,curW=0,ws=null,reconnectTimer=null;
 let curLang='en',lastPayload=null,lastBLE={state:'disconnected',address:null};
 const I18N={
-  en:{usage:'Usage',anim:'Claude',cycle:'Cycle',refresh:'↻ Refresh',wpre:'W',
-      nextview:'Next view',nextanim:'Next anim',boot1:'BOOT',boot2:'BOOT ×2',reboot:'Reboot',reboot_confirm:'Reboot the device now? The BLE link will drop and reconnect.',diagnose:'Diagnose',
+  en:{usage:'Usage',anim:'Claude',cycle:'Cycle',refresh:'↻ Refresh data',wpre:'W',
+      nextview:'Next view',nextanim:'Next anim',boot1:'Cycle view',boot2:'Random emotion',debug_off:'🐞 Debug',debug_on:'🐞 Debug ON',reboot:'Reboot',reboot_confirm:'Reboot the device now? The BLE link will drop and reconnect.',diagnose:'Diagnose',
       status_group_title:'Per-status visuals',status_group_hint:'Pick a status — set its form, motion, colour.',
       layout_apply:'Make active',layout_close:'Close',
       manual_hint:'Auto-rotation off · motion tap = cycle',
@@ -1539,7 +1460,7 @@ const I18N={
       text_src_off:'Off',text_src_session:'Session',text_src_weekly:'Weekly',text_src_both:'Both',
       text_fmt_pct:'%',text_fmt_pct_reset:'% + reset time',text_fmt_reset:'reset time',
       text_placement_top:'Top',text_placement_middle:'Middle',text_placement_bottom:'Bottom',
-      forms_label:'Forms',motions_label:'Motions',halo_color_label:'Halo colour',
+      forms_label:'Forms',motions_label:'Motions',forms_hint:'▢ multi · rotates ~20s',motions_hint:'↻ multi · fires ~8s',canim_hint:'✦ multi',character_label:'Character',orient_label:'Orientation',halo_color_label:'Halo colour',
       clock_title:'Clock',clock_hint:'Pick a clock style for the top of the ClauLi screen.',
       clock_style_off:'Off',
       clock_style_mono:'Mono',clock_style_major_mono:'Major Mono',clock_style_orbitron:'Orbitron',
@@ -1601,8 +1522,8 @@ const I18N={
       unsaved_discard:'Discard',
       unsaved_cancel:'Cancel',
       },
-  ru:{usage:'Использование',anim:'Claude',cycle:'Цикл',refresh:'↻ Обновить',wpre:'Н',
-      nextview:'Сменить вид',nextanim:'Сменить анимацию',boot1:'BOOT',boot2:'BOOT ×2',reboot:'Перезагрузка',reboot_confirm:'Перезагрузить устройство? BLE-связь разорвётся и переподключится.',diagnose:'Диагностика',
+  ru:{usage:'Использование',anim:'Claude',cycle:'Цикл',refresh:'↻ Обновить данные',wpre:'Н',
+      nextview:'Сменить вид',nextanim:'Сменить анимацию',boot1:'Сменить вид',boot2:'Случайная эмоция',debug_off:'🐞 Отладка',debug_on:'🐞 Отладка ВКЛ',reboot:'Перезагрузка',reboot_confirm:'Перезагрузить устройство? BLE-связь разорвётся и переподключится.',diagnose:'Диагностика',
       status_group_title:'Визуалы по статусам',status_group_hint:'Выберите статус — задайте форму, мотион, цвет.',
       layout_apply:'Сделать активным',layout_close:'Закрыть',
       manual_hint:'Авто-ротация выкл · тап мотиона = цикл',
@@ -1610,7 +1531,7 @@ const I18N={
       settings:'Настройки',manual_mode:'Ручное управление',preview:'Предпросмотр',preview_hint:'Тап — мгновенный CTRL',
       manual_confirm_msg:'Включён ручной режим — отключить его, чтобы менять авто-настройки?',manual_confirm_yes:'Отключить',manual_confirm_no:'Отмена',
       stats_title:'% Layout',stats_hint:'Как % сессии и недели рисуются на экране ESP. Тап — переключить.',stats_edit:'Изменить выбор в галерее',stats_pending:'Применится когда firmware получит поддержку этих % layouts.',stats_text_label:'ТЕКСТ',
-      layout_title:'Layout',layout_hint:'Выберите раскладку статистики на экране — применяется ко всем статусам. ПКМ по плитке делает её раскладкой по умолчанию (★).',
+      layout_title:'Раскладка',layout_hint:'Выберите раскладку статистики на экране — применяется ко всем статусам. ПКМ по плитке делает её раскладкой по умолчанию (★).',
       layout_bezel_orbit:'Рамка',layout_twin_columns:'Колонки',layout_hud_ribbon:'Лента',
       layout_brows:'Брови',layout_tear_pearls:'Слёзы',layout_corner_chip:'Чип',layout_ecg_monitor:'ЭКГ',
       layout_classic:'Классика',layout_none:'Выкл',
@@ -1622,14 +1543,14 @@ const I18N={
       gradient_mode_label:'Интерполяция',gradient_mode_step:'ШАГ',gradient_mode_smooth:'ПЛАВНО',
       gradient_saved:'СОХР',gradient_unsaved:'НЕ СОХР',gradient_preset_name_prompt:'Название (макс 8 симв):',
       cp_cancel:'ОТМЕНА',cp_apply:'ПРИМЕНИТЬ',
-      layout_color_label:'ЦВЕТ LAYOUT',color_settings:'Цвет',
+      layout_color_label:'ЦВЕТ РАСКЛАДКИ',color_settings:'Цвет',
       layout_color_cyan:'Cyan',layout_color_amber:'Amber',layout_color_red:'Red',layout_color_auto:'Авто',layout_color_custom:'Свой',
       clock_color_default:'Стиль',clock_color_auto:'Авто',clock_color_custom:'Свой',
       text_source_label:'ИСТОЧНИК ТЕКСТА',text_format_label:'ФОРМАТ ТЕКСТА',text_placement_label:'РАЗМЕЩЕНИЕ ТЕКСТА',
       text_src_off:'Выкл',text_src_session:'Сессия',text_src_weekly:'Неделя',text_src_both:'Обе',
       text_fmt_pct:'%',text_fmt_pct_reset:'% + время сброса',text_fmt_reset:'время сброса',
       text_placement_top:'Сверху',text_placement_middle:'Посередине',text_placement_bottom:'Снизу',
-      forms_label:'Формы',motions_label:'Motions',halo_color_label:'Цвет halo',
+      forms_label:'Формы',motions_label:'Движения',forms_hint:'▢ неск. · ротация ~20с',motions_hint:'↻ неск. · каждые ~8с',canim_hint:'✦ неск.',character_label:'Герой',orient_label:'Ориентация',halo_color_label:'Цвет halo',
       clock_title:'Часы',clock_hint:'Стиль часов в верхней зоне экрана ClauLi.',
       clock_style_off:'Выкл',
       clock_style_mono:'Mono',clock_style_major_mono:'Major Mono',clock_style_orbitron:'Orbitron',
@@ -1690,7 +1611,7 @@ const I18N={
       unsaved_cancel:'Отмена',
       }};
 function t(k){return (I18N[curLang]||I18N.en)[k]}
-function applyI18n(){document.querySelectorAll('[data-i18n]').forEach(el=>{el.textContent=t(el.dataset.i18n)});document.getElementById('w-pre').textContent=t('wpre');updateBLE(lastBLE.state,lastBLE.address);if(lastPayload)updateData(lastPayload)}
+function applyI18n(){document.querySelectorAll('[data-i18n]').forEach(el=>{el.textContent=t(el.dataset.i18n)});const _wp=document.getElementById('w-pre');if(_wp)_wp.textContent=t('wpre');updateBLE(lastBLE.state,lastBLE.address);if(lastPayload)updateData(lastPayload)}
 function pctColor(p){return p>=80?'var(--red)':p>=50?'var(--amber)':'var(--green)'}
 function pctColorRaw(p){return p>=80?'#c4503a':p>=50?'#d97757':'#8fa66e'}
 function fmtReset(m){if(m<0)return t('none');if(m<60)return`${t('resetIn')} ${m}${t('um')}`;if(m<1440)return`${t('resetIn')} ${Math.floor(m/60)}${t('uh')} ${m%60}${t('um')}`;return`${t('resetIn')} ${Math.floor(m/1440)}${t('ud')} ${Math.floor((m%1440)/60)}${t('uh')}`}
@@ -2589,7 +2510,12 @@ function updateData(payload){
     _lastFormColorKey = newColor;
     _lastFormDraw = new WeakMap(); _lastOpDraw = new WeakMap();
   }
-  lastPayload=payload;const s=payload.s||0,w=payload.w||0;const sc=pctColorRaw(s),wc=pctColorRaw(w);updateGradientCursor(s);setArc('ind-s',CIRC_S,ARC_S,s);setArc('ind-w',CIRC_W,ARC_W,w);setGlow('glow-s',CIRC_S,ARC_S,s,sc);setGlow('glow-w',CIRC_W,ARC_W,w,wc);animateNum(document.getElementById('s-num'),curS,s,800);animateNum(document.getElementById('w-num'),curW,w,800);document.getElementById('s-num').style.color=pctColor(s);document.getElementById('w-num').style.color=pctColor(w);document.getElementById('dot-s').style.background=pctColorRaw(s);document.getElementById('dot-w').style.background=pctColorRaw(w);document.getElementById('s-reset').textContent=t('sess')+' · '+fmtReset(payload.sr);document.getElementById('w-reset').textContent=t('week')+' · '+fmtReset(payload.wr);const s1=document.querySelector('#gs stop:first-child'),s2=document.querySelector('#gs stop:last-child');if(s>=80){s1.setAttribute('stop-color','#c4503a');s2.setAttribute('stop-color','#e85535')}else if(s>=50){s1.setAttribute('stop-color','#d97757');s2.setAttribute('stop-color','#e8956a')}else{s1.setAttribute('stop-color','#8fa66e');s2.setAttribute('stop-color','#c4a462')}curS=s;curW=w;const g=document.getElementById('gauge');g.classList.remove('pulse');void g.offsetWidth;g.classList.add('pulse')
+  // Gauge + reset readouts were removed from the dashboard. Keep only the
+  // bookkeeping the rest of the UI still needs: lastPayload (re-render on lang
+  // switch), the gradient test cursor, and curS/curW.
+  lastPayload=payload;const s=payload.s||0,w=payload.w||0;
+  if(typeof updateGradientCursor==='function')updateGradientCursor(s);
+  curS=s;curW=w;
 }
 // Tracks the last resolved auto-colour so the cache only flushes when the
 // pct actually crosses a threshold (otherwise we'd repaint every minute).
@@ -2599,11 +2525,6 @@ function updateBLE(state,address){
   const dot=document.getElementById('ble-dot'),txt=document.getElementById('ble-status');
   if(state==='connected'){dot.className='status-dot on';txt.textContent=address?t('connected')+' · '+address:t('connected')}
   else{dot.className='status-dot';txt.textContent=t('disconnected')}
-  // Also refresh Bluetooth settings pane (if it's open).
-  const s = document.getElementById('bt-status-text');
-  const a = document.getElementById('bt-address-text');
-  if (s) s.textContent = state === 'connected' ? t('connected') : t('disconnected');
-  if (a) a.textContent = address || '—';
   // Phase L7 polish — light up the device mockup's outer ring when the
   // physical device is actually attached.
   const mock = document.getElementById('deviceMockup');
@@ -2648,45 +2569,8 @@ function connectWS(){const proto=location.protocol==='https:'?'wss:':'ws:';ws=ne
   // WS reconnect: refresh server snapshots only; don't clobber staged edits.
   loadEmo2Config(); loadEmo2Stats();
 }}else if(msg.type==='lang')_applyLangUI(msg.lang);else if(msg.type==='orient')applyOrientFromDaemon(msg.value);else if(msg.type==='character')applyCharFromDaemon(msg.value);else if(msg.type==='auth')updateAuth(msg.ok);else if(msg.type==='ota')updateOTA(msg);else if(msg.type==='emo2_state')updateEmo2State(msg.state)}catch{}};ws.onclose=()=>{reconnectTimer=setTimeout(connectWS,3000)};ws.onerror=()=>{ws.close()}}
-async function sendScreen(name){
-  // Tab UI synced with the actual screen on ESP. Click on the top-row
-  // button OR the tab — both call this; tab UI flips here.
-  setSettingsTab(name);
-  try{await fetch('/api/screen',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({screen:name})})}catch{}
-}
-function _applySettingsTab(screen){
-  if (screen === 'bt') screen = 'bluetooth';
-  document.querySelectorAll('#screenTabs .screen-tab').forEach(t => {
-    t.classList.toggle('active', t.dataset.screen === screen);
-  });
-  document.querySelectorAll('.screen-pane').forEach(p => {
-    p.style.display = (p.dataset.screen === screen) ? '' : 'none';
-  });
-  if (screen === 'bluetooth') {
-    const s = document.getElementById('bt-status-text');
-    const a = document.getElementById('bt-address-text');
-    if (s) s.textContent = lastBLE.state === 'connected' ? t('connected') : t('disconnected');
-    if (a) a.textContent = lastBLE.address || '—';
-  }
-}
-function setSettingsTab(screen){
-  // Map alternate name first so the guard sees the canonical name.
-  if (screen === 'bt') screen = 'bluetooth';
-  // Only guard when actually leaving the emo2 pane (where edits live).
-  const curActive = document.querySelector('#screenTabs .screen-tab.active');
-  const from = curActive ? curActive.dataset.screen : 'emo2';
-  if (from === screen){ _applySettingsTab(screen); return; }
-  if (from === 'emo2' && isAnyDirty()){
-    guardUnsaved(() => _applySettingsTab(screen));
-  } else {
-    _applySettingsTab(screen);
-  }
-}
-
-// Wire click handlers + initial state once DOM is ready (script runs at body end).
-document.querySelectorAll('#screenTabs .screen-tab').forEach(tab => {
-  tab.onclick = () => sendScreen(tab.dataset.screen);
-});
+// screenTabs + sendScreen/setSettingsTab removed — the ClauLi configurator is
+// the only settings screen now, so there's no tab to switch or screen to push.
 
 // ─── Orientation toggle (ClauLi pane) ────────────────────────────────────
 // 2 pills (Vertical / Horizontal). Click sends CTRL via /api/orientation;
@@ -2791,6 +2675,14 @@ function applyTileOrient(){
 renderOrientPills();
 async function sendRefresh(){try{await fetch('/api/refresh',{method:'POST'})}catch{}}
 async function sendAction(a){try{await fetch('/api/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:a})})}catch{}}
+// Debug overlay toggle — shows live state/mode/animation name on the device.
+let _dbgOn = false;
+function toggleDebugOverlay(){
+  _dbgOn = !_dbgOn;
+  sendAction(_dbgOn ? 'debug_on' : 'debug_off');
+  const b = document.getElementById('dbgBtn');
+  if (b){ b.dataset.i18n = _dbgOn ? 'debug_on' : 'debug_off'; b.textContent = t(b.dataset.i18n); b.classList.toggle('accent', _dbgOn); }
+}
 async function saveOAuthToken(){
   const inp = document.getElementById('auth-token-input');
   const st  = document.getElementById('auth-token-status');
@@ -3173,8 +3065,12 @@ async function applyAll(){
 }
 async function resetAllToDevice(){
   if (isAnyDirty() && !(await _confirmDiscard())) return;
-  await loadEmo2Config();
-  await loadEmo2Stats();
+  // Explicit user reset → FORCE-discard staged edits. Without force, the
+  // loaders' keepStaged guard (which protects against WS/focus reloads
+  // clobbering edits) would keep the staged values → "Сбросить" appeared to
+  // do nothing (dirty count stayed). force=true bypasses that guard.
+  await loadEmo2Config(true);
+  await loadEmo2Stats(true);
 }
 function resetAllToDefault(){
   emo2Config = _cloneCfg(DEFAULT_EMO2_CONFIG);
@@ -3690,14 +3586,14 @@ function buildStatusGroup(){
       <div class="pane-grid" style="grid-template-columns:1fr">
         <div class="pane-col pane-col-left pane-rotation-section">
           <!-- Req #5: bulk all/none buttons -->
-          <div class="section-label" data-i18n="forms_label">Forms <span class="hint">▢ multi · rotates ~20s</span><span class="bulk-row"><button class="ge-btn bulk" onclick="bulkSet('${sid}','forms',true)">${t('bulk_all')||'ALL'}</button><button class="ge-btn bulk" onclick="bulkSet('${sid}','forms',false)">${t('bulk_none')||'NONE'}</button></span></div>
+          <div class="section-label">${t('forms_label')||'Forms'} <span class="hint">${t('forms_hint')||'▢ multi · rotates ~20s'}</span><span class="bulk-row"><button class="ge-btn bulk" onclick="bulkSet('${sid}','forms',true)">${t('bulk_all')||'ALL'}</button><button class="ge-btn bulk" onclick="bulkSet('${sid}','forms',false)">${t('bulk_none')||'NONE'}</button></span></div>
           <div class="tile-grid" data-kind="form" data-state="${sid}"></div>
-          <div class="section-label" data-i18n="motions_label">Motions <span class="hint">↻ multi · fires ~8s</span><span class="bulk-row"><button class="ge-btn bulk" onclick="bulkSet('${sid}','ops',true)">${t('bulk_all')||'ALL'}</button><button class="ge-btn bulk" onclick="bulkSet('${sid}','ops',false)">${t('bulk_none')||'NONE'}</button></span></div>
+          <div class="section-label">${t('motions_label')||'Motions'} <span class="hint">${t('motions_hint')||'↻ multi · fires ~8s'}</span><span class="bulk-row"><button class="ge-btn bulk" onclick="bulkSet('${sid}','ops',true)">${t('bulk_all')||'ALL'}</button><button class="ge-btn bulk" onclick="bulkSet('${sid}','ops',false)">${t('bulk_none')||'NONE'}</button></span></div>
           <div class="tile-grid" data-kind="op" data-state="${sid}"></div>
         </div>
         <div class="pane-col pane-col-left pane-canim-section" style="display:none">
           <div class="pane-inactive-caption">${t('anim_mode_help')||'Canim mode: only complex animations run.'}</div>
-          <div class="section-label" data-i18n="canim_label">Complex anims <span class="hint">✦ multi</span><span class="bulk-row"><button class="ge-btn bulk" onclick="bulkSet('${sid}','canims',true)">${t('bulk_all')||'ALL'}</button><button class="ge-btn bulk" onclick="bulkSet('${sid}','canims',false)">${t('bulk_none')||'NONE'}</button></span></div>
+          <div class="section-label">${t('canim_label')||'Complex anims'} <span class="hint">${t('canim_hint')||'✦ multi'}</span><span class="bulk-row"><button class="ge-btn bulk" onclick="bulkSet('${sid}','canims',true)">${t('bulk_all')||'ALL'}</button><button class="ge-btn bulk" onclick="bulkSet('${sid}','canims',false)">${t('bulk_none')||'NONE'}</button></span></div>
           <div class="canim-btn-grid state-canim-grid" data-state="${sid}" style="padding:0 0 6px"></div>
         </div>
         <div class="pane-color-row" style="grid-column:1/-1">
@@ -4161,13 +4057,14 @@ function refreshPaneModes(){
   }
 }
 
-async function loadEmo2Config(){
+async function loadEmo2Config(force){
   try {
     const r = await fetch('/api/emo2-config'); const d = await r.json();
     // Dirtiness MUST be measured against the PREVIOUS snapshot, BEFORE we
     // replace it — otherwise every load (incl. the first) looks "dirty" and the
     // staged globals never populate, so the web never reflects the device.
-    const keepStaged = (emo2ConfigServer != null) && (typeof STATES !== 'undefined') &&
+    // force=true (explicit "Сбросить") discards staged edits unconditionally.
+    const keepStaged = !force && (emo2ConfigServer != null) && (typeof STATES !== 'undefined') &&
                        STATES.some(([sid]) => _isStatusDirty(sid));
     emo2ConfigServer = _cloneCfg(d.config);
     if (!keepStaged){
@@ -4516,14 +4413,15 @@ function resolveTileColor(spec) {
 // first state's pane threw, the whole settings panel went blank.
 
 // ───────── % Layout settings (read-only display, edit happens in gallery) ──
-async function loadEmo2Stats(){
+async function loadEmo2Stats(force){
   try {
     const r = await fetch('/api/emo2-stats-config');
     if (!r.ok) return;
     const j = await r.json();
     // Measure dirtiness against the PREVIOUS snapshot BEFORE replacing it (else
     // the first load looks dirty and never adopts the device's settings).
-    const keepStaged = (emo2StatsCfgServer != null) &&
+    // force=true (explicit "Сбросить") discards staged edits unconditionally.
+    const keepStaged = !force && (emo2StatsCfgServer != null) &&
       (_isStatsBlockDirty(['active','default','extras','layouts','layout_color','clock_style','clock_color','anim_pace_x10','form_pace_x10'])
        || (typeof _isGradDirty === 'function' && _isGradDirty()));
     emo2StatsCfgServer = _cloneCfg(j.config || {});
@@ -4543,6 +4441,14 @@ async function loadEmo2Stats(){
     }
     // Always sync grad stops from server (fromServer=true) so snapshot is fresh.
     syncGradStopsFromCfg(j.config || {}, true);
+    // Force reset also discards a dirty gradient (syncGradStopsFromCfg keeps
+    // staged stops when _isGradDirty()), so explicitly adopt the server stops.
+    if (force && typeof gradStopsServer !== 'undefined'){
+      gradStops = (gradStopsServer || []).map(s => ({...s}));
+      gradMode  = gradModeServer;
+      if (typeof renderGradEditor === 'function') renderGradEditor();
+      if (typeof refreshGradApplyState === 'function') refreshGradApplyState();
+    }
   } catch (e) { /* offline — leave dashes */ }
 }
 let emo2StatsCfg = { default:'bezel_orbit', extras:[], active:'bezel_orbit', layouts:{} };
@@ -5158,19 +5064,22 @@ function layoutThumbLoop(now){
         const sid = activeStatusTab || emo2CurrentState || 'connected';
         // Layout is global now — the mockup shows the single active layout.
         const layoutId = emo2StatsCfg.active || emo2StatsCfg.default || 'hud_ribbon';
-        // Faithful eyes: render the active status's ACTUAL form/animation + colour
-        // (cycle forms in rotation mode; play the chosen canim in canim mode).
+        // Faithful eyes: render the active status's eye. To avoid the preview
+        // "мельтешит" (flickering through every selected form/canim each frame),
+        // LOCK to a SINGLE animation: canim mode → the first selected canim
+        // (its own internal fn(t*4) keeps it alive — one looping animation);
+        // rotation mode → the first selected form, held static.
         try {
           const sc = (typeof emo2Config !== 'undefined' && emo2Config) ? (emo2Config[sid] || {}) : {};
           const pctNow = 30 + 60 * Math.abs(Math.sin(t * Math.PI));
           let form = 'neutral', opts = { scaleY: 1 };
           if (sc.mode === 'canim' && (sc.canims || []).length && typeof CANIM_FRAME !== 'undefined') {
-            const cid = sc.canims[Math.floor(t * sc.canims.length) % sc.canims.length];
+            const cid = sc.canims[0];                       // one fixed animation, no cycling
             const fn = CANIM_FRAME[cid];
             if (fn) { const fr = fn(t * 4); form = fr.formL || fr.form || 'neutral'; opts = fr; }
           } else {
             const forms = (sc.forms && sc.forms.length) ? sc.forms : ['neutral'];
-            form = forms[Math.floor(t * forms.length) % forms.length] || 'neutral';
+            form = forms[0] || 'neutral';                   // one fixed form, no cycling
           }
           _mockupEye = { form, opts, color: _statusEyeColor(sc, pctNow) };
         } catch(e) { _mockupEye = { form: 'neutral', opts: {}, color: _CY }; }

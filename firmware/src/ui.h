@@ -2,11 +2,10 @@
 #include "data.h"
 #include "ble.h"
 
+// Only the emo2 character screen remains (Usage / Claude / Bluetooth / legacy
+// EMO screens were removed). The enum is kept (single value) so the historical
+// screen API in ui.* / main.cpp / ota.cpp compiles unchanged.
 enum screen_t {
-    SCREEN_SPLASH,
-    SCREEN_USAGE,
-    SCREEN_EMO,
-    SCREEN_BLUETOOTH,
     SCREEN_EMO2,
     SCREEN_COUNT,
 };

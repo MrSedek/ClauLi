@@ -176,16 +176,17 @@ BLINK_TIMES = [0.7, 1.6, 3.1, 5.5]
 
 
 def frame_state(t: float):
-    # Showcase: NEUTRAL → CIRCLE → PUPIL_LEFT → PUPIL_SLIT → HAPPY ⌒ →
-    # ANGRY → CROSS → SLEEP, ~1.0 s each (8 moods × 1 s = 8 s loop).
-    if t < 1.0:    return "NEUTRAL",    22.0 + t * 8
-    if t < 2.0:    return "CIRCLE",     38.0
-    if t < 3.0:    return "PUPIL_LEFT", 50.0
-    if t < 4.0:    return "PUPIL_SLIT", 60.0
-    if t < 5.0:    return "HAPPY",      70.0
-    if t < 6.0:    return "ANGRY",      85.0
-    if t < 7.0:    return "CROSS",      95.0
-    return                "SLEEP",      100.0
+    # Showcase: NEUTRAL → CIRCLE → LOVE → SAD → HAPPY ⌒ → ANGRY → CROSS → SLEEP,
+    # ~1.0 s each (8 moods × 1 s = 8 s loop). Pupil forms (PUPIL_LEFT/PUPIL_SLIT)
+    # are intentionally excluded from the promo per design — keep eye shapes only.
+    if t < 1.0:    return "NEUTRAL", 22.0 + t * 8
+    if t < 2.0:    return "CIRCLE",  38.0
+    if t < 3.0:    return "LOVE",    50.0
+    if t < 4.0:    return "SAD",     60.0
+    if t < 5.0:    return "HAPPY",   70.0
+    if t < 6.0:    return "ANGRY",   85.0
+    if t < 7.0:    return "CROSS",   95.0
+    return                "SLEEP",   100.0
 
 
 def render_frame(t: float) -> Image.Image:

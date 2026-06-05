@@ -86,12 +86,17 @@ static volatile bool need_advertise = false;
 // stays "connected" forever and never re-advertises until a power cycle).
 static volatile uint32_t last_activity_ms = 0;
 static volatile uint16_t conn_handle = BLE_HS_CONN_HANDLE_NONE;
-// Backstop only: the 4s supervision timeout (set in onConnect) handles a
-// genuinely dropped link via onDisconnect. This watchdog covers the rare
-// "onDisconnect never fires" case. Kept long (5 min) so a healthy link
-// that is merely idle — e.g. the daemon is connected but its OAuth token
-// is broken, so no payload is sent — is NOT force-cycled every poll.
-#define LINK_DEAD_MS 300000UL
+// Backstop for the "onDisconnect never fires" case (macOS keeps the link at the
+// controller level after the daemon process dies → the device stays CONNECTED
+// to a dead peer, stops advertising, and a freshly-restarted daemon can't
+// discover it → user had to power-cycle the device). 90 s is safely ABOVE the
+// daemon's 60 s usage-poll write (which refreshes last_activity_ms), so a
+// healthy link is never force-cycled; and the fixed daemon's 3 s keep-alive
+// write keeps even a broken-token link warm. A genuinely dead central trips
+// this in ≤90 s → force-disconnect + re-advertise → the daemon reconnects with
+// no manual reboot. (Was 5 min — far too long; the device looked permanently
+// stuck until rebooted.)
+#define LINK_DEAD_MS 90000UL
 // Hard self-heal: once the device has connected at least once, a disconnect
 // that the daemon/macOS can't recover from (CoreBluetooth wedged, the device
 // advertising but undiscoverable) leaves it stuck on "Переподключение" forever.

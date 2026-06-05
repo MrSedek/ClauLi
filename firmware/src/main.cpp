@@ -7,13 +7,11 @@
 #include "ui.h"
 #include "ble.h"
 #include "ota.h"
-#include "splash.h"
-#include "usage_rate.h"
 #include "i18n.h"
-#include "emo.h"
 #include "emo2.h"
 #include <Preferences.h>
 #include <esp_system.h>
+#include <esp_task_wdt.h>
 
 // ─── Hardware objects (allocated in setup() — C6 crashes on global new) ────
 Arduino_DataBus *bus = nullptr;
@@ -164,12 +162,8 @@ static void btn_poll_one(const btn_config_t& cfg, btn_state_t& st) {
 // ─── Button actions ─────────────────────────────────────────────────────────
 static void action_trigger_animation(void) {
     ui_trigger_animation();
-    // Persist the chosen view mode so it survives a reboot.
-    switch (ui_get_current_screen()) {
-    case SCREEN_EMO:  g_prefs.putInt("emo_view",  (int)emo_get_view());  break;
-    case SCREEN_EMO2: g_prefs.putInt("emo2_view", (int)emo2_get_view()); break;
-    default: break;
-    }
+    // Persist the chosen emo2 view mode so it survives a reboot.
+    g_prefs.putInt("emo2_view", (int)emo2_get_view());
 }
 
 static void action_cycle_screen(void) {
@@ -187,7 +181,6 @@ static void action_set_rotation_persisted(uint8_t rot) {
     if (disp) lv_display_set_resolution(disp, logical_w(), logical_h());
     lv_obj_invalidate(lv_screen_active());
     ui_relayout();
-    splash_relayout();
     emo2_relayout();   // walks every absolute-positioned emo2 layout object
     g_prefs.putUInt("rotation", current_rotation);
     Serial.printf("Rotation: %d (%dx%d) [persisted]\n",
@@ -335,14 +328,29 @@ void setup() {
 
     ui_init();
     ui_update_ble_status(ble_get_state(), ble_get_device_name(), ble_get_mac_address());
-#ifdef EMO_SELFTEST
-    ui_show_screen(SCREEN_EMO2);
-    emo_set_view(9);  // compact + clock (only affects legacy emo)
-#else
-    emo_set_view((uint8_t)g_prefs.getInt("emo_view", 0));   // legacy emo view
-    emo2_set_view((uint8_t)g_prefs.getInt("emo2_view", 0)); // emo 2.0 view
-    ui_show_screen(SCREEN_EMO2);   // emo 2.0 is the new default screen
-#endif
+    emo2_set_view((uint8_t)g_prefs.getInt("emo2_view", 0)); // restore emo2 view
+    ui_show_screen(SCREEN_EMO2);   // emo2 is the only screen
+
+    // ─── Loop watchdog ──────────────────────────────────────────────────────
+    // Subscribe loop() to the Task WDT with a generous 15 s timeout + panic
+    // reboot. If the main loop ever HANGS (e.g. the rare LVGL-render / reconnect
+    // freeze that previously stuck the device on "Переподключение" until a
+    // power-cycle), the WDT fires → reboot → the device recovers on its own in
+    // ~15 s, and the panic backtrace + next-boot reason=TASK_WDT pinpoint the
+    // hang. 15 s is well above any legitimate blocking step (NVS flush, cfg
+    // parse, per-OTA-chunk write — OTA flash writes run on the BLE task, so the
+    // loop keeps feeding the WDT during an update).
+    {
+        esp_task_wdt_config_t wdt_cfg = {
+            .timeout_ms     = 15000,
+            .idle_core_mask = 0,        // don't watch idle tasks, only loop()
+            .trigger_panic  = true,
+        };
+        esp_err_t werr = esp_task_wdt_init(&wdt_cfg);
+        if (werr == ESP_ERR_INVALID_STATE) esp_task_wdt_reconfigure(&wdt_cfg);  // already init'd
+        esp_task_wdt_add(NULL);         // subscribe the loop task
+        Serial.println("Loop WDT armed (15s, panic-reboot)");
+    }
 
     Serial.println("Dashboard ready");
 }
@@ -379,7 +387,6 @@ void loop() {
     }
     ble_tick();
     ota_tick();
-    splash_tick();
 
     btn_poll();
 
@@ -427,7 +434,6 @@ void loop() {
                       sname, (unsigned)(_now_ms / 1000),
                       (unsigned)ESP.getFreeHeap());
         ui_update_ble_status(bs, ble_get_device_name(), ble_get_mac_address());
-        emo_set_connected(bs == BLE_STATE_CONNECTED);
         // emo2's connected-state is debounced below (not here) so a brief BLE
         // drop doesn't flash the loading screen.
     }
@@ -482,11 +488,11 @@ void loop() {
         usage.valid = true;
         ui_update(&usage);
     }
-    // Also exercise the emo emotion/animation change.
+    // Also exercise the emo2 emotion/animation change.
     static uint32_t st_emo = 0;
     if (millis() - st_emo >= 2500) {
         st_emo = millis();
-        emo_next_emotion();
+        emo2_next_emotion();
     }
 #else
     // Process incoming BLE data — payload may be a usage frame ({s:...}),
@@ -498,12 +504,6 @@ void loop() {
         if (emo2_apply_cfg_json(json)) ack = true;
         // Then try usage. parse_json sets `valid=true` only when `s` exists.
         if (parse_json(json, &usage) && usage.valid) {
-            int g_before = usage_rate_group();
-            usage_rate_sample(usage.session_pct);
-            int g_after = usage_rate_group();
-            if (g_after != g_before && splash_is_active()) {
-                splash_pick_for_current_rate();
-            }
             ui_update(&usage);
             emo2_set_data_received();   // anchor for state-machine staleness
             ack = true;
@@ -519,23 +519,17 @@ void loop() {
     while (ble_has_ctrl_cmd()) {
         uint8_t cmd = ble_get_ctrl_cmd();
         switch (cmd) {
-        case 0x01: ui_show_screen(SCREEN_USAGE);      break;
-        case 0x02: ui_show_screen(SCREEN_BLUETOOTH);  break;
-        case 0x03: ui_show_screen(SCREEN_SPLASH);     break;
+        // Legacy screen selectors removed (0x01 usage / 0x02 bluetooth /
+        // 0x03 splash / 0x06 emo) — only emo2 remains. 0x04 now cycles the
+        // emo2 view-mode; 0x09 is a no-op (emo2 is already the only screen).
         case 0x04: ui_cycle_screen();                 break;
-        case 0x06: ui_show_screen(SCREEN_EMO);        break;
-        case 0x09: ui_show_screen(SCREEN_EMO2);       break;  // ClauLi (HD)
-        case 0x0A: ui_show_screen(SCREEN_EMO2);
-                   emo2_run_diagnostics();            break;  // 8s diag sequence
+        case 0x09: /* emo2 is the only screen */      break;
+        case 0x0A: emo2_run_diagnostics();            break;  // 8s diag sequence
+        case 0x0B: emo2_set_debug_overlay(true);      break;  // on-screen debug overlay ON
+        case 0x0C: emo2_set_debug_overlay(false);     break;  // debug overlay OFF
         case 0x05: esp_restart();                     break;  // device reboot
         case 0x07: action_trigger_animation();        break;  // BOOT-click analog (cycle view)
-        case 0x08:                                            // next animation now (screen-aware)
-            switch (ui_get_current_screen()) {
-            case SCREEN_SPLASH:   splash_next();           break;
-            case SCREEN_EMO2:     emo2_next_emotion();     break;
-            default:              emo_next_emotion();      break;
-            }
-            break;
+        case 0x08: emo2_next_emotion();               break;  // next emotion now
         case 0x10: ble_request_refresh();             break;
         // 0x18–0x1B: daemon-driven state signals for emo2.
         case 0x18: emo2_set_token_expired(true);      break;
@@ -628,5 +622,6 @@ void loop() {
         }
     }
 
+    esp_task_wdt_reset();   // feed the loop watchdog — a hang >15s → panic-reboot
     delay(5);
 }

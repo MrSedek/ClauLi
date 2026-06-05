@@ -20,5 +20,15 @@ daemon/.venv/
 __pycache__/
 *.pyc
 
+# Logs
+merged.log/esp.log
+merged.log/merged.log
+
 # Internal agent notes — not part of the project
 CLAUDE.md
+
+# Docs / promo landing — kept out of the repo (hosted separately)
+docs/
+
+# Legacy source assets (old-board fonts/icons + demo media) — unused by the build
+assets/

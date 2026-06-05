@@ -25,6 +25,14 @@ static uint32_t reboot_at_ms     = 0;   // 0 = no pending reboot
 // the daemon so the web UI shows a clear error instead of just freezing.
 #define OTA_IDLE_TIMEOUT_MS 8000
 
+// The OTA progress overlay is LVGL, which is NOT thread-safe. ota_cmd_begin/
+// data/end run in the NimBLE callback context (see ble.cpp), so they must NOT
+// touch LVGL directly — doing so races the main-loop renderer and can hang the
+// device. Callbacks set these flags; ota_tick() applies them on the main loop.
+static volatile uint8_t ota_ui_state = 0xFF;   // 0xFF = nothing pending; else 0..3
+static volatile uint8_t ota_ui_pct   = 0;
+static inline void ota_ui_set(uint8_t st, uint8_t pct) { ota_ui_pct = pct; ota_ui_state = st; }
+
 static inline void send_notify(uint8_t status, const uint8_t* payload, size_t len) {
     if (notify_cb) notify_cb(status, payload, len);
 }
@@ -59,14 +67,14 @@ void ota_cmd_begin(uint32_t total_size) {
         uint8_t err = (uint8_t)Update.getError();
         Serial.printf("OTA: begin failed err=%u (%s)\n", err, Update.errorString());
         send_notify(OTA_NOTIFY_ERR_BEGIN, &err, 1);
-        emo2_set_ota_progress(3, 0);
+        ota_ui_set(3, 0);
         return;
     }
     in_progress = true;
     last_progress_ms = millis();
     last_chunk_ms    = millis();   // idle-timeout anchor
     send_notify(OTA_NOTIFY_READY, nullptr, 0);
-    emo2_set_ota_progress(0, 0);   // show "OTA 0%" overlay
+    ota_ui_set(0, 0);   // show "OTA 0%" overlay (applied on main loop)
 }
 
 void ota_cmd_data(const uint8_t* data, size_t len) {
@@ -77,7 +85,7 @@ void ota_cmd_data(const uint8_t* data, size_t len) {
         Serial.printf("OTA: write failed wrote=%u/%u err=%u (%s)\n",
                       (unsigned)wrote, (unsigned)len, err, Update.errorString());
         send_notify(OTA_NOTIFY_ERR_WRITE, &err, 1);
-        emo2_set_ota_progress(3, 0);
+        ota_ui_set(3, 0);
         Update.abort();
         in_progress = false;
         return;
@@ -91,7 +99,7 @@ void ota_cmd_data(const uint8_t* data, size_t len) {
         // Mirror the percent on the ESP screen so the user has a visual cue
         // even if they don't have the web UI open.
         uint8_t pct = expected ? (uint8_t)((uint64_t)received * 100 / expected) : 0;
-        emo2_set_ota_progress(1, pct);
+        ota_ui_set(1, pct);
     }
 }
 
@@ -110,7 +118,7 @@ void ota_cmd_end(void) {
                       (unsigned long)received, (unsigned long)expected);
         uint8_t err = 0xFE;   // custom: incomplete transfer (not from Update lib)
         send_notify(OTA_NOTIFY_ERR_END, &err, 1);
-        emo2_set_ota_progress(3, 0);
+        ota_ui_set(3, 0);
         Update.abort();
         in_progress = false;
         return;
@@ -119,13 +127,13 @@ void ota_cmd_end(void) {
         uint8_t err = (uint8_t)Update.getError();
         Serial.printf("OTA: end failed err=%u (%s)\n", err, Update.errorString());
         send_notify(OTA_NOTIFY_ERR_END, &err, 1);
-        emo2_set_ota_progress(3, 0);   // error
+        ota_ui_set(3, 0);   // error
         in_progress = false;
         return;
     }
     in_progress = false;
     send_notify(OTA_NOTIFY_DONE, nullptr, 0);
-    emo2_set_ota_progress(2, 100);     // done — stays visible till reboot
+    ota_ui_set(2, 100);     // done — stays visible till reboot (applied on main loop)
     reboot_at_ms = millis() + 1500;
 }
 
@@ -138,6 +146,13 @@ void ota_cmd_abort(void) {
 }
 
 void ota_tick(void) {
+    // Apply any pending OTA overlay update HERE (main loop) — the ota_cmd_*
+    // setters run in NimBLE-callback context and must not touch LVGL directly.
+    if (ota_ui_state != 0xFF) {
+        uint8_t st = ota_ui_state, pct = ota_ui_pct;
+        ota_ui_state = 0xFF;
+        emo2_set_ota_progress(st, pct);
+    }
     if (reboot_at_ms && (int32_t)(millis() - reboot_at_ms) >= 0) {
         Serial.println("OTA: rebooting into new image");
         delay(50);
@@ -156,6 +171,6 @@ void ota_tick(void) {
         send_notify(OTA_NOTIFY_ERR_END, &err, 1);
         Update.abort();
         in_progress = false;
-        emo2_set_ota_progress(3, 0);
+        ota_ui_set(3, 0);
     }
 }

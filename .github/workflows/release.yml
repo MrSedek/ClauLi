@@ -49,12 +49,24 @@ jobs:
       - name: Build firmware (esp32c6)
         run: pio run -d firmware -e esp32c6
 
-      - name: Stage artefacts
+      - name: Stage artefacts (OTA image + USB flasher bundle)
         run: |
-          mkdir -p out
-          cp firmware/.pio/build/esp32c6/firmware.bin   out/firmware.bin
-          cp firmware/.pio/build/esp32c6/partitions.bin out/partitions.bin
-          cp firmware/.pio/build/esp32c6/bootloader.bin out/bootloader.bin || true
+          BUILD=firmware/.pio/build/esp32c6
+          mkdir -p out flasher
+
+          # OTA image — uploaded from the device web UI (Firmware OTA), no cable.
+          cp "$BUILD/firmware.bin" out/firmware.bin
+
+          # First-time USB flash bundle: complete image + portable esptool flasher
+          # + instructions. `firmware.factory.bin` is the merged image flashed at 0x0.
+          cp "$BUILD/firmware.factory.bin" flasher/firmware.factory.bin
+          cp scripts/release/flash.sh  flasher/flash.sh
+          cp scripts/release/flash.bat flasher/flash.bat
+          cp scripts/release/FLASH.md  flasher/FLASH.md
+          chmod +x flasher/flash.sh
+          (cd flasher && zip -r ../out/ClauLi-firmware-flasher.zip .)
+
+          ls -la out/
 
       - uses: actions/upload-artifact@v4
         with:
@@ -197,9 +209,12 @@ jobs:
           body: |
             ## ClauLi ${{ github.ref_name }}
 
-            ### Downloads
-            - **Firmware** (`firmware.bin`) — flash via web UI's OTA tab or `esptool.py write_flash 0x10000 firmware.bin`.
-            - **macOS** (`ClauLi-macOS.zip`) — unzip, drag to `/Applications`. On first launch Right-click → Open to bypass Gatekeeper (no code-signing).
+            ### Firmware
+            - **First flash over USB** (`ClauLi-firmware-flasher.zip`) — unzip, then run `flash.sh` (macOS/Linux) or `flash.bat` (Windows). Contains the complete image + a portable esptool flasher (only needs Python 3). See `FLASH.md`.
+            - **Wireless update** (`firmware.bin`) — open the device web UI → *Firmware OTA* and upload it. No cable.
+
+            ### Desktop app (daemon)
+            - **macOS** (`ClauLi-macOS.zip`) — unzip, drag `ClauLi.app` to `/Applications`. On first launch Right-click → Open to bypass Gatekeeper (no code-signing).
             - **Linux** (`clauli-linux-x86_64.tar.gz`) — `tar xzf`, run `./clauli/clauli --tray`.
             - **Windows** (`ClauLi-windows-x86_64.zip`) — unzip, run `clauli.exe --tray`. Click *More info → Run anyway* on SmartScreen prompt.
 

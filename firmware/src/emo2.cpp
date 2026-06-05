@@ -254,6 +254,20 @@ static bool      canim_active   = false;
 static uint8_t   canim_id       = 0;
 static uint32_t  canim_start_ms = 0;
 static int16_t   canim_phase    = -1;
+
+// ─── Debug overlay (separate mode, CTRL 0x0B on / 0x0C off) ──────────────────
+// Shows the live derived STATE, the per-state MODE (rot/canim) and the current
+// canim id+name on a top-layer label so per-status complex-animation issues are
+// diagnosable on-device without a serial cable.
+static bool      dbg_overlay = false;
+static lv_obj_t* obj_dbg     = nullptr;
+static void      dbg_update(void);   // fwd decl (defined after the state machine)
+static const char* const CANIM_DBG_NAMES[] = {
+  "wakeup","sneeze","laugh","cry","dizzy","sleep","dance","shock","scan","lovestruck",
+  "suspicious","flirt","peek","roll","giggle","rage","ponder","agree","disagree","melt",
+  "rage2","lovestruck2","suspicion","dizzy_spell","panic","mischief","sob","wake_up2","tv_crt"
+};
+static const char* const DSTATE_DBG_NAMES[] = {"connected","connecting","ble_off","token_exp"};
 static bool      ota_active    = false;     // OTA upload in progress (set by ota.cpp via emo2_set_ota_progress)
 // % stats layout: 0=off, 1=bezel_orbit, 2=twin_columns, 3=hud_ribbon.
 // User picks from the gallery in the web UI; daemon pushes the active one on
@@ -529,6 +543,13 @@ static bool emo2_cfg_loaded = false;       // true once NVS or daemon populated
 // Rotation scheduler state.
 #define EMO2_FORM_ROT_MS  20000
 #define EMO2_OP_ROT_MS     8000
+// Canim-mode repeat: how often a per-status complex animation re-fires. The
+// `!canim_active` guard prevents overlap, so the next canim plays ~right after
+// the current one ends (canims run ~5-6s) — i.e. the chosen animation loops
+// near-continuously, which is what "this status shows this animation" means.
+// (Was EMO2_FORM_ROT_MS*3 = 60s → the canim played once then sat idle for a
+// minute, so the user almost never saw it: "не отображается".)
+#define EMO2_CANIM_REPEAT_MS 8000
 #define EMO2_DATA_STALE_MS 150000UL   // 2.5× POLL_INTERVAL (60s)
 static emo2_dstate_t prev_dstate = EST_BLE_OFF;
 static uint32_t      form_next_ms = 0, op_next_ms = 0;
@@ -881,10 +902,20 @@ static void zzz_anim_cb(void* obj, int32_t v) {
 // Re-show the catchlight after a blink/wink completes (if the mood wants it).
 static void blink_restore_spec(lv_anim_t* a) {
     (void)a;
+    // Never restore the white catchlight while a canim suppresses it (e.g.
+    // wake_up2 keeps it hidden until the wake sequence ENDS) — scenes fire
+    // do_blink() to mask sprite swaps, and this callback used to pop the spec
+    // back mid-animation, putting a white dot on the still-closed dark eye
+    // ("блик появляется раньше кадра, где он должен быть").
+    if (canim_spec_suppress) return;
     for (int i = 0; i < 2; i++) {
         if (!eye_spec[i]) continue;
-        bool show = mood_has_spec(cur_mood);
-        if (show) lv_obj_clear_flag(eye_spec[i], LV_OBJ_FLAG_HIDDEN);
+        // GENERAL guard: only restore the catchlight on a sufficiently-OPEN eye
+        // — never on a closed/squished one (no white blik on a dark eye).
+        int32_t sy = lv_image_get_scale_y(eye_base[i]);
+        bool open_enough = (sy >= BASE_SCALE * 7 / 10);
+        if (mood_has_spec(cur_mood) && open_enough)
+            lv_obj_clear_flag(eye_spec[i], LV_OBJ_FLAG_HIDDEN);
     }
 }
 static void do_blink(void) {
@@ -1712,6 +1743,18 @@ void emo2_init(void) {
     // Cyrillic-capable font — "Переподключение…" would tofu in built-in 10pt.
     lv_obj_set_style_text_font (obj_status, &lv_font_montserrat_16, 0);
     position_status_label();
+
+    // Debug overlay label — on the TOP layer so it's visible over every layout
+    // AND the reconnect overlay. Hidden unless debug mode is toggled on.
+    obj_dbg = lv_label_create(lv_layer_top());
+    lv_label_set_text(obj_dbg, "");
+    lv_obj_set_style_text_color(obj_dbg, lv_color_hex(0x00FF66), 0);
+    lv_obj_set_style_bg_color (obj_dbg, lv_color_hex(0x000000), 0);
+    lv_obj_set_style_bg_opa   (obj_dbg, LV_OPA_70, 0);
+    lv_obj_set_style_pad_all  (obj_dbg, 2, 0);
+    lv_obj_set_style_text_font(obj_dbg, &lv_font_montserrat_14, 0);
+    lv_obj_align(obj_dbg, LV_ALIGN_BOTTOM_MID, 0, -1);
+    lv_obj_add_flag(obj_dbg, LV_OBJ_FLAG_HIDDEN);
 
     // Session / weekly info labels (text view modes).
     obj_info_s = lv_label_create(container);
@@ -2963,12 +3006,23 @@ static void emo2_tick_state_machine(void) {
     if (s != prev_dstate) {
         prev_dstate = s;
         rot_form_i = rot_op_i = rot_canim_i = 0;
-        form_next_ms = now + EMO2_FORM_ROT_MS;
         op_next_ms   = now + EMO2_OP_ROT_MS;
         apply_cfg_form(s, 0);
         apply_cfg_op  (s, 0);
         apply_cfg_color(s);
         apply_cfg_state(s);   // Phase D: layout / text / layout_color
+        // Canim mode: play the FIRST complex animation IMMEDIATELY on entering
+        // the state. Previously it only fired after a full EMO2_FORM_ROT_MS
+        // (20s) rotation interval — and since every web "Apply" forces a state
+        // re-entry (prev_dstate invalidated), that 20s timer kept resetting and
+        // the chosen animation effectively never played ("не используется").
+        if (emo2_cfg.per_state[s].mode == 1 && emo2_cfg.per_state[s].n_canims > 0) {
+            emo2_play_canim(emo2_cfg.per_state[s].canims[0]);
+            rot_canim_i  = (uint8_t)(1 % emo2_cfg.per_state[s].n_canims);
+            form_next_ms = now + EMO2_CANIM_REPEAT_MS;   // loop the canim regularly (not once/60s)
+        } else {
+            form_next_ms = now + EMO2_FORM_ROT_MS;
+        }
         return;
     }
     // Part C: branch on per-state mode.
@@ -2981,7 +3035,7 @@ static void emo2_tick_state_machine(void) {
                 emo2_play_canim(emo2_cfg.per_state[s].canims[rot_canim_i]);
                 rot_canim_i = (rot_canim_i + 1) % nc;
             }
-            form_next_ms = now + EMO2_FORM_ROT_MS * 3;
+            form_next_ms = now + EMO2_CANIM_REPEAT_MS;
         }
     } else {
         // Default rotation mode: advance forms on the normal cadence.
@@ -4045,11 +4099,39 @@ void emo2_play_canim(uint8_t id) {
         int32_t sc = lv_image_get_scale_y(eye_base[i]);
         scene_ssy[i] = (BASE_SCALE > 0) ? (int)(sc * 100 / BASE_SCALE) : 100;
     }
+    Serial.printf("[CANIM] play id=%u %s\n", id,
+                  id < (sizeof(CANIM_DBG_NAMES)/sizeof(CANIM_DBG_NAMES[0])) ? CANIM_DBG_NAMES[id] : "?");
+}
+
+// Debug overlay: refresh the on-screen label with the live state / mode / canim.
+static void dbg_update(void) {
+    if (!obj_dbg) return;
+    if (!dbg_overlay) { lv_obj_add_flag(obj_dbg, LV_OBJ_FLAG_HIDDEN); return; }
+    lv_obj_clear_flag(obj_dbg, LV_OBJ_FLAG_HIDDEN);
+    emo2_dstate_t s = derive_state_local();
+    const uint8_t NC = sizeof(CANIM_DBG_NAMES) / sizeof(CANIM_DBG_NAMES[0]);
+    const char* sn = ((uint8_t)s <= (uint8_t)EST_TOKEN_EXPIRED) ? DSTATE_DBG_NAMES[(uint8_t)s] : "?";
+    uint8_t md = emo2_cfg.per_state[s].mode;
+    uint8_t nc = emo2_cfg.per_state[s].n_canims;
+    // gate: why the per-state scheduler might not be running (manual / no cfg / OTA).
+    const char* gate = manual_mode ? "MAN" : (!emo2_cfg_loaded ? "NOCFG" : (ota_active ? "OTA" : "ok"));
+    char buf[80];
+    if (canim_active && canim_id < NC)
+        snprintf(buf, sizeof(buf), "%s %s[%s] C%u %s", sn, md ? "CANIM " : "rot ", gate, canim_id, CANIM_DBG_NAMES[canim_id]);
+    else
+        snprintf(buf, sizeof(buf), "%s %s[%s] nc=%u", sn, md ? "CANIM " : "rot ", gate, nc);
+    lv_label_set_text(obj_dbg, buf);
+}
+void emo2_set_debug_overlay(bool on) {
+    dbg_overlay = on;
+    Serial.printf("DBG overlay %s\n", on ? "ON" : "OFF");
+    dbg_update();
 }
 
 void emo2_tick(void) {
     if (!active) return;
     uint32_t now = millis();
+    if (dbg_overlay) { static uint32_t _dbgms = 0; if (now - _dbgms >= 250) { _dbgms = now; dbg_update(); } }
     // Test-pct TTL — once expired, repaint with the real session_pct.
     if (test_pct_override >= 0.0f && (int32_t)(test_pct_expires_ms - now) <= 0) {
         test_pct_override   = -1.0f;
@@ -4410,9 +4492,17 @@ void emo2_tick(void) {
         curious_next_ms = now + ANIM_PACE(30000 + (esp_random() % 30000));
     }
 
-    // --- Auto mood change (1–3 min) — skip SLEEP/LOVE/CROSS and the
-    //     "manual-only" forms (OVAL_TALL/DIAMOND/PUPIL_LEFT). -------------
-    if (!diag_active && !manual_mode && now >= mood_next_ms) {
+    // --- Auto mood change (1–3 min): a LEGACY "living" random form-change from
+    //     the standalone-toy era. Once the daemon has pushed a per-state config
+    //     (emo2_cfg_loaded), the state machine OWNS the visuals — rotation mode
+    //     cycles the user's SELECTED forms, canim mode plays the chosen
+    //     animations. Firing a RANDOM mood on top surfaced unselected "simple
+    //     forms" (esp. visible in canim mode → user: "выбраны сложные анимации,
+    //     но отображаются простые формы, притом не выбранные"). So skip it when
+    //     a config is loaded (and never interrupt a running canim). With no
+    //     daemon/config the random liveness still runs (standalone fallback).
+    if (!diag_active && !manual_mode && !canim_active && !emo2_cfg_loaded &&
+        now >= mood_next_ms) {
         uint8_t next = cur_mood;
         for (int tries = 0; tries < 16 &&
              (next == cur_mood || next == M_SLEEP || next == M_LOVE ||

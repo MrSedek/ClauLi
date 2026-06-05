@@ -28,6 +28,13 @@ from anthropic import Anthropic
 from anthropic.lib.credentials import CredentialsFile
 from bleak import BleakClient, BleakScanner
 from bleak.exc import BleakError
+try:
+    # Raised by CoreBluetooth/BlueZ when BT is powered off or access is denied
+    # (macOS Privacy & Security). Newer bleak only — fall back gracefully.
+    from bleak.exc import BleakBluetoothNotAvailableError
+except ImportError:  # older bleak: define a sentinel that never matches a real raise
+    class BleakBluetoothNotAvailableError(BleakError):  # type: ignore
+        reason = None
 
 try:
     from aiohttp import web
@@ -277,6 +284,10 @@ ACTION_MAP = {
     "color_amber": CTRL_COLOR_AMBER,
     "color_red":   CTRL_COLOR_RED,
     "color_auto":  CTRL_COLOR_AUTO,
+    # On-screen debug overlay (separate mode) — shows live state/mode/canim on
+    # the device for diagnosing per-status complex-animation issues.
+    "debug_on":  0x0B,
+    "debug_off": 0x0C,
 }
 
 # emo2 explicit form select — order must match mood_t in emo2.cpp.
@@ -326,6 +337,9 @@ for _i, _n in enumerate(CANIM_NAMES):
 POLL_INTERVAL = 60
 TICK = 5
 SCAN_TIMEOUT = 8.0
+# When Bluetooth is off or access is denied, scanning fails instantly — back off
+# this long between quiet retries so we don't spin (recovers once BT is enabled).
+BT_RETRY_S = 30.0
 # If no device telemetry notify arrives for this long, treat the BLE link as
 # stale — macOS/CoreBluetooth keeps is_connected=True after the device silently
 # drops + re-advertises, so the connect loop never exits and all config/CTRL/
@@ -645,6 +659,8 @@ class DaemonState:
     api_client: Optional[Anthropic] = None
     auth_error: bool = False
     auth_retry_count: int = 0            # consecutive failed Keychain re-reads
+    ble_unavailable: bool = False        # BT powered off / access denied by macOS
+    ble_unavailable_reason: str = ""     # "denied" | "off" | "unsupported" | "unknown"
     force_poll: bool = False             # set by /api/oauth-token to poll asap
     manual_mode: bool = False           # Settings → manual override
     emo2_config: dict = field(default_factory=lambda: {
@@ -860,6 +876,171 @@ async def poll_api(client: Anthropic, state: DaemonState) -> Optional[dict]:
 # ---------------------------------------------------------------------------
 # BLE
 # ---------------------------------------------------------------------------
+
+def _bt_reason_key(err) -> str:
+    """Classify a BleakBluetoothNotAvailableError into a short reason key."""
+    name = ""
+    try:
+        name = (getattr(getattr(err, "reason", None), "name", "") or "").upper()
+    except Exception:
+        name = ""
+    if not name:
+        name = str(err).upper()
+    if "DENIED" in name or "UNAUTHORIZED" in name:
+        return "denied"
+    if "OFF" in name:                       # POWERED_OFF
+        return "off"
+    if "UNSUPPORTED" in name:
+        return "unsupported"
+    return "unknown"
+
+
+def _bluetooth_guidance(reason: str, lang: str):
+    """Return (title, body_lines[], short_notification) — actionable, bilingual."""
+    ru = (lang == "ru")
+    mac = (sys.platform == "darwin")
+    if reason == "denied":
+        if ru:
+            title = "Нет доступа к Bluetooth"
+            body = [
+                "macOS запретил этому приложению доступ к Bluetooth — ClauLi не может",
+                "искать устройство.",
+                "Как исправить:",
+                "  1. Системные настройки → Конфиденциальность и безопасность → Bluetooth",
+                "  2. Включите переключатель для приложения, запускающего демон",
+                "     (ClauLi или ваш Терминал / iTerm, если запускаете из консоли).",
+                "  3. Полностью закройте и запустите ClauLi заново — macOS проверяет",
+                "     доступ только при старте.",
+                "Демон продолжит работать и будет повторять попытки.",
+            ]
+            short = "Включите Bluetooth для ClauLi в Системных настройках, затем перезапустите."
+        else:
+            title = "Bluetooth access denied"
+            body = [
+                "macOS has denied Bluetooth access to this app, so ClauLi can't scan",
+                "for the device.",
+                "Fix it:",
+                "  1. System Settings → Privacy & Security → Bluetooth",
+                "  2. Enable the toggle for the app running the daemon",
+                "     (ClauLi, or your Terminal / iTerm if you run it from a shell).",
+                "  3. Quit and start ClauLi again — macOS only re-checks the",
+                "     permission on launch.",
+                "The daemon will keep running and retry.",
+            ]
+            short = "Enable Bluetooth for ClauLi in System Settings, then relaunch."
+    elif reason == "off":
+        if ru:
+            title = "Bluetooth выключен"
+            body = [
+                "Bluetooth, похоже, выключен. Включите его:",
+                ("  Пункт управления → Bluetooth, или Системные настройки → Bluetooth"
+                 if mac else "  в настройках системы."),
+                "Демон продолжит попытки и подключится автоматически.",
+            ]
+            short = "Включите Bluetooth — демон подключится автоматически."
+        else:
+            title = "Bluetooth is turned off"
+            body = [
+                "Bluetooth appears to be off. Turn it on:",
+                ("  Control Center → Bluetooth, or System Settings → Bluetooth"
+                 if mac else "  in your system settings."),
+                "The daemon will keep retrying and connect automatically.",
+            ]
+            short = "Turn on Bluetooth — the daemon will reconnect automatically."
+    elif reason == "unsupported":
+        if ru:
+            title = "Bluetooth недоступен"
+            body = ["Bluetooth недоступен или не поддерживается на этом компьютере.",
+                    "Демону нужен Bluetooth LE для связи с устройством."]
+            short = "Bluetooth LE недоступен на этом компьютере."
+        else:
+            title = "Bluetooth unavailable"
+            body = ["Bluetooth is unavailable or unsupported on this machine.",
+                    "The daemon needs Bluetooth LE to reach the device."]
+            short = "Bluetooth LE is unavailable on this machine."
+    else:
+        if ru:
+            title = "Проблема с Bluetooth"
+            body = ["Не удалось получить доступ к Bluetooth. Проверьте, что он включён",
+                    "и разрешён для приложения, затем перезапустите ClauLi."]
+            short = "Не удалось получить доступ к Bluetooth."
+        else:
+            title = "Bluetooth problem"
+            body = ["Could not access Bluetooth. Make sure it's on and allowed for",
+                    "this app, then restart ClauLi."]
+            short = "Could not access Bluetooth."
+    return title, body, short
+
+
+def _macos_notify(title: str, message: str) -> None:
+    """Best-effort native macOS notification (no-op elsewhere / on failure)."""
+    if sys.platform != "darwin":
+        return
+    msg = message.replace('"', "'").replace("\n", " ")
+    ttl = title.replace('"', "'")
+    try:
+        subprocess.run(
+            ["osascript", "-e",
+             f'display notification "{msg}" with title "ClauLi" subtitle "{ttl}"'],
+            check=False, timeout=5,
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+    except Exception:
+        pass
+
+
+def _warn_bluetooth_unavailable(err, lang: str, state=None) -> str:
+    """Log a clear, boxed, actionable message + fire a macOS notification.
+
+    De-duped: only logs/notifies on the transition into the unavailable state
+    (tracked via state.ble_unavailable) so retries don't spam the log.
+    Returns the reason key.
+    """
+    reason = _bt_reason_key(err)
+    already = bool(getattr(state, "ble_unavailable", False)) if state is not None else False
+    if state is not None:
+        state.ble_unavailable = True
+        state.ble_unavailable_reason = reason
+    if already:
+        return reason  # quiet on subsequent retries
+    title, body, short = _bluetooth_guidance(reason, lang)
+    bar = "─" * 68
+    log("┌" + bar)
+    log("│  ⚠  " + title)
+    for ln in body:
+        log("│     " + ln)
+    log("└" + bar)
+    _macos_notify(title, short)
+    return reason
+
+
+async def _bluetooth_preflight(state, lang: str) -> bool:
+    """Explicit startup Bluetooth check.
+
+    Surfaces a clear message immediately at launch if BT is off / access is
+    denied, instead of letting the daemon fail later mid-scan. Returns True if
+    Bluetooth looks usable, False otherwise. Never raises.
+    """
+    try:
+        scanner = BleakScanner()
+        await asyncio.wait_for(scanner.start(), timeout=SCAN_TIMEOUT + 4)
+        try:
+            await asyncio.wait_for(scanner.stop(), timeout=5)
+        except Exception:
+            pass
+        # reachable → clear any stale flag
+        if getattr(state, "ble_unavailable", False):
+            state.ble_unavailable = False
+            state.ble_unavailable_reason = ""
+        return True
+    except BleakBluetoothNotAvailableError as e:
+        _warn_bluetooth_unavailable(e, lang, state)
+        return False
+    except (asyncio.TimeoutError, BleakError, Exception):
+        # Any other backend hiccup: don't block startup — the main loop will
+        # log/handle it. (Timeout here just means the radio was slow to init.)
+        return True
+
 
 async def scan_for_device():
     """Return a freshly-discovered BLEDevice (not a cached address).
@@ -1900,6 +2081,13 @@ def load_emo2_stats() -> dict:
                 cs_val = _CLOCK_STYLE_LEGACY_MAP.get(cs_val, cs_val)
                 if cs_val in CLOCK_STYLES:
                     cfg["clock_style"] = cs_val
+            # Clock colour (v3+) — "default" / "auto" / "#RRGGBB". This was NOT
+            # read back before, so a custom/auto clock colour reverted to the
+            # default on every daemon restart and got re-pushed to the ESP
+            # (user: "настройки времени (цвет) сбросились").
+            cc_val = stored.get("clock_color")
+            if isinstance(cc_val, str) and (cc_val in ("default", "auto") or HEX_COLOR_RE.match(cc_val)):
+                cfg["clock_color"] = cc_val
             # Colour-by-% gradient stops (v3+). Migration: ignore persisted
             # stops if their schema version is older than the current default
             # — the thresholds changed (0/50/70/90 → 0/20/50/80) and stale
@@ -1913,6 +2101,11 @@ def load_emo2_stats() -> dict:
                     cfg["color_stops"] = stops_val
             # else: keep defaults (already deep-copied above). _stops_v is
             # automatically refreshed when save_emo2_stats writes the file.
+            # Gradient interpolation mode (v3+) — "step" / "smooth". Also was not
+            # read back, so it reverted to the default on restart.
+            gm_val = stored.get("gradient_mode")
+            if gm_val in ("step", "smooth"):
+                cfg["gradient_mode"] = gm_val
             # Pace multipliers — validate range and ignore garbage.
             for k in ("anim_pace_x10", "form_pace_x10"):
                 v = stored.get(k)
@@ -1932,6 +2125,12 @@ def load_emo2_stats() -> dict:
                     tf = lc.get("text_format")
                     if isinstance(tf, str) and tf in TEXT_FORMATS:
                         cfg["layouts"][lid]["text_format"] = tf
+                    # Per-layout text PLACEMENT (top/middle/bottom). Was NOT read
+                    # back before → text position reverted to default on daemon
+                    # restart (user: "настройки текста (положение) сбросились").
+                    tp = lc.get("text_placement")
+                    if isinstance(tp, str) and tp in TEXT_PLACEMENTS:
+                        cfg["layouts"][lid]["text_placement"] = tp
                     # v2 fallback: text_mode (only used if v3 fields missing)
                     tm = lc.get("text_mode")
                     if (isinstance(tm, str) and tm in TEXT_MODES
@@ -2552,13 +2751,27 @@ async def push_emo2_full_config(session: "Session", state: "DaemonState") -> Non
     reconnect we replay them via the simple CTRL channel."""
     if session is None or not state.ble_connected:
         return
-    try:
-        blob = build_emo2_cfg_blob(state)
-        ok = await session.write_payload(blob)
-        if not ok:
-            log("emo2 cfg push failed (write_payload returned false)")
-    except Exception as e:
-        log(f"emo2 cfg push exception: {e}")
+    # RETRY: on a flaky BLE link the single full-config write was silently lost
+    # (chunked ~900-byte payload + a momentary drop) → the firmware kept a stale
+    # /partial per-state config (e.g. `connected` with no canims while the
+    # daemon held the user's pick). Retry a few times so every (re)connect and
+    # every Apply reliably re-syncs the WHOLE config. Combined with the 90s
+    # LINK_DEAD_MS self-recovery, config converges within ~90s worst case.
+    blob = build_emo2_cfg_blob(state)
+    ok = False
+    for attempt in range(4):
+        if session is None or not state.ble_connected:
+            break
+        try:
+            ok = await session.write_payload(blob)
+        except Exception as e:
+            log(f"emo2 cfg push exception (try {attempt + 1}): {e}")
+            ok = False
+        if ok:
+            break
+        await asyncio.sleep(0.4)
+    if not ok:
+        log("emo2 cfg push FAILED after retries — firmware may be out of sync")
     # Replay the per-display knobs via CTRL bytes. Old firmware will ignore
     # any byte it doesn't recognise (default branch in CTRL dispatch).
     stats = state.emo2_stats or {}
@@ -2904,6 +3117,11 @@ async def daemon_main(
     await site.start()
     log(f"HTTP server: http://localhost:{port}")
 
+    # Explicit startup Bluetooth check — surface a clear, actionable message
+    # right away (and a macOS notification) if BT is off / access is denied,
+    # instead of crashing with a traceback the way an unguarded scan would.
+    await _bluetooth_preflight(state, lang)
+
     backoff = 1
     try:
         while not stop_event.is_set():
@@ -2916,6 +3134,21 @@ async def daemon_main(
             except asyncio.TimeoutError:
                 log("Scan exceeded hard timeout (CoreBluetooth wedged?) — retrying")
                 device = None
+            except BleakBluetoothNotAvailableError as e:
+                # BT off or access denied: log the guidance once + notify, then
+                # quietly retry (recovers when BT is enabled / access granted).
+                _warn_bluetooth_unavailable(e, lang, state)
+                try:
+                    await asyncio.wait_for(stop_event.wait(), timeout=BT_RETRY_S)
+                except asyncio.TimeoutError:
+                    pass
+                continue
+            # Got here without a BT error → Bluetooth is reachable; clear any
+            # prior "unavailable" state so a fresh outage notifies again.
+            if state.ble_unavailable:
+                state.ble_unavailable = False
+                state.ble_unavailable_reason = ""
+                log("Bluetooth access restored")
             if device is None:
                 log(f"Device not found, retrying in {backoff}s...")
                 try:
@@ -2978,6 +3211,8 @@ def _run_tray_mode(port: int, lang: str) -> int:
     def _daemon_thread_target() -> None:
         try:
             asyncio.run(daemon_main(port=port, lang=lang, external_stop=stop_event))
+        except BleakBluetoothNotAvailableError as exc:
+            _warn_bluetooth_unavailable(exc, lang, None)
         except Exception as exc:  # pragma: no cover  (defensive: never crash silently)
             print(f"Daemon thread crashed: {exc}", file=sys.stderr)
 
@@ -3043,7 +3278,13 @@ def main() -> None:
         return
 
     # Daemon mode (foreground, no UI shell — used by daemon.sh)
-    asyncio.run(daemon_main(port=args.port, lang=args.lang))
+    try:
+        asyncio.run(daemon_main(port=args.port, lang=args.lang))
+    except BleakBluetoothNotAvailableError as e:
+        # Defensive net: daemon_main handles this internally, but never let a
+        # raw traceback reach the user if it ever escapes.
+        _warn_bluetooth_unavailable(e, args.lang, None)
+        sys.exit(3)
 
 
 if __name__ == "__main__":

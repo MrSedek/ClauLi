@@ -34,6 +34,12 @@ void    emo2_next_view(void);
 uint8_t emo2_get_view(void);
 void    emo2_set_view(uint8_t idx);
 
+// Debug overlay (separate mode). When on, the emo2 screen shows the live
+// derived state + per-state mode + current canim id/name on a top-layer label
+// — for diagnosing per-status complex-animation issues on-device. CTRL 0x0B
+// (on) / 0x0C (off).
+void emo2_set_debug_overlay(bool on);
+
 // Run an 8-second scripted diagnostics sequence on the emo2 screen — cycles
 // through every mood and across the full halo colour range so the user can
 // visually verify the LCD/animations are working. Triggered from the web
