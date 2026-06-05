@@ -527,7 +527,34 @@ EMO2_STATES = list(DEFAULT_EMO2_CONFIG.keys())
 EMO2_COLOR_CTRL = {"cyan": 0x1C, "amber": 0x1D, "red": 0x1E, "auto": 0x1F}
 # Form/op rotation timers moved to ESP (Phase A) — emo2.cpp EMO2_FORM_ROT_MS / OP_ROT_MS.
 SDK_CREDENTIALS_DIR = Path.home() / ".config" / "anthropic"
-WEB_DIR = Path(__file__).parent / "web"
+
+
+def _resolve_web_dir() -> Path:
+    """Locate the bundled web/ tree across run modes.
+
+    Source run: web/ sits next to this file. But in a **py2app .app** the code
+    is zipped, so __file__ points inside the zip (→ "Web UI not found"); py2app
+    instead exposes resources via $RESOURCEPATH (Contents/Resources). PyInstaller
+    extracts data to sys._MEIPASS. Probe each candidate and pick the one that
+    actually contains index.html.
+    """
+    cands = []
+    rp = os.environ.get("RESOURCEPATH")                 # py2app → Contents/Resources
+    if rp:
+        cands.append(Path(rp) / "web")
+    if getattr(sys, "frozen", False):
+        mei = getattr(sys, "_MEIPASS", None)            # PyInstaller bundle
+        if mei:
+            cands.append(Path(mei) / "web")
+        cands.append(Path(sys.executable).resolve().parent / "web")
+    cands.append(Path(__file__).resolve().parent / "web")   # source / fallback
+    for c in cands:
+        if (c / "index.html").is_file():
+            return c
+    return cands[-1]
+
+
+WEB_DIR = _resolve_web_dir()
 
 # Public Claude Code OAuth client ID — the SDK's CredentialsFile provider sends
 # this verbatim in the refresh_token grant. It must be the client UUID, not the
