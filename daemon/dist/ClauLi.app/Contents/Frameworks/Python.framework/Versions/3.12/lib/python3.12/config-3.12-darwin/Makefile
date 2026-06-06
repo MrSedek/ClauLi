@@ -21,18 +21,18 @@
 
 # === Variables set by makesetup ===
 
-MODBUILT_NAMES=      array  _asyncio  _bisect  _contextvars  _csv  _heapq  _json  _lsprof  _opcode  _pickle  _queue  _random  _struct  _xxsubinterpreters  _xxinterpchannels  _zoneinfo  audioop  math  cmath  _statistics  _datetime  _decimal  binascii  _bz2  _lzma  zlib  _dbm  readline  _md5  _sha1  _sha2  _sha3  _blake2  pyexpat  _elementtree  _codecs_cn  _codecs_hk  _codecs_iso2022  _codecs_jp  _codecs_kr  _codecs_tw  _multibytecodec  unicodedata  _crypt  fcntl  grp  mmap  nis  _posixsubprocess  resource  select  _socket  syslog  termios  _posixshmem  _multiprocessing  _ctypes  _curses  _curses_panel  _sqlite3  _ssl  _hashlib  _uuid  _tkinter  _scproxy  xxsubtype  _xxtestfuzz  _testbuffer  _testinternalcapi  _testcapi  _testclinic  _testimportmultiple  _testmultiphase  _testsinglephase  _ctypes_test  xxlimited  xxlimited_35  atexit  faulthandler  posix  _signal  _tracemalloc  _codecs  _collections  errno  _io  itertools  _sre  _thread  time  _typing  _weakref  _abc  _functools  _locale  _operator  _stat  _symtable  pwd
-MODSHARED_NAMES=    array _asyncio _bisect _contextvars _csv _heapq _json _lsprof _opcode _pickle _queue _random _struct _xxsubinterpreters _xxinterpchannels _zoneinfo audioop math cmath _statistics _datetime _decimal binascii _bz2 _lzma zlib _dbm readline _md5 _sha1 _sha2 _sha3 _blake2 pyexpat _elementtree _codecs_cn _codecs_hk _codecs_iso2022 _codecs_jp _codecs_kr _codecs_tw _multibytecodec unicodedata _crypt fcntl grp mmap nis _posixsubprocess resource select _socket syslog termios _posixshmem _multiprocessing _ctypes _curses _curses_panel _sqlite3 _ssl _hashlib _uuid _tkinter _scproxy xxsubtype _xxtestfuzz _testbuffer _testinternalcapi _testcapi _testclinic _testimportmultiple _testmultiphase _testsinglephase _ctypes_test xxlimited xxlimited_35
+MODBUILT_NAMES=      array  _asyncio  _bisect  _contextvars  _csv  _heapq  _json  _lsprof  _opcode  _pickle  _queue  _random  _struct  _xxsubinterpreters  _xxinterpchannels  _zoneinfo  audioop  math  cmath  _statistics  _datetime  _decimal  binascii  _bz2  _lzma  zlib  _dbm  readline  _md5  _sha1  _sha2  _sha3  _blake2  pyexpat  _elementtree  _codecs_cn  _codecs_hk  _codecs_iso2022  _codecs_jp  _codecs_kr  _codecs_tw  _multibytecodec  unicodedata  _crypt  fcntl  grp  mmap  nis  _posixsubprocess  resource  select  _socket  syslog  termios  _posixshmem  _multiprocessing  _ctypes  _curses  _curses_panel  _sqlite3  _ssl  _hashlib  _uuid  _scproxy  xxsubtype  _xxtestfuzz  _testbuffer  _testinternalcapi  _testcapi  _testclinic  _testimportmultiple  _testmultiphase  _testsinglephase  _ctypes_test  xxlimited  xxlimited_35  atexit  faulthandler  posix  _signal  _tracemalloc  _codecs  _collections  errno  _io  itertools  _sre  _thread  time  _typing  _weakref  _abc  _functools  _locale  _operator  _stat  _symtable  pwd
+MODSHARED_NAMES=    array _asyncio _bisect _contextvars _csv _heapq _json _lsprof _opcode _pickle _queue _random _struct _xxsubinterpreters _xxinterpchannels _zoneinfo audioop math cmath _statistics _datetime _decimal binascii _bz2 _lzma zlib _dbm readline _md5 _sha1 _sha2 _sha3 _blake2 pyexpat _elementtree _codecs_cn _codecs_hk _codecs_iso2022 _codecs_jp _codecs_kr _codecs_tw _multibytecodec unicodedata _crypt fcntl grp mmap nis _posixsubprocess resource select _socket syslog termios _posixshmem _multiprocessing _ctypes _curses _curses_panel _sqlite3 _ssl _hashlib _uuid _scproxy xxsubtype _xxtestfuzz _testbuffer _testinternalcapi _testcapi _testclinic _testimportmultiple _testmultiphase _testsinglephase _ctypes_test xxlimited xxlimited_35
 MODDISABLED_NAMES= 
 MODOBJS=             Modules/atexitmodule.o  Modules/faulthandler.o  Modules/posixmodule.o  Modules/signalmodule.o  Modules/_tracemalloc.o  Modules/_codecsmodule.o  Modules/_collectionsmodule.o  Modules/errnomodule.o  Modules/_io/_iomodule.o Modules/_io/iobase.o Modules/_io/fileio.o Modules/_io/bytesio.o Modules/_io/bufferedio.o Modules/_io/textio.o Modules/_io/stringio.o  Modules/itertoolsmodule.o  Modules/_sre/sre.o  Modules/_threadmodule.o  Modules/timemodule.o  Modules/_typingmodule.o  Modules/_weakref.o  Modules/_abc.o  Modules/_functoolsmodule.o  Modules/_localemodule.o  Modules/_operator.o  Modules/_stat.o  Modules/symtablemodule.o  Modules/pwdmodule.o
 MODLIBS=           $(LOCALMODLIBS) $(BASEMODLIBS)
 
 # === Variables set by configure
 VERSION=	3.12
-srcdir=		/Users/sysadmin/build/v3.12.3
-VPATH=		/Users/sysadmin/build/v3.12.3
-abs_srcdir=	/Users/sysadmin/build/v3.12.3
-abs_builddir=	/private/tmp/_py/_bld/python
+srcdir=		.
+
+abs_srcdir=	/private/tmp/pythonA3.12-20250910-7173-wrz91j/Python-3.12.11
+abs_builddir=	/private/tmp/pythonA3.12-20250910-7173-wrz91j/Python-3.12.11
 
 
 CC=		clang
@@ -47,13 +47,13 @@ GITVERSION=
 GITTAG=		
 GITBRANCH=	
 PGO_PROF_GEN_FLAG=-fprofile-instr-generate
-PGO_PROF_USE_FLAG=-fprofile-instr-use=code.profclangd
-LLVM_PROF_MERGER=/usr/bin/xcrun llvm-profdata merge -output=code.profclangd *.profclangr
-LLVM_PROF_FILE=LLVM_PROFILE_FILE="code-%p.profclangr"
+PGO_PROF_USE_FLAG=-fprofile-instr-use="$(shell pwd)/code.profclangd"
+LLVM_PROF_MERGER= /usr/bin/xcrun llvm-profdata merge -output="$(shell pwd)/code.profclangd" "$(shell pwd)"/*.profclangr 
+LLVM_PROF_FILE=LLVM_PROFILE_FILE="$(shell pwd)/code-%p.profclangr"
 LLVM_PROF_ERR=no
-DTRACE=         
+DTRACE=         /usr/sbin/dtrace
 DFLAGS=         
-DTRACE_HEADERS= 
+DTRACE_HEADERS= Include/pydtrace_probes.h
 DTRACE_OBJS=    
 DSYMUTIL=       
 DSYMUTIL_PATH=  
@@ -75,28 +75,28 @@ INSTALL_DATA=	${INSTALL} -m 644
 # rather than figuring out exactly which, we always give them executable mode.
 INSTALL_SHARED= ${INSTALL} -m 755
 
-MKDIR_P=	/Users/sysadmin/build/v3.12.3/install-sh -c -d
+MKDIR_P=	./install-sh -c -d
 
 MAKESETUP=      $(srcdir)/Modules/makesetup
 
 # Compiler options
 OPT=		-DNDEBUG -g -O3 -Wall
 BASECFLAGS=	 -fno-strict-overflow -Wsign-compare -Wunreachable-code -fno-common -dynamic
-BASECPPFLAGS=	-IObjects -IInclude -IPython
-CONFIGURE_CFLAGS=	-arch arm64 -arch x86_64 -g
+BASECPPFLAGS=	
+CONFIGURE_CFLAGS=	-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk
 # CFLAGS_NODIST is used for building the interpreter and stdlib C extensions.
 # Use it when a compiler flag should _not_ be part of the distutils CFLAGS
 # once Python is installed (Issue #21121).
-CONFIGURE_CFLAGS_NODIST= -flto=thin -std=c11 -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wstrict-prototypes -Werror=implicit-function-declaration -fvisibility=hidden
+CONFIGURE_CFLAGS_NODIST=-I/opt/homebrew/include -flto=thin -std=c11 -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wstrict-prototypes -Werror=implicit-function-declaration -fvisibility=hidden
 # LDFLAGS_NODIST is used in the same manner as CFLAGS_NODIST.
 # Use it when a linker flag should _not_ be part of the distutils LDFLAGS
 # once Python is installed (bpo-35257)
-CONFIGURE_LDFLAGS_NODIST= -flto=thin -Wl,-export_dynamic -Wl,-object_path_lto,"$@".lto -g
+CONFIGURE_LDFLAGS_NODIST=-L/opt/homebrew/lib -Wl,-rpath,/opt/homebrew/lib -flto=thin -Wl,-export_dynamic -Wl,-object_path_lto,"$@".lto -g
 # LDFLAGS_NOLTO is an extra flag to disable lto. It is used to speed up building
 # of _bootstrap_python and _freeze_module tools, which don't need LTO.
 CONFIGURE_LDFLAGS_NOLTO=-flto=thin
-CONFIGURE_CPPFLAGS=	
-CONFIGURE_LDFLAGS=	-arch arm64 -arch x86_64 -g
+CONFIGURE_CPPFLAGS=	-I/opt/homebrew/include
+CONFIGURE_LDFLAGS=	-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk
 # Avoid assigning CFLAGS, LDFLAGS, etc. so users can use them on the
 # command line to append to these values without stomping the pre-set
 # values.
@@ -113,7 +113,7 @@ NO_AS_NEEDED=
 CCSHARED=	
 # LINKFORSHARED are the flags passed to the $(CC) command that links
 # the python executable -- this is only needed for a few systems
-LINKFORSHARED=	-Wl,-stack_size,1000000  -framework CoreFoundation $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)
+LINKFORSHARED=	-Wl,-stack_size,1000000  -framework CoreFoundation $(PYTHONFRAMEWORKINSTALLDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)
 ARFLAGS=	rcs
 # Extra C flags added for building the interpreter object files.
 CFLAGSFORSHARED=$(CCSHARED)
@@ -135,13 +135,13 @@ MULTIARCH=	darwin
 MULTIARCH_CPPFLAGS = -DMULTIARCH=\"darwin\"
 
 # Install prefix for architecture-independent files
-prefix=		/Library/Frameworks/Python.framework/Versions/3.12
+prefix=		/opt/homebrew/opt/python@3.12/Frameworks/Python.framework/Versions/3.12
 
 # Install prefix for architecture-dependent files
 exec_prefix=	${prefix}
 
 # Install prefix for data files
-datarootdir=    ${prefix}/share
+datarootdir=    /opt/homebrew/opt/python@3.12/share
 
 # Expanded directories
 BINDIR=		${exec_prefix}/bin
@@ -168,7 +168,7 @@ SHLIB_SUFFIX=	.so
 EXT_SUFFIX=	.cpython-312-darwin.so
 LDSHARED=	$(CC) -bundle -undefined dynamic_lookup $(PY_LDFLAGS)
 BLDSHARED=	$(CC) -bundle -undefined dynamic_lookup $(PY_CORE_LDFLAGS)
-LDCXXSHARED=	$(CXX) -bundle -undefined dynamic_lookup
+LDCXXSHARED=	$(CXX) -bundle -undefined dynamic_lookup $(PY_LDFLAGS)
 DESTSHARED=	$(BINLIBDEST)/lib-dynload
 
 # List of exported symbols for AIX
@@ -180,15 +180,15 @@ EXE=
 BUILDEXE=	.exe
 
 # Short name and location for Mac OS X Python framework
-UNIVERSALSDK=/
+UNIVERSALSDK=
 PYTHONFRAMEWORK=	Python
 PYTHONFRAMEWORKDIR=	Python.framework
-PYTHONFRAMEWORKPREFIX=	/Library/Frameworks
-PYTHONFRAMEWORKINSTALLDIR= /Library/Frameworks/Python.framework
+PYTHONFRAMEWORKPREFIX=	/opt/homebrew/opt/python@3.12/Frameworks
+PYTHONFRAMEWORKINSTALLDIR= /opt/homebrew/opt/python@3.12/Frameworks/Python.framework
 # Deployment target selected during configure, to be checked
 # by distutils. The export statement is needed to ensure that the
 # deployment target is active during build.
-MACOSX_DEPLOYMENT_TARGET=10.9
+MACOSX_DEPLOYMENT_TARGET=26
 export MACOSX_DEPLOYMENT_TARGET
 
 # Option to install to strip binaries
@@ -198,10 +198,10 @@ STRIPFLAG=-s
 LIPO_32BIT_FLAGS=
 
 # Flags to lipo to produce an intel-64-only universal executable
-LIPO_INTEL64_FLAGS=-extract x86_64
+LIPO_INTEL64_FLAGS=
 
 # Environment to run shared python without installed libraries
-RUNSHARED=       DYLD_FRAMEWORK_PATH=/private/tmp/_py/_bld/python
+RUNSHARED=       DYLD_FRAMEWORK_PATH=/private/tmp/pythonA3.12-20250910-7173-wrz91j/Python-3.12.11
 
 # ensurepip options
 ENSUREPIP=      no
@@ -273,10 +273,10 @@ MODULE_SPWD_STATE=n/a
 MODULE_SYSLOG_STATE=yes
 MODULE_TERMIOS_STATE=yes
 MODULE_PYEXPAT_STATE=yes
-MODULE_PYEXPAT_CFLAGS=-I$(srcdir)/Modules/expat
-MODULE_PYEXPAT_LDFLAGS=-lm $(LIBEXPAT_A)
+MODULE_PYEXPAT_CFLAGS=
+MODULE_PYEXPAT_LDFLAGS=-lexpat
 MODULE__ELEMENTTREE_STATE=yes
-MODULE__ELEMENTTREE_CFLAGS=-I$(srcdir)/Modules/expat
+MODULE__ELEMENTTREE_CFLAGS=
 MODULE__CODECS_CN_STATE=yes
 MODULE__CODECS_HK_STATE=yes
 MODULE__CODECS_ISO2022_STATE=yes
@@ -299,35 +299,33 @@ MODULE__CRYPT_STATE=yes
 MODULE__CRYPT_CFLAGS=
 MODULE__CRYPT_LDFLAGS=
 MODULE__CTYPES_STATE=yes
-MODULE__CTYPES_CFLAGS=-fno-strict-overflow -I/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/ffi -DUSING_APPLE_OS_LIBFFI=1 -DUSING_MALLOC_CLOSURE_DOT_C=1
+MODULE__CTYPES_CFLAGS=-fno-strict-overflow -I/Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/usr/include/ffi -DUSING_APPLE_OS_LIBFFI=1 -DUSING_MALLOC_CLOSURE_DOT_C=1
 MODULE__CTYPES_LDFLAGS=-lffi -ldl
 MODULE__CURSES_STATE=yes
-MODULE__CURSES_CFLAGS= -D_XOPEN_SOURCE_EXTENDED=1
+MODULE__CURSES_CFLAGS=-D_DARWIN_C_SOURCE -D_XOPEN_SOURCE_EXTENDED=1
 MODULE__CURSES_LDFLAGS=-lncurses
 
 MODULE__CURSES_PANEL_STATE=yes
-MODULE__CURSES_PANEL_CFLAGS=  -D_XOPEN_SOURCE_EXTENDED=1
+MODULE__CURSES_PANEL_CFLAGS= -D_DARWIN_C_SOURCE -D_XOPEN_SOURCE_EXTENDED=1
 MODULE__CURSES_PANEL_LDFLAGS=-lpanel -lncurses
 
 MODULE__DECIMAL_STATE=yes
-MODULE__DECIMAL_CFLAGS=-I$(srcdir)/Modules/_decimal/libmpdec -DUNIVERSAL=1
-MODULE__DECIMAL_LDFLAGS=-lm $(LIBMPDEC_A)
+MODULE__DECIMAL_CFLAGS= -DCONFIG_64=1 -DANSI=1 -DHAVE_UINT128_T=1
+MODULE__DECIMAL_LDFLAGS=-lmpdec
 MODULE__DBM_STATE=yes
 MODULE__DBM_CFLAGS=-DUSE_NDBM
 MODULE__DBM_LDFLAGS=
-MODULE__GDBM_STATE=missing
+MODULE__GDBM_STATE=disabled
 MODULE_NIS_STATE=yes
 MODULE_NIS_CFLAGS=
 MODULE_NIS_LDFLAGS=
 MODULE_READLINE_STATE=yes
-MODULE_READLINE_CFLAGS=
-MODULE_READLINE_LDFLAGS=-lreadline
+MODULE_READLINE_CFLAGS=-I/Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/usr/include/editline
+MODULE_READLINE_LDFLAGS=-ledit
 MODULE__SQLITE3_STATE=yes
-MODULE__SQLITE3_CFLAGS= -I$(srcdir)/Modules/_sqlite
-MODULE__SQLITE3_LDFLAGS=-lsqlite3
-MODULE__TKINTER_STATE=yes
-MODULE__TKINTER_CFLAGS=-Wno-strict-prototypes -DWITH_APPINIT=1
-MODULE__TKINTER_LDFLAGS=-ltcl8.6 -ltk8.6
+MODULE__SQLITE3_CFLAGS=-I/opt/homebrew/opt/sqlite/include -I$(srcdir)/Modules/_sqlite
+MODULE__SQLITE3_LDFLAGS=-L/opt/homebrew/opt/sqlite/lib -lsqlite3
+MODULE__TKINTER_STATE=n/a
 MODULE__UUID_STATE=yes
 MODULE__UUID_CFLAGS=
 MODULE__UUID_LDFLAGS=
@@ -341,14 +339,14 @@ MODULE__BZ2_STATE=yes
 MODULE__BZ2_CFLAGS=
 MODULE__BZ2_LDFLAGS=-lbz2
 MODULE__LZMA_STATE=yes
-MODULE__LZMA_CFLAGS=
-MODULE__LZMA_LDFLAGS=-llzma
+MODULE__LZMA_CFLAGS=-I/opt/homebrew/Cellar/xz/5.8.1/include
+MODULE__LZMA_LDFLAGS=-L/opt/homebrew/Cellar/xz/5.8.1/lib -llzma
 MODULE__SSL_STATE=yes
-MODULE__SSL_CFLAGS=-I/tmp/_py/libraries/usr/local/include
-MODULE__SSL_LDFLAGS= -lssl -lcrypto
+MODULE__SSL_CFLAGS=-I/opt/homebrew/opt/openssl@3/include
+MODULE__SSL_LDFLAGS=-L/opt/homebrew/opt/openssl@3/lib  -lssl -lcrypto
 MODULE__HASHLIB_STATE=yes
-MODULE__HASHLIB_CFLAGS=-I/tmp/_py/libraries/usr/local/include
-MODULE__HASHLIB_LDFLAGS=  -lcrypto
+MODULE__HASHLIB_CFLAGS=-I/opt/homebrew/opt/openssl@3/include
+MODULE__HASHLIB_LDFLAGS=-L/opt/homebrew/opt/openssl@3/lib   -lcrypto
 MODULE__TESTCAPI_STATE=yes
 MODULE__TESTCLINIC_STATE=yes
 MODULE__TESTINTERNALCAPI_STATE=yes
@@ -373,7 +371,7 @@ EXEMODE=	755
 FILEMODE=	644
 
 # configure script arguments
-CONFIG_ARGS=	 '-C' '--enable-framework' '--enable-universalsdk=/' '--with-universal-archs=universal2' '--with-computed-gotos' '--without-ensurepip' '--with-openssl=/tmp/_py/libraries/usr/local' '--enable-optimizations' '--with-lto' 'TCLTK_CFLAGS=-I/tmp/_py/libraries/usr/local/include' 'TCLTK_LIBS=-ltcl8.6 -ltk8.6' 'LDFLAGS=-g' 'CFLAGS=-g' 'CC=clang'
+CONFIG_ARGS=	 '--prefix=/opt/homebrew/opt/python@3.12' '--enable-ipv6' '--datarootdir=/opt/homebrew/opt/python@3.12/share' '--datadir=/opt/homebrew/opt/python@3.12/share' '--without-ensurepip' '--enable-loadable-sqlite-extensions' '--with-openssl=/opt/homebrew/opt/openssl@3' '--enable-optimizations' '--with-system-expat' '--with-system-libmpdec' '--with-readline=editline' '--with-lto' '--enable-framework=/opt/homebrew/opt/python@3.12/Frameworks' '--with-dtrace' '--with-dbmliborder=ndbm' 'MACOSX_DEPLOYMENT_TARGET=26' 'CFLAGS=-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk' 'CFLAGS_NODIST=-I/opt/homebrew/include' 'LDFLAGS=-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk' 'LDFLAGS_NODIST=-L/opt/homebrew/lib -Wl,-rpath,/opt/homebrew/lib' 'CPPFLAGS=-I/opt/homebrew/include' 'py_cv_module__tkinter=n/a' 'PKG_CONFIG_PATH=/opt/homebrew/opt/pkgconf/lib/pkgconfig:/opt/homebrew/opt/mpdecimal/lib/pkgconfig:/opt/homebrew/opt/openssl@3/lib/pkgconfig:/opt/homebrew/opt/readline/lib/pkgconfig:/opt/homebrew/opt/sqlite/lib/pkgconfig:/opt/homebrew/opt/xz/lib/pkgconfig' 'PKG_CONFIG_LIBDIR=/usr/lib/pkgconfig:/opt/homebrew/Library/Homebrew/os/mac/pkgconfig/26' 'CC=clang'
 
 
 # Subdirectories with code
@@ -440,8 +438,8 @@ FREEZE_MODULE=$(PYTHON_FOR_FREEZE) $(srcdir)/Programs/_freeze_module.py
 FREEZE_MODULE_DEPS=_bootstrap_python $(srcdir)/Programs/_freeze_module.py
 
 _PYTHON_HOST_PLATFORM=
-BUILD_GNU_TYPE=	x86_64-apple-darwin20.6.0
-HOST_GNU_TYPE=	x86_64-apple-darwin20.6.0
+BUILD_GNU_TYPE=	aarch64-apple-darwin25.0.0
+HOST_GNU_TYPE=	aarch64-apple-darwin25.0.0
 
 # The task to run while instrumented when building the profile-opt target.
 # To speed up profile generation, we don't run the full unit test suite
@@ -461,7 +459,7 @@ COVERAGE_REPORT_OPTIONS=--rc lcov_branch_coverage=1 --branch-coverage --title "C
 
 LOCALMODLIBS= $(MODULE_ATEXIT_LDFLAGS) $(MODULE_FAULTHANDLER_LDFLAGS) $(MODULE_POSIX_LDFLAGS) $(MODULE__SIGNAL_LDFLAGS) $(MODULE__TRACEMALLOC_LDFLAGS) $(MODULE__CODECS_LDFLAGS) $(MODULE__COLLECTIONS_LDFLAGS) $(MODULE_ERRNO_LDFLAGS) $(MODULE__IO_LDFLAGS) $(MODULE_ITERTOOLS_LDFLAGS) $(MODULE__SRE_LDFLAGS) $(MODULE__THREAD_LDFLAGS) $(MODULE_TIME_LDFLAGS) $(MODULE__TYPING_LDFLAGS) $(MODULE__WEAKREF_LDFLAGS) $(MODULE__ABC_LDFLAGS) $(MODULE__FUNCTOOLS_LDFLAGS) $(MODULE__LOCALE_LDFLAGS) $(MODULE__OPERATOR_LDFLAGS) $(MODULE__STAT_LDFLAGS) $(MODULE__SYMTABLE_LDFLAGS) $(MODULE_PWD_LDFLAGS)
 BASEMODLIBS=
-SHAREDMODS= Modules/array$(EXT_SUFFIX) Modules/_asyncio$(EXT_SUFFIX) Modules/_bisect$(EXT_SUFFIX) Modules/_contextvars$(EXT_SUFFIX) Modules/_csv$(EXT_SUFFIX) Modules/_heapq$(EXT_SUFFIX) Modules/_json$(EXT_SUFFIX) Modules/_lsprof$(EXT_SUFFIX) Modules/_opcode$(EXT_SUFFIX) Modules/_pickle$(EXT_SUFFIX) Modules/_queue$(EXT_SUFFIX) Modules/_random$(EXT_SUFFIX) Modules/_struct$(EXT_SUFFIX) Modules/_xxsubinterpreters$(EXT_SUFFIX) Modules/_xxinterpchannels$(EXT_SUFFIX) Modules/_zoneinfo$(EXT_SUFFIX) Modules/audioop$(EXT_SUFFIX) Modules/math$(EXT_SUFFIX) Modules/cmath$(EXT_SUFFIX) Modules/_statistics$(EXT_SUFFIX) Modules/_datetime$(EXT_SUFFIX) Modules/_decimal$(EXT_SUFFIX) Modules/binascii$(EXT_SUFFIX) Modules/_bz2$(EXT_SUFFIX) Modules/_lzma$(EXT_SUFFIX) Modules/zlib$(EXT_SUFFIX) Modules/_dbm$(EXT_SUFFIX) Modules/readline$(EXT_SUFFIX) Modules/_md5$(EXT_SUFFIX) Modules/_sha1$(EXT_SUFFIX) Modules/_sha2$(EXT_SUFFIX) Modules/_sha3$(EXT_SUFFIX) Modules/_blake2$(EXT_SUFFIX) Modules/pyexpat$(EXT_SUFFIX) Modules/_elementtree$(EXT_SUFFIX) Modules/_codecs_cn$(EXT_SUFFIX) Modules/_codecs_hk$(EXT_SUFFIX) Modules/_codecs_iso2022$(EXT_SUFFIX) Modules/_codecs_jp$(EXT_SUFFIX) Modules/_codecs_kr$(EXT_SUFFIX) Modules/_codecs_tw$(EXT_SUFFIX) Modules/_multibytecodec$(EXT_SUFFIX) Modules/unicodedata$(EXT_SUFFIX) Modules/_crypt$(EXT_SUFFIX) Modules/fcntl$(EXT_SUFFIX) Modules/grp$(EXT_SUFFIX) Modules/mmap$(EXT_SUFFIX) Modules/nis$(EXT_SUFFIX) Modules/_posixsubprocess$(EXT_SUFFIX) Modules/resource$(EXT_SUFFIX) Modules/select$(EXT_SUFFIX) Modules/_socket$(EXT_SUFFIX) Modules/syslog$(EXT_SUFFIX) Modules/termios$(EXT_SUFFIX) Modules/_posixshmem$(EXT_SUFFIX) Modules/_multiprocessing$(EXT_SUFFIX) Modules/_ctypes$(EXT_SUFFIX) Modules/_curses$(EXT_SUFFIX) Modules/_curses_panel$(EXT_SUFFIX) Modules/_sqlite3$(EXT_SUFFIX) Modules/_ssl$(EXT_SUFFIX) Modules/_hashlib$(EXT_SUFFIX) Modules/_uuid$(EXT_SUFFIX) Modules/_tkinter$(EXT_SUFFIX) Modules/_scproxy$(EXT_SUFFIX) Modules/xxsubtype$(EXT_SUFFIX) Modules/_xxtestfuzz$(EXT_SUFFIX) Modules/_testbuffer$(EXT_SUFFIX) Modules/_testinternalcapi$(EXT_SUFFIX) Modules/_testcapi$(EXT_SUFFIX) Modules/_testclinic$(EXT_SUFFIX) Modules/_testimportmultiple$(EXT_SUFFIX) Modules/_testmultiphase$(EXT_SUFFIX) Modules/_testsinglephase$(EXT_SUFFIX) Modules/_ctypes_test$(EXT_SUFFIX) Modules/xxlimited$(EXT_SUFFIX) Modules/xxlimited_35$(EXT_SUFFIX)
+SHAREDMODS= Modules/array$(EXT_SUFFIX) Modules/_asyncio$(EXT_SUFFIX) Modules/_bisect$(EXT_SUFFIX) Modules/_contextvars$(EXT_SUFFIX) Modules/_csv$(EXT_SUFFIX) Modules/_heapq$(EXT_SUFFIX) Modules/_json$(EXT_SUFFIX) Modules/_lsprof$(EXT_SUFFIX) Modules/_opcode$(EXT_SUFFIX) Modules/_pickle$(EXT_SUFFIX) Modules/_queue$(EXT_SUFFIX) Modules/_random$(EXT_SUFFIX) Modules/_struct$(EXT_SUFFIX) Modules/_xxsubinterpreters$(EXT_SUFFIX) Modules/_xxinterpchannels$(EXT_SUFFIX) Modules/_zoneinfo$(EXT_SUFFIX) Modules/audioop$(EXT_SUFFIX) Modules/math$(EXT_SUFFIX) Modules/cmath$(EXT_SUFFIX) Modules/_statistics$(EXT_SUFFIX) Modules/_datetime$(EXT_SUFFIX) Modules/_decimal$(EXT_SUFFIX) Modules/binascii$(EXT_SUFFIX) Modules/_bz2$(EXT_SUFFIX) Modules/_lzma$(EXT_SUFFIX) Modules/zlib$(EXT_SUFFIX) Modules/_dbm$(EXT_SUFFIX) Modules/readline$(EXT_SUFFIX) Modules/_md5$(EXT_SUFFIX) Modules/_sha1$(EXT_SUFFIX) Modules/_sha2$(EXT_SUFFIX) Modules/_sha3$(EXT_SUFFIX) Modules/_blake2$(EXT_SUFFIX) Modules/pyexpat$(EXT_SUFFIX) Modules/_elementtree$(EXT_SUFFIX) Modules/_codecs_cn$(EXT_SUFFIX) Modules/_codecs_hk$(EXT_SUFFIX) Modules/_codecs_iso2022$(EXT_SUFFIX) Modules/_codecs_jp$(EXT_SUFFIX) Modules/_codecs_kr$(EXT_SUFFIX) Modules/_codecs_tw$(EXT_SUFFIX) Modules/_multibytecodec$(EXT_SUFFIX) Modules/unicodedata$(EXT_SUFFIX) Modules/_crypt$(EXT_SUFFIX) Modules/fcntl$(EXT_SUFFIX) Modules/grp$(EXT_SUFFIX) Modules/mmap$(EXT_SUFFIX) Modules/nis$(EXT_SUFFIX) Modules/_posixsubprocess$(EXT_SUFFIX) Modules/resource$(EXT_SUFFIX) Modules/select$(EXT_SUFFIX) Modules/_socket$(EXT_SUFFIX) Modules/syslog$(EXT_SUFFIX) Modules/termios$(EXT_SUFFIX) Modules/_posixshmem$(EXT_SUFFIX) Modules/_multiprocessing$(EXT_SUFFIX) Modules/_ctypes$(EXT_SUFFIX) Modules/_curses$(EXT_SUFFIX) Modules/_curses_panel$(EXT_SUFFIX) Modules/_sqlite3$(EXT_SUFFIX) Modules/_ssl$(EXT_SUFFIX) Modules/_hashlib$(EXT_SUFFIX) Modules/_uuid$(EXT_SUFFIX) Modules/_scproxy$(EXT_SUFFIX) Modules/xxsubtype$(EXT_SUFFIX) Modules/_xxtestfuzz$(EXT_SUFFIX) Modules/_testbuffer$(EXT_SUFFIX) Modules/_testinternalcapi$(EXT_SUFFIX) Modules/_testcapi$(EXT_SUFFIX) Modules/_testclinic$(EXT_SUFFIX) Modules/_testimportmultiple$(EXT_SUFFIX) Modules/_testmultiphase$(EXT_SUFFIX) Modules/_testsinglephase$(EXT_SUFFIX) Modules/_ctypes_test$(EXT_SUFFIX) Modules/xxlimited$(EXT_SUFFIX) Modules/xxlimited_35$(EXT_SUFFIX)
 PYTHONPATH=$(COREPYTHONPATH)
 COREPYTHONPATH=$(DESTPATH)$(SITEPATH)$(TESTPATH)
 TESTPATH=
@@ -732,7 +730,9 @@ LIBEXPAT_HEADERS= \
 		Modules/expat/utf8tab.h \
 		Modules/expat/xmlrole.h \
 		Modules/expat/xmltok.h \
-		Modules/expat/xmltok_impl.h
+		Modules/expat/xmltok_impl.h \
+		Modules/expat/xmltok_impl.c \
+		Modules/expat/xmltok_ns.c
 
 ##########################################################################
 # hashlib's HACL* library
@@ -833,8 +833,8 @@ profile-opt: profile-run-stamp
 # List of binaries that BOLT runs on.
 BOLT_BINARIES := $(BUILDPYTHON)
 
-BOLT_INSTRUMENT_FLAGS := 
-BOLT_APPLY_FLAGS :=  -update-debug-sections -reorder-blocks=ext-tsp -reorder-functions=hfsort+ -split-functions -icf=1 -inline-all -split-eh -reorder-functions-use-hot-size -peepholes=none -jump-tables=aggressive -inline-ap -indirect-call-promotion=all -dyno-stats -use-gnu-stack -frame-opt=hot 
+BOLT_INSTRUMENT_FLAGS :=  -update-debug-sections -skip-funcs=_PyEval_EvalFrameDefault,sre_ucs1_match/1,sre_ucs2_match/1,sre_ucs4_match/1 
+BOLT_APPLY_FLAGS :=   -update-debug-sections -skip-funcs=_PyEval_EvalFrameDefault,sre_ucs1_match/1,sre_ucs2_match/1,sre_ucs4_match/1  -reorder-blocks=ext-tsp -reorder-functions=cdsort -split-functions -icf=1 -inline-all -split-eh -reorder-functions-use-hot-size -peepholes=none -jump-tables=aggressive -inline-ap -indirect-call-promotion=all -dyno-stats -use-gnu-stack -frame-opt=hot 
 
 .PHONY: clean-bolt
 clean-bolt:
@@ -1051,7 +1051,7 @@ python.worker.js: $(srcdir)/Tools/wasm/python.worker.js
 
 ##########################################################################
 # Build static libmpdec.a
-LIBMPDEC_CFLAGS=-I$(srcdir)/Modules/_decimal/libmpdec -DUNIVERSAL=1 $(PY_STDMODULE_CFLAGS) $(CCSHARED)
+LIBMPDEC_CFLAGS= -DCONFIG_64=1 -DANSI=1 -DHAVE_UINT128_T=1 $(PY_STDMODULE_CFLAGS) $(CCSHARED)
 
 # "%.o: %c" is not portable
 Modules/_decimal/libmpdec/basearith.o: $(srcdir)/Modules/_decimal/libmpdec/basearith.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
@@ -1105,7 +1105,7 @@ $(LIBMPDEC_A): $(LIBMPDEC_OBJS)
 
 ##########################################################################
 # Build static libexpat.a
-LIBEXPAT_CFLAGS=-I$(srcdir)/Modules/expat $(PY_STDMODULE_CFLAGS) $(CCSHARED)
+LIBEXPAT_CFLAGS= $(PY_STDMODULE_CFLAGS) $(CCSHARED)
 
 Modules/expat/xmlparse.o: $(srcdir)/Modules/expat/xmlparse.c $(LIBEXPAT_HEADERS) $(PYTHON_HEADERS)
 	$(CC) -c $(LIBEXPAT_CFLAGS) -o $@ $(srcdir)/Modules/expat/xmlparse.c
@@ -1726,7 +1726,7 @@ Python/frozen.o: $(FROZEN_FILES_OUT)
 # an include guard, so we can't use a pipeline to transform its output.
 Include/pydtrace_probes.h: $(srcdir)/Include/pydtrace.d
 	$(MKDIR_P) Include
-	$(DTRACE) $(DFLAGS) -o $@ -h -s $<
+	CC="$(CC)" CFLAGS="$(CFLAGS)" $(DTRACE) $(DFLAGS) -o $@ -h -s $<
 	: sed in-place edit with POSIX-only tools
 	sed 's/PYTHON_/PyDTrace_/' $@ > $@.tmp
 	mv $@.tmp $@
@@ -1736,7 +1736,7 @@ Python/import.o: $(srcdir)/Include/pydtrace.h
 Modules/gcmodule.o: $(srcdir)/Include/pydtrace.h
 
 Python/pydtrace.o: $(srcdir)/Include/pydtrace.d $(DTRACE_DEPS)
-	$(DTRACE) $(DFLAGS) -o $@ -G -s $< $(DTRACE_DEPS)
+	CC="$(CC)" CFLAGS="$(CFLAGS)" $(DTRACE) $(DFLAGS) -o $@ -G -s $< $(DTRACE_DEPS)
 
 Objects/typeobject.o: Objects/typeslots.inc
 
@@ -2272,6 +2272,7 @@ LIBSUBDIRS=	asyncio \
 		__phello__
 TESTSUBDIRS=	idlelib/idle_test \
 		test \
+		test/test_ast \
 		test/audiodata \
 		test/certdata \
 		test/certdata/capath \
@@ -2294,6 +2295,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/support/_hypothesis_stubs \
 		test/test_asyncio \
 		test/test_capi \
+		test/test_cext \
 		test/test_cppext \
 		test/test_ctypes \
 		test/test_dataclasses \
@@ -2311,6 +2313,8 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_import/data/circular_imports/subpkg2/parent \
 		test/test_import/data/package \
 		test/test_import/data/package2 \
+		test/test_import/data/package3 \
+		test/test_import/data/package4 \
 		test/test_import/data/unwritable \
 		test/test_importlib \
 		test/test_importlib/builtin \
@@ -2384,6 +2388,8 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_tomllib/data/valid/dates-and-times \
 		test/test_tomllib/data/valid/multiline-basic-str \
 		test/test_tools \
+		test/test_tools/i18n_data \
+		test/test_tools/msgfmt_data \
 		test/test_ttk \
 		test/test_unittest \
 		test/test_unittest/testmock \
@@ -2395,6 +2401,10 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_zoneinfo/data \
 		test/tokenizedata \
 		test/tracedmodules \
+		test/translationdata \
+		test/translationdata/argparse \
+		test/translationdata/getopt \
+		test/translationdata/optparse \
 		test/typinganndata \
 		test/wheeldata \
 		test/xmltestdata \
@@ -2950,13 +2960,13 @@ MODULE_DEPS_SHARED=$(MODULE_DEPS_STATIC) $(EXPORTSYMS)
 
 MODULE_CMATH_DEPS=$(srcdir)/Modules/_math.h
 MODULE_MATH_DEPS=$(srcdir)/Modules/_math.h
-MODULE_PYEXPAT_DEPS=$(LIBEXPAT_HEADERS) $(LIBEXPAT_A)
+MODULE_PYEXPAT_DEPS=
 MODULE_UNICODEDATA_DEPS=$(srcdir)/Modules/unicodedata_db.h $(srcdir)/Modules/unicodename_db.h
 MODULE__BLAKE2_DEPS=$(srcdir)/Modules/_blake2/impl/blake2-config.h $(srcdir)/Modules/_blake2/impl/blake2-impl.h $(srcdir)/Modules/_blake2/impl/blake2.h $(srcdir)/Modules/_blake2/impl/blake2b-load-sse2.h $(srcdir)/Modules/_blake2/impl/blake2b-load-sse41.h $(srcdir)/Modules/_blake2/impl/blake2b-ref.c $(srcdir)/Modules/_blake2/impl/blake2b-round.h $(srcdir)/Modules/_blake2/impl/blake2b.c $(srcdir)/Modules/_blake2/impl/blake2s-load-sse2.h $(srcdir)/Modules/_blake2/impl/blake2s-load-sse41.h $(srcdir)/Modules/_blake2/impl/blake2s-load-xop.h $(srcdir)/Modules/_blake2/impl/blake2s-ref.c $(srcdir)/Modules/_blake2/impl/blake2s-round.h $(srcdir)/Modules/_blake2/impl/blake2s.c $(srcdir)/Modules/_blake2/blake2module.h $(srcdir)/Modules/hashlib.h
 MODULE__CTYPES_DEPS=$(srcdir)/Modules/_ctypes/ctypes.h
 MODULE__CTYPES_MALLOC_CLOSURE=_ctypes/malloc_closure.c
-MODULE__DECIMAL_DEPS=$(srcdir)/Modules/_decimal/docstrings.h $(LIBMPDEC_HEADERS) $(LIBMPDEC_A)
-MODULE__ELEMENTTREE_DEPS=$(srcdir)/Modules/pyexpat.c $(LIBEXPAT_HEADERS) $(LIBEXPAT_A)
+MODULE__DECIMAL_DEPS=$(srcdir)/Modules/_decimal/docstrings.h 
+MODULE__ELEMENTTREE_DEPS=$(srcdir)/Modules/pyexpat.c 
 MODULE__HASHLIB_DEPS=$(srcdir)/Modules/hashlib.h
 MODULE__IO_DEPS=$(srcdir)/Modules/_io/_iomodule.h
 MODULE__MD5_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_HEADERS) Modules/_hacl/Hacl_Hash_MD5.h Modules/_hacl/Hacl_Hash_MD5.c
@@ -3130,9 +3140,6 @@ Modules/_hashopenssl.o: $(srcdir)/Modules/_hashopenssl.c $(MODULE__HASHLIB_DEPS)
 Modules/_hashlib$(EXT_SUFFIX):  Modules/_hashopenssl.o; $(BLDSHARED)  Modules/_hashopenssl.o $(MODULE__HASHLIB_LDFLAGS)  -o Modules/_hashlib$(EXT_SUFFIX)
 Modules/_uuidmodule.o: $(srcdir)/Modules/_uuidmodule.c $(MODULE__UUID_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__UUID_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_uuidmodule.c -o Modules/_uuidmodule.o
 Modules/_uuid$(EXT_SUFFIX):  Modules/_uuidmodule.o; $(BLDSHARED)  Modules/_uuidmodule.o $(MODULE__UUID_LDFLAGS)  -o Modules/_uuid$(EXT_SUFFIX)
-Modules/_tkinter.o: $(srcdir)/Modules/_tkinter.c $(MODULE__TKINTER_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TKINTER_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_tkinter.c -o Modules/_tkinter.o
-Modules/tkappinit.o: $(srcdir)/Modules/tkappinit.c $(MODULE__TKINTER_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TKINTER_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/tkappinit.c -o Modules/tkappinit.o
-Modules/_tkinter$(EXT_SUFFIX):  Modules/_tkinter.o Modules/tkappinit.o; $(BLDSHARED)  Modules/_tkinter.o Modules/tkappinit.o $(MODULE__TKINTER_LDFLAGS)  -o Modules/_tkinter$(EXT_SUFFIX)
 Modules/_scproxy.o: $(srcdir)/Modules/_scproxy.c $(MODULE__SCPROXY_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__SCPROXY_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_scproxy.c -o Modules/_scproxy.o
 Modules/_scproxy$(EXT_SUFFIX):  Modules/_scproxy.o; $(BLDSHARED)  Modules/_scproxy.o $(MODULE__SCPROXY_LDFLAGS)  -o Modules/_scproxy$(EXT_SUFFIX)
 Modules/xxsubtype.o: $(srcdir)/Modules/xxsubtype.c $(MODULE_XXSUBTYPE_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE_XXSUBTYPE_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/xxsubtype.c -o Modules/xxsubtype.o
@@ -3171,13 +3178,16 @@ Modules/_testcapi/exceptions.o: $(srcdir)/Modules/_testcapi/exceptions.c $(MODUL
 Modules/_testcapi/code.o: $(srcdir)/Modules/_testcapi/code.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/code.c -o Modules/_testcapi/code.o
 Modules/_testcapi/buffer.o: $(srcdir)/Modules/_testcapi/buffer.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/buffer.c -o Modules/_testcapi/buffer.o
 Modules/_testcapi/pyos.o: $(srcdir)/Modules/_testcapi/pyos.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/pyos.c -o Modules/_testcapi/pyos.o
+Modules/_testcapi/run.o: $(srcdir)/Modules/_testcapi/run.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/run.c -o Modules/_testcapi/run.o
 Modules/_testcapi/file.o: $(srcdir)/Modules/_testcapi/file.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/file.c -o Modules/_testcapi/file.o
 Modules/_testcapi/codec.o: $(srcdir)/Modules/_testcapi/codec.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/codec.c -o Modules/_testcapi/codec.o
 Modules/_testcapi/immortal.o: $(srcdir)/Modules/_testcapi/immortal.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/immortal.c -o Modules/_testcapi/immortal.o
 Modules/_testcapi/heaptype_relative.o: $(srcdir)/Modules/_testcapi/heaptype_relative.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/heaptype_relative.c -o Modules/_testcapi/heaptype_relative.o
 Modules/_testcapi/gc.o: $(srcdir)/Modules/_testcapi/gc.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/gc.c -o Modules/_testcapi/gc.o
 Modules/_testcapi/sys.o: $(srcdir)/Modules/_testcapi/sys.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/sys.c -o Modules/_testcapi/sys.o
-Modules/_testcapi$(EXT_SUFFIX):  Modules/_testcapimodule.o Modules/_testcapi/vectorcall.o Modules/_testcapi/vectorcall_limited.o Modules/_testcapi/heaptype.o Modules/_testcapi/abstract.o Modules/_testcapi/bytearray.o Modules/_testcapi/bytes.o Modules/_testcapi/unicode.o Modules/_testcapi/dict.o Modules/_testcapi/set.o Modules/_testcapi/list.o Modules/_testcapi/tuple.o Modules/_testcapi/getargs.o Modules/_testcapi/pytime.o Modules/_testcapi/datetime.o Modules/_testcapi/docstring.o Modules/_testcapi/mem.o Modules/_testcapi/watchers.o Modules/_testcapi/long.o Modules/_testcapi/float.o Modules/_testcapi/complex.o Modules/_testcapi/numbers.o Modules/_testcapi/structmember.o Modules/_testcapi/exceptions.o Modules/_testcapi/code.o Modules/_testcapi/buffer.o Modules/_testcapi/pyos.o Modules/_testcapi/file.o Modules/_testcapi/codec.o Modules/_testcapi/immortal.o Modules/_testcapi/heaptype_relative.o Modules/_testcapi/gc.o Modules/_testcapi/sys.o; $(BLDSHARED)  Modules/_testcapimodule.o Modules/_testcapi/vectorcall.o Modules/_testcapi/vectorcall_limited.o Modules/_testcapi/heaptype.o Modules/_testcapi/abstract.o Modules/_testcapi/bytearray.o Modules/_testcapi/bytes.o Modules/_testcapi/unicode.o Modules/_testcapi/dict.o Modules/_testcapi/set.o Modules/_testcapi/list.o Modules/_testcapi/tuple.o Modules/_testcapi/getargs.o Modules/_testcapi/pytime.o Modules/_testcapi/datetime.o Modules/_testcapi/docstring.o Modules/_testcapi/mem.o Modules/_testcapi/watchers.o Modules/_testcapi/long.o Modules/_testcapi/float.o Modules/_testcapi/complex.o Modules/_testcapi/numbers.o Modules/_testcapi/structmember.o Modules/_testcapi/exceptions.o Modules/_testcapi/code.o Modules/_testcapi/buffer.o Modules/_testcapi/pyos.o Modules/_testcapi/file.o Modules/_testcapi/codec.o Modules/_testcapi/immortal.o Modules/_testcapi/heaptype_relative.o Modules/_testcapi/gc.o Modules/_testcapi/sys.o $(MODULE__TESTCAPI_LDFLAGS)  -o Modules/_testcapi$(EXT_SUFFIX)
+Modules/_testcapi/import.o: $(srcdir)/Modules/_testcapi/import.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/import.c -o Modules/_testcapi/import.o
+Modules/_testcapi/eval.o: $(srcdir)/Modules/_testcapi/eval.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/eval.c -o Modules/_testcapi/eval.o
+Modules/_testcapi$(EXT_SUFFIX):  Modules/_testcapimodule.o Modules/_testcapi/vectorcall.o Modules/_testcapi/vectorcall_limited.o Modules/_testcapi/heaptype.o Modules/_testcapi/abstract.o Modules/_testcapi/bytearray.o Modules/_testcapi/bytes.o Modules/_testcapi/unicode.o Modules/_testcapi/dict.o Modules/_testcapi/set.o Modules/_testcapi/list.o Modules/_testcapi/tuple.o Modules/_testcapi/getargs.o Modules/_testcapi/pytime.o Modules/_testcapi/datetime.o Modules/_testcapi/docstring.o Modules/_testcapi/mem.o Modules/_testcapi/watchers.o Modules/_testcapi/long.o Modules/_testcapi/float.o Modules/_testcapi/complex.o Modules/_testcapi/numbers.o Modules/_testcapi/structmember.o Modules/_testcapi/exceptions.o Modules/_testcapi/code.o Modules/_testcapi/buffer.o Modules/_testcapi/pyos.o Modules/_testcapi/run.o Modules/_testcapi/file.o Modules/_testcapi/codec.o Modules/_testcapi/immortal.o Modules/_testcapi/heaptype_relative.o Modules/_testcapi/gc.o Modules/_testcapi/sys.o Modules/_testcapi/import.o Modules/_testcapi/eval.o; $(BLDSHARED)  Modules/_testcapimodule.o Modules/_testcapi/vectorcall.o Modules/_testcapi/vectorcall_limited.o Modules/_testcapi/heaptype.o Modules/_testcapi/abstract.o Modules/_testcapi/bytearray.o Modules/_testcapi/bytes.o Modules/_testcapi/unicode.o Modules/_testcapi/dict.o Modules/_testcapi/set.o Modules/_testcapi/list.o Modules/_testcapi/tuple.o Modules/_testcapi/getargs.o Modules/_testcapi/pytime.o Modules/_testcapi/datetime.o Modules/_testcapi/docstring.o Modules/_testcapi/mem.o Modules/_testcapi/watchers.o Modules/_testcapi/long.o Modules/_testcapi/float.o Modules/_testcapi/complex.o Modules/_testcapi/numbers.o Modules/_testcapi/structmember.o Modules/_testcapi/exceptions.o Modules/_testcapi/code.o Modules/_testcapi/buffer.o Modules/_testcapi/pyos.o Modules/_testcapi/run.o Modules/_testcapi/file.o Modules/_testcapi/codec.o Modules/_testcapi/immortal.o Modules/_testcapi/heaptype_relative.o Modules/_testcapi/gc.o Modules/_testcapi/sys.o Modules/_testcapi/import.o Modules/_testcapi/eval.o $(MODULE__TESTCAPI_LDFLAGS)  -o Modules/_testcapi$(EXT_SUFFIX)
 Modules/_testclinic.o: $(srcdir)/Modules/_testclinic.c $(MODULE__TESTCLINIC_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCLINIC_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testclinic.c -o Modules/_testclinic.o
 Modules/_testclinic$(EXT_SUFFIX):  Modules/_testclinic.o; $(BLDSHARED)  Modules/_testclinic.o $(MODULE__TESTCLINIC_LDFLAGS)  -o Modules/_testclinic$(EXT_SUFFIX)
 Modules/_testimportmultiple.o: $(srcdir)/Modules/_testimportmultiple.c $(MODULE__TESTIMPORTMULTIPLE_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTIMPORTMULTIPLE_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testimportmultiple.c -o Modules/_testimportmultiple.o

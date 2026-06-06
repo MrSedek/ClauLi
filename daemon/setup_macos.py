@@ -48,6 +48,14 @@ OPTIONS = {
     },
     "packages": [
         "aiohttp", "bleak", "httpx", "anthropic", "rumps",
+        # httpx → httpcore → anyio loads its event-loop backend via a runtime
+        # import_module("anyio._backends._asyncio"). py2app's static analysis
+        # can't see that dynamic import, so anyio._backends gets dropped and the
+        # first API poll dies with `ModuleNotFoundError: No module named
+        # 'anyio._backends'`, which kills the daemon thread (BLE link drops with
+        # reason=531 and never reconnects). Copy anyio + sniffio whole so the
+        # backend ships. (sniffio is anyio's async-lib detector.)
+        "anyio", "sniffio",
     ],
     "includes": [
         # Stdlib modules py2app's static analysis sometimes misses

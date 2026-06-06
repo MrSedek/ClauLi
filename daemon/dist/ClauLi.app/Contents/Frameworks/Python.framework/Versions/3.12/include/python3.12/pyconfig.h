@@ -21,7 +21,7 @@
 #define ALIGNOF_LONG 8
 
 /* The normal alignment of `max_align_t', in bytes. */
-#define ALIGNOF_MAX_ALIGN_T 16
+#define ALIGNOF_MAX_ALIGN_T 8
 
 /* The normal alignment of `size_t', in bytes. */
 #define ALIGNOF_SIZE_T 8
@@ -47,10 +47,6 @@
 
 /* Define if --enable-ipv6 is specified */
 #define ENABLE_IPV6 1
-
-/* Define to 1 if your system stores words within floats with the most
-   significant word first */
-/* #undef FLOAT_WORDS_BIGENDIAN */
 
 /* Define if getpgrp() must be called as getpgrp(0). */
 /* #undef GETPGRP_HAVE_ARG */
@@ -129,7 +125,7 @@
 #define HAVE_BUILTIN_ATOMIC 1
 
 /* Define to 1 if you have the <bzlib.h> header file. */
-#define HAVE_BZLIB_H 1
+/* #undef HAVE_BZLIB_H */
 
 /* Define to 1 if you have the 'chflags' function. */
 #define HAVE_CHFLAGS 1
@@ -201,7 +197,7 @@
 #define HAVE_CURSES_IMMEDOK 1
 
 /* Define if you have the 'is_pad' function. */
-/* #undef HAVE_CURSES_IS_PAD */
+#define HAVE_CURSES_IS_PAD 1
 
 /* Define if you have the 'is_term_resized' function. */
 #define HAVE_CURSES_IS_TERM_RESIZED 1
@@ -612,7 +608,7 @@
 #define HAVE_HSTRERROR 1
 
 /* Define this if you have le64toh() */
-/* #undef HAVE_HTOLE64 */
+#define HAVE_HTOLE64 1
 
 /* Define to 1 if you have the <ieeefp.h> header file. */
 /* #undef HAVE_IEEEFP_H */
@@ -780,7 +776,7 @@
 #define HAVE_LUTIMES 1
 
 /* Define to 1 if you have the <lzma.h> header file. */
-#define HAVE_LZMA_H 1
+/* #undef HAVE_LZMA_H */
 
 /* Define to 1 if you have the `madvise' function. */
 #define HAVE_MADVISE 1
@@ -807,13 +803,13 @@
 #define HAVE_MKFIFO 1
 
 /* Define to 1 if you have the `mkfifoat' function. */
-/* #undef HAVE_MKFIFOAT */
+#define HAVE_MKFIFOAT 1
 
 /* Define to 1 if you have the `mknod' function. */
 #define HAVE_MKNOD 1
 
 /* Define to 1 if you have the `mknodat' function. */
-/* #undef HAVE_MKNODAT */
+#define HAVE_MKNODAT 1
 
 /* Define to 1 if you have the `mktime' function. */
 #define HAVE_MKTIME 1
@@ -964,7 +960,7 @@
 /* #undef HAVE_PWRITEV2 */
 
 /* Define to 1 if you have the <readline/readline.h> header file. */
-#define HAVE_READLINE_READLINE_H 1
+/* #undef HAVE_READLINE_READLINE_H */
 
 /* Define to 1 if you have the `readlink' function. */
 #define HAVE_READLINK 1
@@ -1292,7 +1288,7 @@
 /* #undef HAVE_SYS_DIR_H */
 
 /* Define to 1 if you have the <sys/endian.h> header file. */
-/* #undef HAVE_SYS_ENDIAN_H */
+#define HAVE_SYS_ENDIAN_H 1
 
 /* Define to 1 if you have the <sys/epoll.h> header file. */
 /* #undef HAVE_SYS_EPOLL_H */
@@ -1336,6 +1332,9 @@
 
 /* Define to 1 if you have the <sys/param.h> header file. */
 #define HAVE_SYS_PARAM_H 1
+
+/* Define to 1 if you have the <sys/pidfd.h> header file. */
+/* #undef HAVE_SYS_PIDFD_H */
 
 /* Define to 1 if you have the <sys/poll.h> header file. */
 #define HAVE_SYS_POLL_H 1
@@ -1437,8 +1436,8 @@
 /* Define to 1 if you have the `truncate' function. */
 #define HAVE_TRUNCATE 1
 
-/* Define to 1 if you have the `ttyname' function. */
-#define HAVE_TTYNAME 1
+/* Define to 1 if you have the `ttyname_r' function. */
+#define HAVE_TTYNAME_R 1
 
 /* Define to 1 if you don't have `tm_zone' but do have the external array
    `tzname'. */
@@ -1538,7 +1537,7 @@
 #define HAVE_ZLIB_COPY 1
 
 /* Define to 1 if you have the <zlib.h> header file. */
-#define HAVE_ZLIB_H 1
+/* #undef HAVE_ZLIB_H */
 
 /* Define to 1 if you have the `_getpty' function. */
 /* #undef HAVE__GETPTY */
@@ -1594,7 +1593,7 @@
 /* #undef PY_HAVE_PERF_TRAMPOLINE */
 
 /* Define to 1 to build the sqlite module with loadable extensions support. */
-/* #undef PY_SQLITE_ENABLE_LOAD_EXTENSION */
+#define PY_SQLITE_ENABLE_LOAD_EXTENSION 1
 
 /* Define if SQLite was compiled with the serialize API */
 #define PY_SQLITE_HAVE_SERIALIZE 1
@@ -1607,7 +1606,7 @@
 /* #undef PY_SSL_DEFAULT_CIPHER_STRING */
 
 /* PEP 11 Support tier (1, 2, 3 or 0 for unsupported) */
-#define PY_SUPPORT_TIER 1
+#define PY_SUPPORT_TIER 2
 
 /* Define if you want to build an interpreter with many run-time checks. */
 /* #undef Py_DEBUG */
@@ -1653,7 +1652,7 @@
 #define SIZEOF_LONG 8
 
 /* The size of `long double', as computed by sizeof. */
-#define SIZEOF_LONG_DOUBLE 16
+#define SIZEOF_LONG_DOUBLE 8
 
 /* The size of `long long', as computed by sizeof. */
 #define SIZEOF_LONG_LONG 8
@@ -1708,7 +1707,7 @@
 /* #undef TM_IN_SYS_TIME */
 
 /* Define if you want to use computed gotos in ceval.c. */
-#define USE_COMPUTED_GOTOS 1
+/* #undef USE_COMPUTED_GOTOS */
 
 /* Enable extensions on AIX 3, Interix.  */
 #ifndef _ALL_SOURCE
@@ -1809,7 +1808,7 @@
 #define WITH_DOC_STRINGS 1
 
 /* Define if you want to compile in DTrace support */
-/* #undef WITH_DTRACE */
+#define WITH_DTRACE 1
 
 /* Define if you want to use the new-style (Openstep, Rhapsody, MacOS) dynamic
    linker (dyld) instead of the old-style (NextStep) dynamic linker (rld).
@@ -1817,7 +1816,7 @@
 #define WITH_DYLD 1
 
 /* Define to build the readline module against libedit. */
-/* #undef WITH_EDITLINE */
+#define WITH_EDITLINE 1
 
 /* Define if you want to compile in object freelists optimization */
 #define WITH_FREELISTS 1

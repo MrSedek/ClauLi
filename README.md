@@ -97,6 +97,13 @@ Grab the latest release from [GitHub Releases](https://github.com/MrSedek/ClauLi
 | Linux x86_64 | `clauli-linux-x86_64.tar.gz` | `tar xzf clauli-linux-x86_64.tar.gz && ./clauli/clauli --tray` |
 | Windows x86_64 | `ClauLi-windows-x86_64.zip` | Unzip, run `clauli.exe --tray`. Click *More info → Run anyway* on the SmartScreen prompt. |
 
+> **macOS Bluetooth permission — required.** On first launch click **Allow**
+> when macOS asks for Bluetooth. If the device is never found and the log
+> (`~/.config/claude-usage-monitor/daemon.log`) repeats *"Bluetooth access
+> denied"* / *"Scanning…"*, enable **ClauLi** under **System Settings →
+> Privacy & Security → Bluetooth**, then fully quit and relaunch (macOS only
+> checks at startup). Running from source? Grant Bluetooth to your terminal.
+
 #### Option B — Run from source
 
 Requires Python 3.10+. The script creates a venv and installs all dependencies automatically:

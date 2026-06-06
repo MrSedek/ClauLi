@@ -58,6 +58,22 @@ body{
   grid-column:1; justify-self:center; align-self:start;
   display:flex; flex-direction:column; align-items:center; gap:20px;
   position:sticky; top:32px;
+  /* The preview + applied-settings list can be taller than the viewport; cap it
+     so the sticky column never spills past the fold (hiding the Apply bar /
+     overlapping). It scrolls internally instead. min/max-width keep the column
+     inside its grid cell so long content can never balloon it over col-right. */
+  min-width:0; max-width:100%; box-sizing:border-box;
+  max-height:calc(100vh - 48px); overflow-y:auto; overflow-x:hidden;
+  scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.18) transparent;
+}
+.shell > .col-left::-webkit-scrollbar{ width:7px }
+.shell > .col-left::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.16); border-radius:4px }
+/* Narrow viewports: the page assumes ≥1080px. Below that, stack the columns so
+   the sticky preview can't overlap the (otherwise cramped) settings. */
+@media (max-width:1024px){
+  .shell{ grid-template-columns:1fr !important; }
+  .shell > .col-left{ grid-column:1 !important; position:static !important; max-height:none; overflow:visible; width:100%; max-width:460px; }
+  .shell > .col-right{ grid-column:1 !important; }
 }
 .shell > .col-right{
   grid-column:2;
@@ -73,24 +89,7 @@ body{
 /* Animations stripped — page renders statically. Restore once we confirm
    the black-screen issue was animation-related. */
 .title{font-family:'Azeret Mono',monospace;font-size:13px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--dim)}
-.gauge-wrap{position:relative;width:260px;height:260px}
-.gauge-svg{width:100%;height:100%;overflow:visible}
-.gauge-svg circle{fill:none}
-.glow-s,.glow-w{transition:stroke-dasharray .8s ease-out,stroke .3s ease;filter:blur(6px);opacity:.45}
-.glow-s{stroke-width:14px}.glow-w{stroke-width:10px}
-.track-s,.track-w{stroke:var(--track);stroke-linecap:round}
-.track-s{stroke-width:12px}.track-w{stroke-width:8px}
-.ind-s,.ind-w{stroke-linecap:round;transition:stroke-dasharray .8s ease-out,stroke .3s ease}
-.ind-s{stroke-width:12px}.ind-w{stroke-width:8px}
-.center-group{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
-.pct-main{font-family:'Azeret Mono',monospace;font-size:52px;font-weight:700;line-height:1;letter-spacing:-2px;transition:color .3s ease}
-.pct-sub{font-family:'Azeret Mono',monospace;font-size:18px;font-weight:400;color:var(--dim);margin-top:4px;transition:color .3s ease}
-.pct-sub span{font-size:13px;opacity:.5;margin-right:2px}
-@keyframes pulse{0%{transform:scale(1)}40%{transform:scale(1.025)}100%{transform:scale(1)}}
-.gauge-wrap.pulse{animation:pulse .4s ease-out}
-.resets{display:flex;flex-direction:column;align-items:center;gap:4px}
-.reset-line{font-family:'Onest',sans-serif;font-size:12px;color:var(--dim);display:flex;align-items:center;gap:6px}
-.reset-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+/* Usage gauge + reset-readout styles removed with the gauge block. */
 .status-row{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--dim)}
 .status-dot{width:7px;height:7px;border-radius:50%;background:var(--red);flex-shrink:0}
 .status-dot.on{background:var(--green);animation:breathe 2.5s ease-in-out infinite}
@@ -214,11 +213,7 @@ body{
 .text-subpill.active{background:rgba(61,224,224,.08);border-color:rgba(61,224,224,.45)}
 .text-subpill.active canvas{box-shadow:inset 0 0 0 1px var(--cyan),0 0 10px rgba(61,224,224,.25)}
 .text-subpill.active .pname{color:var(--cyan)}
-/* Settings screen-tabs at the top of the settings drawer */
-.screen-tab{padding:7px 14px;font-family:'Azeret Mono',monospace;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:7px;cursor:pointer;user-select:none;transition:all .15s;position:relative}
-.screen-tab:hover{background:rgba(255,255,255,.07);color:var(--text)}
-.screen-tab.active{background:rgba(61,224,224,.10);border-color:var(--cyan);color:var(--cyan)}
-.screen-tab.live::after{content:'●';position:absolute;top:-4px;right:-4px;font-size:9px;color:var(--cyan);text-shadow:0 0 6px var(--cyan)}
+/* (screen-tab styles removed — single settings screen) */
 /* Sub-pills under active layout for per-layout text mode */
 .text-subpill{display:inline-flex;align-items:center;padding:5px 9px;font-family:'Azeret Mono',monospace;font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;border-radius:5px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);color:var(--text);cursor:pointer;user-select:none;transition:all .15s}
 .text-subpill:hover{background:rgba(255,255,255,.08)}
@@ -236,6 +231,25 @@ body{
   border-color:rgba(61,224,224,.30);
   box-shadow:0 0 0 1px rgba(61,224,224,.20), 0 0 38px rgba(61,224,224,.18);
 }
+/* Item 4 — device mockup labeled preview card */
+.mockup-card{background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:10px 12px 12px;display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:18px;width:100%;max-width:100%;box-sizing:border-box}
+.mockup-card-head{display:flex;align-items:center;gap:8px;width:100%}
+.mockup-card-title{font:700 9px/1 'Azeret Mono',monospace;letter-spacing:2px;color:var(--dim);text-transform:uppercase;flex:1}
+.mockup-card-state{font:700 9px/1 'Azeret Mono',monospace;letter-spacing:1px;color:var(--cyan)}
+/* Applied/changed-settings list under the device preview */
+.mockup-summary{width:100%;display:flex;flex-direction:column;gap:2px;margin-top:2px}
+.mockup-summary .ms-head{font:700 9px/1.4 'Azeret Mono',monospace;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.mockup-summary .ms-badge{font:700 8px/1 'Azeret Mono',monospace;letter-spacing:.5px;color:var(--accent);background:rgba(217,119,87,.14);border:1px solid rgba(217,119,87,.4);border-radius:4px;padding:2px 5px;text-transform:none}
+.mockup-summary .ms-row{display:flex;justify-content:space-between;gap:10px;min-width:0;font:500 10px/1.5 'Onest',sans-serif;padding:1px 0;border-bottom:1px solid rgba(255,255,255,.03)}
+.mockup-summary .ms-k{color:var(--dim);flex:0 0 auto;white-space:nowrap}
+/* min-width:0 + flex:1 lets a long value TRUNCATE instead of forcing the card
+   (and the whole sticky column) wider than its grid cell → no overlap. */
+.mockup-summary .ms-v{color:var(--text);flex:1 1 auto;min-width:0;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mockup-summary .ms-row.ms-dirty .ms-v{color:var(--accent)}
+.mockup-summary .ms-row.ms-dirty .ms-k::before{content:'● ';color:var(--accent);font-size:7px;vertical-align:middle}
+/* Item 1 — inactive-state note banner */
+.status-inactive-note{display:none;background:rgba(255,176,46,.07);border:1px solid rgba(255,176,46,.28);border-radius:7px;padding:8px 12px;font:500 10.5px/1.45 'Onest',sans-serif;color:#d4a96a;margin:0 0 10px;letter-spacing:.1px}
+.status-inactive-note.visible{display:block}
 /* Cyclic motion tile — pulse to show it's looping (item 7) */
 .tile.cycling{border-color:var(--cyan)!important;box-shadow:0 0 0 1px var(--cyan),0 0 14px rgba(61,224,224,.35);animation:cycle-pulse 1s linear infinite}
 @keyframes cycle-pulse{
@@ -351,40 +365,78 @@ body{
 .ge-btn.apply{background:rgba(255,176,46,.10);border-color:rgba(255,176,46,.45);color:var(--warm);font-weight:700;box-shadow:0 0 8px rgba(255,176,46,.10)}
 .ge-btn.apply:disabled{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.06);color:#555;box-shadow:none;cursor:not-allowed}
 .ge-btn.apply:hover:not(:disabled){background:rgba(255,176,46,.18);box-shadow:0 0 12px rgba(255,176,46,.25)}
+/* Character selector pills — same base as .stats-pill but inline (row) */
+.char-pill{display:inline-flex;flex-direction:row;align-items:center;gap:7px;padding:7px 12px;font-family:'Azeret Mono',monospace;font-size:10.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;border-radius:6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);color:var(--dim);cursor:pointer;transition:all .15s;user-select:none}
+.char-pill:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.20);color:var(--text)}
+.char-pill.active{background:rgba(61,224,224,.10);border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 0 1px rgba(61,224,224,.25),0 0 14px rgba(61,224,224,.18)}
+.char-pill.active[data-char="pixl"]{background:rgba(116,227,106,.10);border-color:#74e36a;color:#74e36a;box-shadow:0 0 0 1px rgba(116,227,106,.25),0 0 14px rgba(116,227,106,.18)}
+.char-pill.active[data-char="blob"]{background:rgba(220,122,90,.12);border-color:#dc7a5a;color:#dc7a5a;box-shadow:0 0 0 1px rgba(220,122,90,.25),0 0 14px rgba(220,122,90,.18)}
+.char-pip{width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.7;flex-shrink:0}
+/* Complex animation separator + buttons inside previewBlock */
+.canim-separator{display:flex;align-items:center;gap:8px;margin:10px 14px 6px;opacity:.7}
+.canim-separator-line{flex:1;height:1px;background:var(--line,rgba(255,255,255,.08))}
+.canim-separator-label{font:700 9px/1 'Azeret Mono',monospace;color:var(--dim);letter-spacing:2.5px;text-transform:uppercase;white-space:nowrap}
+.canim-btn-grid{display:flex;flex-wrap:wrap;gap:5px;padding:0 12px 8px}
+.canim-btn{background:#070707;border:1px solid rgba(255,255,255,.06);border-radius:7px;cursor:pointer;transition:all .15s;padding:5px 8px 4px;font:700 7.5px/1 'Azeret Mono',monospace;color:rgba(255,255,255,.55);letter-spacing:.5px;text-transform:uppercase;display:flex;flex-direction:column;align-items:center;gap:4px}
+.canim-btn canvas{display:block;border-radius:4px;opacity:.88}
+.canim-btn:hover{border-color:rgba(255,176,46,.45);color:var(--warm);transform:translateY(-1px)}
+.canim-btn:hover canvas{opacity:1}
+.canim-btn.fired{animation:fire-pulse .6s cubic-bezier(.2,.7,.2,1)}
+.canim-btn.on{border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan),0 4px 12px rgba(61,224,224,.20);color:var(--cyan);background:#061212}
+/* ── Staged-editing UX additions ── */
+/* Per-status mode segmented control (Rotation / Canim) */
+.pane-mode-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:0 0 8px;border-bottom:1px solid rgba(255,255,255,.06)}
+.pane-mode-label{font:700 9px/1 'Azeret Mono',monospace;letter-spacing:1.8px;text-transform:uppercase;color:var(--dim)}
+.pane-mode-inactive{opacity:.4;pointer-events:none}
+.pane-inactive-caption{font:500 10px/1.4 'Onest',sans-serif;color:#666;padding:4px 0 6px;letter-spacing:.1px}
+/* Bulk all/none buttons */
+.bulk-row{display:inline-flex;align-items:center;gap:4px;margin-left:6px}
+.ge-btn.bulk{padding:4px 7px;font-size:8.5px;letter-spacing:.8px;background:rgba(255,255,255,.03);color:var(--dim)}
+.ge-btn.bulk:hover{color:var(--text);background:rgba(255,255,255,.07)}
+/* Global apply bar */
+.global-apply-bar{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:10px;padding:8px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:8px;width:100%;box-sizing:border-box}
+.global-apply-bar .ge-btn{padding:5px 8px;font-size:9px;letter-spacing:.3px;white-space:nowrap}
+.global-apply-bar .gab-count{flex:1 1 100%;order:-1;text-align:center;margin-bottom:2px}
+.global-apply-bar .ge-spacer{flex:1}
+.global-apply-bar .gab-count{font:600 9px/1 'Azeret Mono',monospace;letter-spacing:1px;color:#555;text-transform:uppercase}
+.global-apply-bar .gab-count.dirty{color:var(--warm)}
+/* Unsaved-changes guard modal */
+#unsavedModal .modal-card{max-width:360px;margin:20px;background:var(--surface,#14140f);border:1px solid rgba(255,176,46,.40);border-radius:12px;padding:20px 22px;box-shadow:0 0 0 1px rgba(0,0,0,.4),0 18px 50px rgba(0,0,0,.6),0 0 40px rgba(255,176,46,.06)}
+
+/* ─── Page polish: denser settings · subtle motion · responsive ─────────── */
+/* Density — less scroll, tighter rhythm (overrides earlier rules) */
+.state-block{margin:6px 0}
+.state-block > summary{padding:9px 13px;letter-spacing:1.8px}
+.section-label{padding:6px 12px 3px;letter-spacing:2px}
+.pane-grid{gap:8px 14px;padding:4px 2px 8px}
+.tile-grid{gap:4px;padding:0 10px 5px;grid-template-columns:repeat(auto-fill,minmax(46px,1fr))}
+.color-row{padding:0 10px 10px}
+/* Subtle one-time load reveal of the two main panels. NOTE: never animate
+   .col-left — it's position:sticky and a transform would break the sticky. */
+@keyframes pgRise{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
+@media (prefers-reduced-motion:no-preference){
+  #settings{animation:pgRise .5s cubic-bezier(.2,.72,.2,1) both}
+  .mockup-card{animation:pgRise .5s cubic-bezier(.2,.72,.2,1) .06s both}
+}
+/* Crisper tile micro-interaction */
+.tile{transition:transform .14s ease,border-color .14s ease,box-shadow .14s ease}
+.tile:hover{transform:translateY(-1px);border-color:rgba(61,224,224,.45)}
+/* Responsive — trim page gutters as the window narrows; denser tile grids */
+@media (max-width:1024px){ .shell{padding:30px 18px 60px} }
+@media (max-width:560px){
+  .shell{padding:18px 10px 48px}
+  .tile-grid{grid-template-columns:repeat(auto-fill,minmax(42px,1fr));gap:3px}
+  .pane-grid{gap:6px 10px}
+  .state-block > summary{padding:8px 11px}
+}
 </style>
 </head>
 <body>
 <div class="shell">
   <div class="col-left">
   <div class="title">ClauLi</div>
-  <div class="gauge-wrap" id="gauge">
-    <svg class="gauge-svg" viewBox="0 0 260 260">
-      <defs>
-        <linearGradient id="gs" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="var(--green)"/>
-          <stop offset="100%" stop-color="var(--accent)"/>
-        </linearGradient>
-        <linearGradient id="gw" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#6a7f52"/>
-          <stop offset="100%" stop-color="#a0885a"/>
-        </linearGradient>
-      </defs>
-      <circle class="glow-s" cx="130" cy="130" r="110" transform="rotate(135 130 130)" stroke="var(--green)"/>
-      <circle class="glow-w" cx="130" cy="130" r="85"  transform="rotate(135 130 130)" stroke="#6a7f52"/>
-      <circle class="track-s" cx="130" cy="130" r="110" transform="rotate(135 130 130)" stroke-dasharray="518.36 172.79"/>
-      <circle class="track-w" cx="130" cy="130" r="85"  transform="rotate(135 130 130)" stroke-dasharray="400.74 133.58"/>
-      <circle class="ind-s" id="ind-s" cx="130" cy="130" r="110" transform="rotate(135 130 130)" stroke="url(#gs)" stroke-dasharray="0 691.15"/>
-      <circle class="ind-w" id="ind-w" cx="130" cy="130" r="85"  transform="rotate(135 130 130)" stroke="url(#gw)" stroke-dasharray="0 534.32"/>
-    </svg>
-    <div class="center-group">
-      <div class="pct-main" id="s-num">--%</div>
-      <div class="pct-sub" id="w-num"><span id="w-pre">W</span> --%</div>
-    </div>
-  </div>
-  <div class="resets">
-    <div class="reset-line"><span class="reset-dot" id="dot-s"></span><span id="s-reset">---</span></div>
-    <div class="reset-line"><span class="reset-dot" id="dot-w"></span><span id="w-reset">---</span></div>
-  </div>
+  <!-- Usage gauge + reset readouts removed — the web UI is now a character
+       configurator; live usage lives on the device screen. -->
   <div class="status-row">
     <span class="status-dot" id="ble-dot"></span>
     <span id="ble-status">Disconnected</span>
@@ -410,25 +462,35 @@ body{
        screens. Kept only the Refresh + BOOT shortcuts on the dashboard. -->
   <div class="controls">
     <button class="btn accent" data-i18n="refresh" onclick="sendRefresh()">↻ Refresh</button>
-    <button class="btn" title="Same as a single BOOT-button press: cycles the eye view-mode (text/bars/clock)." data-i18n="boot1" onclick="sendAction('anim')">BOOT</button>
-    <button class="btn" title="Same as double BOOT-button press: triggers a new random animation/mood." data-i18n="boot2" onclick="sendAction('view')">BOOT ×2</button>
+    <button class="btn" title="Cycle the device view-mode (text / bars / clock)" data-i18n="boot1" onclick="sendAction('anim')">Cycle view</button>
+    <button class="btn" title="Trigger a random emotion on the device" data-i18n="boot2" onclick="sendAction('view')">Random emotion</button>
+    <button class="btn" id="dbgBtn" title="Show live state / mode / animation name on the device screen (debug mode)" data-i18n="debug_off" onclick="toggleDebugOverlay()">🐞 Debug</button>
   </div>
-  <!-- Phase L5 — live device-screen mockup.
-       Always shows what the ESP is rendering RIGHT NOW for the active
-       per-state config. Driven by the same RAF loop as the layout
-       pill thumbs (data-thumb-kind="mockup" tells the loop to read the
-       live state instead of a fixed layout id). -->
-  <div id="deviceMockupWrap" style="margin-top:18px;display:flex;flex-direction:column;align-items:center;gap:8px">
-    <div style="display:flex;align-items:center;gap:10px;font:700 9px/1 'Azeret Mono',monospace;letter-spacing:2px;color:#5a6068;text-transform:uppercase">
-      <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#3DE0E0;box-shadow:0 0 6px #3DE0E0" id="deviceMockupLive"></span>
-      <span>Device</span>
-      <span style="color:#3DE0E0" id="deviceMockupStateLabel">—</span>
+  <!-- Phase L5 — live device-screen mockup. Item 4: wrapped in labeled preview card. -->
+  <div class="mockup-card" id="deviceMockupWrap">
+    <div class="mockup-card-head">
+      <span class="mockup-card-title" data-i18n="mockup_title">Device preview</span>
+      <span id="deviceMockupLive" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#3DE0E0;box-shadow:0 0 6px #3DE0E0;flex-shrink:0"></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;width:100%">
+      <span style="font:500 9px/1 'Onest',sans-serif;color:var(--dim)" data-i18n="mockup_previewing">Previewing:</span>
+      <span class="mockup-card-state" id="deviceMockupStateLabel">—</span>
     </div>
     <canvas id="deviceMockup"
             width="200" height="234"
             data-thumb-kind="mockup"
             data-thumb-id="hud_ribbon"
-            style="display:block;border-radius:10px;background:#000;border:1px solid #131311;box-shadow:0 0 0 1px rgba(255,255,255,.02), 0 0 32px rgba(61,224,224,.06)"></canvas>
+            style="display:block;border-radius:8px;background:#000;border:1px solid #1c1c19;box-shadow:0 0 0 1px rgba(255,255,255,.02), 0 0 24px rgba(61,224,224,.06)"></canvas>
+    <!-- Item: applied/changed-settings list under the preview -->
+    <div class="mockup-summary" id="mockupSummary"></div>
+    <!-- Global staged-editing apply bar -->
+    <div class="global-apply-bar" id="globalApplyBar">
+      <button class="ge-btn ghost" id="gabReset" data-i18n="reset_settings" onclick="resetAllToDevice()">СБРОСИТЬ</button>
+      <button class="ge-btn ghost" id="gabDefaults" data-i18n="reset_to_default" onclick="resetAllToDefault()">ПО УМОЛЧАНИЮ</button>
+      <div class="ge-spacer"></div>
+      <span class="gab-count" id="gabCount"></span>
+      <button class="ge-btn apply" id="gabApply" data-i18n="apply_all" onclick="applyAll()" disabled>ПРИМЕНИТЬ ВСЁ</button>
+    </div>
   </div>
   </div><!-- /.col-left -->
 
@@ -436,17 +498,19 @@ body{
   <!-- ───────── Settings (collapsible) ───────── -->
   <details id="settings" open style="width:100%;margin-top:14px;background:var(--surface);border:1px solid var(--line);border-radius:10px">
     <summary style="cursor:pointer;padding:10px 14px;font-size:13px;color:var(--text);user-select:none;list-style:none">⚙ <span data-i18n="settings">Настройки</span></summary>
-    <div id="screenTabs" style="display:flex;gap:6px;flex-wrap:wrap;padding:8px 14px 0">
-      <div class="screen-tab active" data-screen="emo2">ClauLi</div>
-      <div class="screen-tab" data-screen="usage" data-i18n="usage">Usage</div>
-      <div class="screen-tab" data-screen="splash" data-i18n="anim">Claude</div>
-      <div class="screen-tab" data-screen="bluetooth">Bluetooth</div>
-    </div>
+    <!-- screenTabs removed — the ClauLi character configurator is the only
+         settings screen (Usage / Claude / Bluetooth screens were dropped). -->
     <div id="screenPaneClauli" class="screen-pane" data-screen="emo2" style="padding:8px 14px 14px;font-size:12px">
       <!-- Orientation toggle — applies to whole device, persists in NVS. -->
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:6px 0;border-bottom:1px solid var(--line)">
-        <span style="font-family:'Azeret Mono',monospace;font-size:10px;letter-spacing:1.5px;color:var(--dim);font-weight:700;flex-shrink:0">ORIENT</span>
+        <span data-i18n="orient_label" style="font-family:'Azeret Mono',monospace;font-size:10px;letter-spacing:1.5px;color:var(--dim);font-weight:700;flex-shrink:0">ORIENT</span>
         <div id="orientPills" style="display:flex;gap:6px"></div>
+      </div>
+
+      <!-- Character selector (ClauLi / Pixl / Blob) -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:6px 0;border-bottom:1px solid var(--line)">
+        <span data-i18n="character_label" style="font-family:'Azeret Mono',monospace;font-size:10px;letter-spacing:1.5px;color:var(--dim);font-weight:700;flex-shrink:0">ГЕРОЙ</span>
+        <div id="characterPills" style="display:flex;gap:6px"></div>
       </div>
 
       <!-- ▦ Layout — GLOBAL on-screen stats layout picker. Restored after the
@@ -467,6 +531,23 @@ body{
                it. renderEmo2Stats() fills #layoutColorPills. -->
           <div class="section-label" data-i18n="layout_color_label" style="margin:16px 0 8px">LAYOUT COLOUR</div>
           <div id="layoutColorPills" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+          <!-- Item 2: text controls moved here from per-state pane -->
+          <div id="layoutInnerSettings">
+            <div class="section-label" data-i18n="text_source_label" style="margin:16px 0 4px">TEXT SOURCE</div>
+            <div id="textSourcePills" style="display:flex;flex-wrap:wrap;gap:6px;padding:0 0 4px"></div>
+            <div class="section-label" data-i18n="text_format_label" style="margin:10px 0 4px">TEXT FORMAT</div>
+            <div id="textFormatPills" style="display:flex;flex-wrap:wrap;gap:6px;padding:0 0 4px"></div>
+            <div class="section-label" data-i18n="text_placement_label" style="margin:10px 0 4px">TEXT PLACEMENT</div>
+            <div id="textPlacementPills" style="display:flex;flex-wrap:wrap;gap:6px;padding:0 0 4px"></div>
+          </div>
+          <!-- Req #3: Layout Apply row -->
+          <div class="ge-actions" style="margin-top:10px">
+            <button class="ge-btn ghost" onclick="resetAllToDefault()" title="Defaults">ПО УМОЛЧ.</button>
+            <button class="ge-btn ghost" onclick="if(emo2StatsCfgServer){_stageEmo2Stats({default:emo2StatsCfgServer.default,extras:_cloneCfg(emo2StatsCfgServer.extras),active:emo2StatsCfgServer.active,layout_color:emo2StatsCfgServer.layout_color,layouts:_cloneCfg(emo2StatsCfgServer.layouts)})}" title="Revert">ОТМЕНИТЬ</button>
+            <div class="ge-spacer"></div>
+            <span class="ge-status" id="layoutApplyStatus">SAVED</span>
+            <button class="ge-btn apply" id="layoutApplyBtn" onclick="applyLayout()" disabled>ПРИМЕНИТЬ</button>
+          </div>
         </div>
       </details>
 
@@ -518,6 +599,13 @@ body{
             <span data-i18n="color_settings">Color settings</span>
           </div>
           <div id="clockColorPills" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
+          <!-- Req #3: Clock Apply row -->
+          <div class="ge-actions" style="margin-top:10px">
+            <button class="ge-btn ghost" onclick="if(emo2StatsCfgServer){_stageEmo2Stats({clock_style:emo2StatsCfgServer.clock_style,clock_color:emo2StatsCfgServer.clock_color})}" title="Revert">ОТМЕНИТЬ</button>
+            <div class="ge-spacer"></div>
+            <span class="ge-status" id="clockApplyStatus">SAVED</span>
+            <button class="ge-btn apply" id="clockApplyBtn" onclick="applyClock()" disabled>ПРИМЕНИТЬ</button>
+          </div>
         </div>
       </details>
 
@@ -543,7 +631,14 @@ body{
             <input id="paceForm" type="range" min="5" max="50" step="1" value="20" style="flex:1;accent-color:var(--warm)">
             <span id="paceFormVal" style="min-width:42px;text-align:right;font-family:'Azeret Mono',monospace;font-weight:700;color:var(--text)">2.0×</span>
           </div>
-          <div style="font-size:10.5px;color:var(--dim);margin-top:4px" data-i18n="timing_help">Slider × 0.5 to ×5. Higher = rarer events. Auto-saves on release.</div>
+          <div style="font-size:10.5px;color:var(--dim);margin-top:4px" data-i18n="timing_help">Slider × 0.5 to ×5. Higher = rarer events. Stage on release — Apply to send.</div>
+          <!-- Req #3: Timing Apply row -->
+          <div class="ge-actions" style="margin-top:10px">
+            <button class="ge-btn ghost" onclick="if(emo2StatsCfgServer){_stageEmo2Stats({anim_pace_x10:emo2StatsCfgServer.anim_pace_x10,form_pace_x10:emo2StatsCfgServer.form_pace_x10});syncPaceSlidersFromCfg(emo2StatsCfg)}" title="Revert">ОТМЕНИТЬ</button>
+            <div class="ge-spacer"></div>
+            <span class="ge-status" id="timingApplyStatus">SAVED</span>
+            <button class="ge-btn apply" id="timingApplyBtn" onclick="applyTiming()" disabled>ПРИМЕНИТЬ</button>
+          </div>
         </div>
       </details>
 
@@ -632,9 +727,9 @@ body{
             <div class="mhint" data-i18n="manual_hint">Auto-rotation off · preview only · motions cycle on tap</div>
           </div>
         </label>
-        <div class="section-label">Forms</div>
+        <div class="section-label" data-i18n="forms_label">Forms</div>
         <div class="tile-grid" id="previewForms"></div>
-        <div class="section-label">Motions</div>
+        <div class="section-label" data-i18n="motions_label">Motions</div>
         <div class="tile-grid" id="previewOps"></div>
         <div class="section-label" data-i18n="color_settings">Color settings</div>
         <div class="color-row" id="previewColors"></div>
@@ -668,35 +763,6 @@ body{
         <button class="btn" data-i18n="reboot" onclick="if(confirm(t('reboot_confirm')||'Reboot the device now? The BLE link will drop and reconnect.'))sendAction('reboot')">Reboot</button>
       </div>
     </div><!-- /#screenPaneClauli -->
-
-    <!-- ─── Usage pane (stub for now) ──────────────────────────────────────── -->
-    <div id="screenPaneUsage" class="screen-pane" data-screen="usage" style="display:none;padding:14px;font-size:12px;color:var(--dim);line-height:1.6">
-      <div style="font-family:'Azeret Mono',monospace;font-size:10px;letter-spacing:1.5px;color:var(--text);font-weight:700;margin-bottom:8px">USAGE SCREEN</div>
-      <p style="margin-bottom:10px">Концентрические дуги — session (внешняя) и weekly (внутренняя). Цвет дуги меняется по %: <span style="color:#3DE0E0">cyan</span> → <span style="color:#FFA000">amber</span> → <span style="color:#FF1818">red</span>.</p>
-      <p style="margin-bottom:10px;font-size:11px;color:#888">Дополнительные настройки (палитра, шрифт, glow) — в следующей итерации.</p>
-      <div class="controls" style="margin-top:8px"><button class="btn" onclick="sendScreen('usage')">Открыть на ESP</button></div>
-    </div>
-
-    <!-- ─── Claude pane (stub for now — animation picker comes later) ──────── -->
-    <div id="screenPaneClaude" class="screen-pane" data-screen="splash" style="display:none;padding:14px;font-size:12px;color:var(--dim);line-height:1.6">
-      <div style="font-family:'Azeret Mono',monospace;font-size:10px;letter-spacing:1.5px;color:var(--text);font-weight:700;margin-bottom:8px">CLAUDE SCREEN</div>
-      <p style="margin-bottom:10px">Pixel-art анимации (Claude character). Выбор группы (Idle / Excited / Sleepy / Working) и цветовой override — в следующей итерации.</p>
-      <p style="margin-bottom:10px;font-size:11px;color:#888">Сейчас auto-cycle через все группы.</p>
-      <div class="controls" style="margin-top:8px"><button class="btn" onclick="sendScreen('splash')">Открыть на ESP</button></div>
-    </div>
-
-    <!-- ─── Bluetooth pane ─────────────────────────────────────────────────── -->
-    <div id="screenPaneBluetooth" class="screen-pane" data-screen="bluetooth" style="display:none;padding:14px;font-size:12px;color:var(--dim);line-height:1.6">
-      <div style="font-family:'Azeret Mono',monospace;font-size:10px;letter-spacing:1.5px;color:var(--text);font-weight:700;margin-bottom:8px">BLUETOOTH</div>
-      <div style="display:flex;flex-direction:column;gap:6px;font-family:'Azeret Mono',monospace;font-size:11px;color:#cfcfcf;margin-bottom:10px">
-        <div>Status: <span id="bt-status-text" style="color:var(--cyan)">—</span></div>
-        <div>Address: <span id="bt-address-text" style="color:#aaa">—</span></div>
-      </div>
-      <div class="controls" style="margin-top:8px;gap:6px">
-        <button class="btn" onclick="sendScreen('bluetooth')">Открыть на ESP</button>
-        <button class="btn" onclick="sendRefresh()" title="Force-rescan / reconnect" data-i18n="refresh">↻ Refresh</button>
-      </div>
-    </div>
   </details>
   </div><!-- /.col-right -->
 
@@ -715,12 +781,659 @@ body{
 <script>
 const SCREEN_MAP={usage:1,bluetooth:2,bt:2,splash:3,cycle:4,emo:6,emo2:9};
 const CIRC_S=2*Math.PI*110,CIRC_W=2*Math.PI*85;
+
+// ════════════════════════════════════════════════════════════════════
+//  CHARACTER SYSTEM  — ClauLi / Pixl / Blob eye renderers
+//  Ported from docs/clauli-character-mockup.html
+// ════════════════════════════════════════════════════════════════════
+let currentChar = 'clauli';
+// Registry for canim preview canvases — rebuilt by buildPreviewTiles().
+let canimCanvases = [];
+
+// ── SVG helpers (used only for blob/clauli eyes in canvas tiles via Image) ──
+// All eye rendering below is done with the CANVAS 2D API, not SVG.
+// We keep canvas-native approaches for tile draw performance.
+
+// ── Pixl dot-matrix patterns (7×7) ──────────────────────────────────────────
+const PIX_PATTERNS = {
+  neutral:   ['0111110','1111111','1111111','1111111','1111111','1111111','0111110'],
+  happy:     ['0011100','0111110','1111111','1110111','1100011','1000001','0000000'],
+  sad:       ['0000000','1000001','1100011','1110111','1111111','0111110','0011100'],
+  ring:      ['0011100','0111110','1110111','1100011','1110111','0111110','0011100'],
+  heart:     ['0110110','1111111','1111111','1111111','0111110','0011100','0001000'],
+  closed:    ['0000000','0000000','0000000','0000000','1111111','1111111','0111110'],
+  squint:    ['0000000','0000000','0111110','1111111','1111111','0000000','0000000'],
+  spark:     ['0001000','0001000','0011100','1111111','0011100','0001000','0001000'],
+  angry:     ['0000001','0000111','0011111','0111111','1111111','1111111','0111110'],
+  // Item 6 — new distinct patterns
+  tall:      ['0011100','0011100','0111110','0111110','0111110','0011100','0011100'],
+  diamond:   ['0001000','0011100','0111110','1111111','0111110','0011100','0001000'],
+  wide:      ['0000000','1111111','1111111','1111111','1111111','1111111','0000000'],
+  slit:      ['0111110','0110110','0110110','0110110','0110110','0110110','0111110'],
+  crossx:    ['1000001','0100010','0011100','0001000','0011100','0100010','1000001'],
+  crescent:  ['0111110','1100000','1100000','1100000','1100000','1100000','0111110'],
+  brackets:  ['1110111','1000001','1000001','0000000','1000001','1000001','1110111'],
+};
+// Map FORM_LIST names → pixl pattern key
+const PIX_FORM_MAP = {
+  neutral:'neutral', happy:'happy', sad:'sad', angry:'angry', upset:'squint',
+  sleep:'closed', circle:'ring',
+  squircle_thick:'neutral', rect_tv:'neutral',
+  pixel_cluster:'spark', q_eye:'neutral', exclaim:'spark',
+  // Item 6 — new distinct mappings
+  oval_tall:'tall', diamond:'diamond', capsule_h:'wide',
+  pupil_slit:'slit', cross:'crossx', crescent:'crescent', brackets:'brackets',
+};
+// Map FORM_LIST names → blob mood spec
+const BLOB_FORM_MAP = {
+  neutral:       {mouth:'flat'},
+  happy:         {mouth:'smile',  brow:null},
+  sad:           {mouth:'frown',  brow:'sad',   lidT:.25, ang:-22},
+  angry:         {mouth:'grit',   brow:'angry', lidT:.22, ang:24},
+  upset:         {mouth:'small',  lidT:.18},
+  sleep:         {mouth:'small',  lidT:.70},
+  circle:        {mouth:'o'},
+  pupil_slit:    {mouth:'flat',   lidT:.10},
+  cross:         {mouth:'wavy'},
+  squircle_thick:{mouth:'flat'},
+  rect_tv:       {mouth:'flat'},
+  capsule_h:     {mouth:'flat'},
+  brackets:      {mouth:'flat'},
+  pixel_cluster: {mouth:'big'},
+  q_eye:         {mouth:'small'},
+  exclaim:       {mouth:'big',  brow:'angry'},
+};
+// Map FORM_LIST names → clauli mood spec (only the delta fields; base is neutral sq)
+const CLAULI_FORM_MAP = {
+  neutral:       {},
+  happy:         {smile:{k:-8,curve:60}},
+  sad:           {lidT:.22, ang:-22},
+  angry:         {lidT:.22, ang:26},
+  upset:         {lidT:.35},
+  sleep:         {lidT:.75},
+  circle:        {},
+  pupil_slit:    {body:'slit'},
+  cross:         {},
+  squircle_thick:{},
+  rect_tv:       {},
+  capsule_h:     {},
+  brackets:      {},
+  pixel_cluster: {},
+  q_eye:         {},
+  exclaim:       {},
+};
+
+// ── Canvas eye rendering — per character ────────────────────────────────────
+// drawCharEye(ctx, cx, cy, form, color, r, opts, char)
+// Renders one eye for the given character type.
+// This is called by pairEye and drawTileEye which already have their canvas context.
+
+function _drawPixlEye(ctx, cx, cy, color, r, patKey, mirror){
+  const pat = PIX_PATTERNS[patKey] || PIX_PATTERNS.neutral;
+  const n = pat.length;
+  const pitch = r * 0.33;
+  const sz    = pitch * 0.82;
+  const x0 = cx - (n-1)/2 * pitch;
+  const y0 = cy - (n-1)/2 * pitch;
+  const rd = sz * 0.18;
+  const hasRR = !!ctx.roundRect;
+  // Batch ALL lit dots into ONE path + a single fill. Previously each dot was
+  // its own beginPath()+fill() (~25/eye); with the glow pass that meant ~100
+  // fills/frame on the live mockup — the source of the Pixl lag.
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  for (let row = 0; row < n; row++){
+    const prow = pat[row];
+    for (let col = 0; col < n; col++){
+      const c = mirror ? (n-1-col) : col;
+      if (prow[c] === '1'){
+        const px = x0 + col * pitch - sz/2;
+        const py = y0 + row * pitch - sz/2;
+        if (hasRR) ctx.roundRect(px, py, sz, sz, rd);
+        else       ctx.rect(px, py, sz, sz);
+      }
+    }
+  }
+  ctx.fill();
+}
+
+function _drawBlobEye(ctx, cx, cy, color, r, opts){
+  opts = opts || {};
+  const ex = r * (opts.bx || 1.05);
+  const ey = r * (opts.by || 1.10);
+  const scaleY = opts.scaleY != null ? opts.scaleY : 1;
+  if (scaleY < 0.04) return;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.scale(1, scaleY);
+  // Outer clay body ellipse (dark fill)
+  ctx.beginPath(); ctx.ellipse(0, 0, ex, ey, 0, 0, Math.PI*2);
+  ctx.fillStyle = '#241310'; ctx.fill();
+  // Wet white catchlights
+  ctx.beginPath(); ctx.arc(-ex*0.32, -ey*0.30, r*0.27, 0, Math.PI*2);
+  ctx.fillStyle = '#fff'; ctx.globalAlpha = 0.95; ctx.fill();
+  ctx.beginPath(); ctx.arc(ex*0.30, ey*0.24, r*0.14, 0, Math.PI*2);
+  ctx.globalAlpha = 0.50; ctx.fill();
+  ctx.globalAlpha = 1;
+  // Lid overlay (upper eyelid — closes from top, uses lidT fraction)
+  const lidT = opts.lidT || 0;
+  if (lidT > 0){
+    const lidH = ey * 2 * lidT;
+    ctx.save();
+    ctx.beginPath(); ctx.ellipse(0, 0, ex+1, ey+1, 0, 0, Math.PI*2);
+    ctx.clip();
+    ctx.fillStyle = color;
+    ctx.fillRect(-ex-2, -ey-2, (ex+2)*2, lidH+2);
+    ctx.restore();
+  }
+  // Angular lid (angry / sad brow emulated by clip-region fill)
+  const ang = opts.ang || 0;
+  if (ang !== 0){
+    ctx.save();
+    ctx.rotate(ang * Math.PI/180);
+    ctx.beginPath(); ctx.ellipse(0, 0, ex+1, ey+1, 0, 0, Math.PI*2);
+    ctx.clip();
+    ctx.fillStyle = color;
+    ctx.fillRect(-ex-2, -ey-2, (ex+2)*2, ey * 0.6);
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+// ── pairEye — branched per character ────────────────────────────────────────
+// Extended version of the existing pairEye; original clauli path unchanged.
+function pairEyeForChar(ctx, form, color, opts, charOverride){
+  const ch = charOverride || currentChar;
+  if (ch === 'pixl'){
+    _pairEyePixl(ctx, form, color, opts);
+  } else if (ch === 'tv'){
+    _pairEyeTv(ctx, form, color, opts);
+  } else {
+    // clauli — original code path (unchanged)
+    pairEye(ctx, form, color, opts);
+  }
+}
+
+// Old-TV / CRT Hero: reuse the ClauLi eye shapes (so per-eye + scene support
+// comes free), then punch horizontal scan-lines through them + a soft screen
+// glow. Eyes are tinted by the usage-% colour passed in, like every character.
+function _pairEyeTv(ctx, form, color, opts){
+  pairEye(ctx, form, color, opts);
+  const W = ctx.canvas.width, H = ctx.canvas.height;
+  ctx.save();
+  ctx.globalCompositeOperation = 'destination-out';   // carve scan-line gaps
+  ctx.globalAlpha = 0.55;
+  // Even scan-line pitch (~16 lines) so spacing matches the device's uniform
+  // integer-pitch sprites — not the old fixed 3px which drifted on tall canvases.
+  const sp = Math.max(2, Math.round(H / 16));
+  for (let y = sp - 1; y < H; y += sp) ctx.fillRect(0, y, W, 1);
+  ctx.restore();
+}
+
+function _pairEyePixl(ctx, form, color, opts){
+  const W = ctx.canvas.width, H = ctx.canvas.height;
+  ctx.clearRect(0,0,W,H);
+  const r    = Math.min(W,H) * 0.20;
+  const gap  = r * 0.7;
+  // Per-eye support: formL/formR, dxL/dyL/dxR/dyR, scaleY_L/scaleY_R
+  const hasPerEye = opts.formL != null || opts.formR != null || opts.dxL != null || opts.dxR != null || opts.dyL != null || opts.dyR != null || opts.scaleY_L != null || opts.scaleY_R != null;
+  const formL  = opts.formL  != null ? opts.formL  : form;
+  const formR  = opts.formR  != null ? opts.formR  : form;
+  const dxL    = opts.dxL    != null ? opts.dxL    : (opts.dx || 0);
+  const dxR    = opts.dxR    != null ? opts.dxR    : (opts.dx || 0);
+  const dyL    = opts.dyL    != null ? opts.dyL    : (opts.dy || 0);
+  const dyR    = opts.dyR    != null ? opts.dyR    : (opts.dy || 0);
+  const scaleL = opts.scaleY_L != null ? opts.scaleY_L : (opts.scaleY != null ? opts.scaleY : 1);
+  const scaleR = opts.scaleY_R != null ? opts.scaleY_R : (opts.scaleY != null ? opts.scaleY : 1);
+  const keyL   = PIX_FORM_MAP[formL] || 'neutral';
+  const keyR   = PIX_FORM_MAP[formR] || 'neutral';
+  const cy_l   = H/2 + dyL;
+  const cy_r   = H/2 + dyR;
+  const lx     = W/2 - r - gap/2 + dxL;
+  const rx     = W/2 + r + gap/2 + dxR;
+  // Phosphor glow behind dots (averaged scaleY for alpha)
+  const avgScale = (scaleL + scaleR) * 0.5;
+  ctx.save();
+  ctx.shadowColor = color; ctx.shadowBlur = 10;
+  ctx.globalAlpha = 0.6 * avgScale;
+  _drawPixlEye(ctx, lx, cy_l, color, r, keyL, false);
+  _drawPixlEye(ctx, rx, cy_r, color, r, keyR, true);
+  ctx.restore();
+  // Sharp dots (no glow) — per-eye alpha
+  ctx.globalAlpha = scaleL < 0.5 ? scaleL * 2 : 1;
+  _drawPixlEye(ctx, lx, cy_l, color, r, keyL, false);
+  ctx.globalAlpha = scaleR < 0.5 ? scaleR * 2 : 1;
+  _drawPixlEye(ctx, rx, cy_r, color, r, keyR, true);
+  ctx.globalAlpha = 1;
+  // Pixl blink: when scaleY is near 0, replace with a single horizontal line
+  if (scaleL < 0.25){
+    ctx.fillStyle = color;
+    const lw = r*1.4, lh = r*0.12;
+    ctx.clearRect(lx-lw/2-2, cy_l-lh-2, lw+4, lh*2+4);
+    ctx.fillRect(lx-lw/2, cy_l-lh/2, lw, lh);
+  }
+  if (scaleR < 0.25){
+    ctx.fillStyle = color;
+    const lw = r*1.4, lh = r*0.12;
+    ctx.clearRect(rx-lw/2-2, cy_r-lh-2, lw+4, lh*2+4);
+    ctx.fillRect(rx-lw/2, cy_r-lh/2, lw, lh);
+  }
+}
+
+function _pairEyeBlob(ctx, form, color, opts){
+  const W = ctx.canvas.width, H = ctx.canvas.height;
+  ctx.clearRect(0,0,W,H);
+  const r    = Math.min(W,H) * 0.20;
+  const gap  = r * 0.7;
+  // Per-eye support: formL/formR, dxL/dyL/dxR/dyR, scaleY_L/scaleY_R
+  const formL  = opts.formL  != null ? opts.formL  : form;
+  const formR  = opts.formR  != null ? opts.formR  : form;
+  const dxL    = opts.dxL    != null ? opts.dxL    : (opts.dx || 0);
+  const dxR    = opts.dxR    != null ? opts.dxR    : (opts.dx || 0);
+  const dyL    = opts.dyL    != null ? opts.dyL    : (opts.dy || 0);
+  const dyR    = opts.dyR    != null ? opts.dyR    : (opts.dy || 0);
+  const scaleL = opts.scaleY_L != null ? opts.scaleY_L : (opts.scaleY != null ? opts.scaleY : 1);
+  const scaleR = opts.scaleY_R != null ? opts.scaleY_R : (opts.scaleY != null ? opts.scaleY : 1);
+  // Use average dy for clay body background + mouth (they straddle both eyes)
+  const cy_  = H/2 + (dyL + dyR) * 0.5;
+  const lx   = W/2 - r - gap/2 + dxL;
+  const rx   = W/2 + r + gap/2 + dxR;
+  const specL = BLOB_FORM_MAP[formL] || {};
+  const specR = BLOB_FORM_MAP[formR] || {};
+  // spec for mouth/brows: use left eye's form spec as representative
+  const spec = specL;
+  // Clay body bar behind both eyes
+  ctx.fillStyle = color;
+  ctx.globalAlpha = 0.18;
+  const bw = r*4.6, bh = r*2.4;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(W/2 - bw/2, cy_ - bh/2, bw, bh, bh/2);
+  else ctx.rect(W/2 - bw/2, cy_ - bh/2, bw, bh);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+  // Body glow — per-eye form opts
+  ctx.shadowColor = color; ctx.shadowBlur = 14;
+  const bodyEyeOptsL = Object.assign({}, specL, opts, {lidT: specL.lidT || 0, ang: specL.ang || 0, scaleY: scaleL});
+  const bodyEyeOptsR = Object.assign({}, specR, opts, {lidT: specR.lidT || 0, ang: specR.ang || 0, scaleY: scaleR});
+  _drawBlobEye(ctx, lx, H/2 + dyL, color, r, bodyEyeOptsL);
+  _drawBlobEye(ctx, rx, H/2 + dyR, color, r, bodyEyeOptsR);
+  ctx.shadowBlur = 0;
+  // Mouth — uses left eye's spec as representative, positioned at avg cy
+  const mk = spec.mouth || 'flat';
+  const MOUTH_PATHS = {
+    flat:  (x,y,s)=>{ ctx.beginPath(); ctx.moveTo(x-s*.45,y+s*.55); ctx.quadraticCurveTo(x,y+s*.62,x+s*.45,y+s*.55); },
+    smile: (x,y,s)=>{ ctx.beginPath(); ctx.moveTo(x-s*.50,y+s*.42); ctx.quadraticCurveTo(x,y+s*.88,x+s*.50,y+s*.42); },
+    big:   (x,y,s)=>{ ctx.beginPath(); ctx.moveTo(x-s*.54,y+s*.36); ctx.quadraticCurveTo(x,y+s*.96,x+s*.54,y+s*.36); ctx.quadraticCurveTo(x,y+s*.72,x-s*.54,y+s*.36); ctx.closePath(); },
+    frown: (x,y,s)=>{ ctx.beginPath(); ctx.moveTo(x-s*.45,y+s*.70); ctx.quadraticCurveTo(x,y+s*.42,x+s*.45,y+s*.70); },
+    small: (x,y,s)=>{ ctx.beginPath(); ctx.moveTo(x-s*.22,y+s*.60); ctx.quadraticCurveTo(x,y+s*.70,x+s*.22,y+s*.60); },
+    wavy:  (x,y,s)=>{ ctx.beginPath(); ctx.moveTo(x-s*.40,y+s*.60); ctx.quadraticCurveTo(x-s*.16,y+s*.46,x,y+s*.60); ctx.quadraticCurveTo(x+s*.16,y+s*.74,x+s*.40,y+s*.60); },
+  };
+  const cx2 = W/2 + (dxL + dxR) * 0.5 * 0.4;
+  const mouthY = cy_ + r;
+  const pathFn = MOUTH_PATHS[mk];
+  if (mk === 'big'){
+    ctx.fillStyle = '#241310';
+    ctx.shadowColor = color; ctx.shadowBlur = 6;
+    if (pathFn) { pathFn(cx2, mouthY, r); ctx.fill(); }
+    ctx.shadowBlur = 0;
+  } else if (mk === 'o'){
+    ctx.fillStyle = '#241310';
+    ctx.shadowColor = color; ctx.shadowBlur = 6;
+    ctx.beginPath(); ctx.ellipse(cx2, mouthY + r*0.55, r*0.28, r*0.35, 0, 0, Math.PI*2); ctx.fill();
+    ctx.shadowBlur = 0;
+  } else if (mk === 'grit'){
+    ctx.strokeStyle = '#241310'; ctx.lineWidth = r*0.28; ctx.lineCap = 'butt';
+    ctx.beginPath(); ctx.moveTo(cx2-r*.42, mouthY+r*0.55); ctx.lineTo(cx2+r*.42, mouthY+r*0.55); ctx.stroke();
+    const nTeeth = 4;
+    for (let i = 0; i < nTeeth; i++){
+      const tx = cx2 - r*0.36 + i*(r*0.72/(nTeeth-1));
+      ctx.beginPath(); ctx.moveTo(tx, mouthY+r*0.38); ctx.lineTo(tx, mouthY+r*0.74); ctx.stroke();
+    }
+  } else if (pathFn){
+    ctx.strokeStyle = '#241310'; ctx.lineWidth = r*0.28; ctx.lineCap = 'round';
+    ctx.shadowColor = color; ctx.shadowBlur = 4;
+    pathFn(cx2, mouthY, r); ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
+  // Brows
+  if (spec.brow === 'angry'){
+    ctx.strokeStyle = '#241310'; ctx.lineWidth = r*0.24; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(lx-r*.72,cy_-r*.96); ctx.lineTo(lx+r*.22,cy_-r*.62); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(rx+r*.72,cy_-r*.96); ctx.lineTo(rx-r*.22,cy_-r*.62); ctx.stroke();
+  } else if (spec.brow === 'sad'){
+    ctx.strokeStyle = '#241310'; ctx.lineWidth = r*0.20; ctx.lineCap = 'round'; ctx.globalAlpha = 0.7;
+    ctx.beginPath(); ctx.moveTo(lx-r*.52,cy_-r*.78); ctx.lineTo(lx+r*.32,cy_-r*.96); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(rx+r*.52,cy_-r*.78); ctx.lineTo(rx-r*.32,cy_-r*.96); ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+}
+
+// ── Living animation engine ───────────────────────────────────────────────────
+// Tracks per-tile life state (breath, saccade, blink, entry).
+const _lifeState = new WeakMap();
+function _getLifeState(canvas){
+  let s = _lifeState.get(canvas);
+  if (!s){
+    const seed = Math.random();
+    s = {seed, tx:0, ty:0, sx:0, sy:0, sacNext:0, blinkAt:600+seed*2200,
+         blinkP:0, dbl:false, entryAt:performance.now()+seed*80, form:'neutral', char:'clauli'};
+    _lifeState.set(canvas, s);
+  }
+  return s;
+}
+// Per-mood eye signature motion (returns {dx,dy,sx,sy,rot})
+function _moodSignature(form, t){
+  switch(form){
+    case 'happy':    return {dy:-1.8-1.5*Math.abs(Math.sin(t*3.2))};
+    case 'angry':    return {dx:0.7*Math.sin(t*28), dy:0.5*Math.sin(t*30)};
+    case 'sad':      return {dy:2.5+1.8*Math.sin(t*0.7)};
+    case 'sleep':    return {dy:2.0*Math.max(0,Math.sin(t*0.7)), sy:1-0.06*(0.5+0.5*Math.sin(t*0.9))};
+    case 'upset':    return {rot:4*Math.sin(t*2.1)};
+    case 'pixel_cluster': return {dx:0.6*Math.sin(t*38), sy:1+0.02*Math.sin(t*8)};
+    default:         return {};
+  }
+}
+// Heartbeat for love-type (unused in form tiles but available for future canims)
+function _heartbeat(t){ const p=(t%1.05)/1.05; const a=Math.exp(-Math.pow((p-0.06)/0.05,2)), b=Math.exp(-Math.pow((p-0.20)/0.06,2)); return 0.07*(a+0.7*b); }
+
+// Apply life-layer transform to a canvas context (call before pairEye* calls).
+// Returns opts object to pass to pairEye functions.
+function _lifeOpts(canvas, now, form, char){
+  const s = _getLifeState(canvas);
+  const t = now / 1000;
+  // Reset entry if form/char changed
+  if (s.form !== form || s.char !== char){ s.form = form; s.char = char; s.entryAt = now; }
+  // Breath
+  const breath = 1 + 0.015 * Math.sin(t * 1.6 + s.seed * 6.28);
+  // Micro-saccade
+  if (now > s.sacNext){ s.tx=(Math.random()*2-1)*1.2; s.ty=(Math.random()*2-1)*0.9; s.sacNext=now+800+Math.random()*1400; }
+  s.sx += (s.tx - s.sx) * 0.08; s.sy += (s.ty - s.sy) * 0.08;
+  // Blink
+  let blinkSY = 1;
+  if (now > s.blinkAt && s.blinkP === 0){ s.blinkP = 0.0001; s.dbl = Math.random() < 0.22; }
+  if (s.blinkP > 0){
+    s.blinkP += 0.085;
+    const p = s.blinkP;
+    blinkSY = p < 1 ? 1 - 0.94 * Math.sin(Math.min(p,1) * Math.PI) : 1;
+    if (p >= 1){ if (s.dbl){ s.dbl=false; s.blinkP=0.0001; } else { s.blinkP=0; s.blinkAt=now+3000+Math.random()*3200; } }
+  }
+  // Mood signature
+  const sig = _moodSignature(form, t);
+  let dx = s.sx + (sig.dx || 0);
+  let dy = s.sy + (sig.dy || 0);
+  let sgx = sig.sx || 1;
+  let sgy = (sig.sy || 1) * breath;
+  let rot = sig.rot || 0;
+  // Entry pop
+  const ep = (now - s.entryAt) / 360;
+  if (ep >= 0 && ep < 1){ const k = Math.sin(ep * Math.PI); sgx *= 1 + 0.12*k*(ep<0.4?-1:1); sgy *= 1+0.18*k; }
+  // Per-character easing
+  if (char === 'pixl'){ dx=Math.round(dx/3)*3; dy=Math.round(dy/3)*3; rot=0; if(Math.random()<0.04)dx+=(Math.random()<.5?-3:3); if(blinkSY<0.6)blinkSY=0; else blinkSY=1; }
+  return {dx, dy, scale:sgx, scaleY: blinkSY * sgy, rot};
+}
+
+// ── Character selector UI ─────────────────────────────────────────────────────
+const CHAR_DEFS = [
+  {id:'clauli', name:'ClauLi', color:'#3DE0E0'},
+  {id:'pixl',   name:'Pixl',   color:'#74e36a'},
+  {id:'tv',     name:'ТВ',     color:'#3DE0E0'},
+];
+function renderCharacterPills(){
+  const wrap = document.getElementById('characterPills');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  CHAR_DEFS.forEach(c => {
+    const pill = document.createElement('div');
+    pill.className = 'char-pill' + (c.id === currentChar ? ' active' : '');
+    pill.dataset.char = c.id;
+    pill.innerHTML = `<span class="char-pip"></span>${c.name}`;
+    pill.onclick = () => setCharacter(c.id);
+    wrap.appendChild(pill);
+  });
+}
+async function setCharacter(name){
+  if (!CHAR_DEFS.find(c => c.id === name)) return;
+  guardUnsaved(async () => {
+    currentChar = name;
+    renderCharacterPills();
+    _lastFormDraw = new WeakMap();
+    _lastOpDraw = new WeakMap();
+    try {
+      await fetch('/api/character', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({character: name})
+      });
+    } catch(e){ /* offline */ }
+  });
+}
+function applyCharFromDaemon(name){
+  if (!CHAR_DEFS.find(c => c.id === name)) return;
+  if (name === currentChar) return;
+  currentChar = name;
+  renderCharacterPills();
+  _lastFormDraw = new WeakMap();
+  _lastOpDraw = new WeakMap();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  COMPLEX ANIMATIONS (canim_*) panel
+// ═══════════════════════════════════════════════════════════════
+const CANIM_LIST = [
+  {id:'wakeup',     ru:'Пробуждение',    en:'Wake up'},
+  {id:'sneeze',     ru:'Чих',            en:'Sneeze'},
+  {id:'laugh',      ru:'Смех',           en:'Laugh'},
+  {id:'cry',        ru:'Плач',           en:'Cry'},
+  {id:'dizzy',      ru:'Голова кругом',  en:'Dizzy'},
+  {id:'sleep',      ru:'Засыпание',      en:'Sleep'},
+  {id:'dance',      ru:'Танец',          en:'Dance'},
+  {id:'shock',      ru:'Шок',            en:'Shock'},
+  {id:'scan',       ru:'Сканирование',   en:'Scan'},
+  {id:'lovestruck', ru:'Влюблённость',   en:'Lovestruck'},
+  // asymmetric / shape+position morph (index-aligned w/ daemon CANIM_NAMES + firmware)
+  {id:'suspicious', ru:'Подозрение',     en:'Suspicious', hidden:true},
+  {id:'flirt',      ru:'Флирт',          en:'Flirt'},
+  {id:'peek',       ru:'Подглядывание',  en:'Peek'},
+  {id:'roll',       ru:'Закатить глаза', en:'Eye roll'},
+  {id:'giggle',     ru:'Хихиканье',      en:'Giggle'},
+  {id:'rage',       ru:'Ярость',         en:'Rage', hidden:true},
+  {id:'ponder',     ru:'Раздумье',       en:'Ponder'},
+  {id:'agree',      ru:'Согласие',       en:'Agree'},
+  {id:'disagree',   ru:'Несогласие',     en:'Disagree'},
+  {id:'melt',       ru:'Уныние',         en:'Melt'},
+  // canim ids 20-27 — scene-engine complex animations (order matches firmware SCENES[])
+  {id:'rage2',      ru:'Ярость',         en:'Rage'},
+  {id:'lovestruck2',ru:'Влюблённость²',  en:'Smitten', hidden:true},
+  {id:'suspicion',  ru:'Подозрение',     en:'Suspicion'},
+  {id:'dizzy_spell',ru:'Головокружение', en:'Dizzy spell'},
+  {id:'panic',      ru:'Паника',         en:'Panic', hidden:true},
+  {id:'mischief',   ru:'Озорство',       en:'Mischief'},
+  {id:'sob',        ru:'Рыдание',        en:'Sob'},
+  {id:'wake_up2',   ru:'Пробуждение²',   en:'Wake up'},
+  // index 28 — dedicated old-TV / CRT power-cycle (inline canim, not a scene)
+  {id:'tv_crt',     ru:'Старый ТВ',      en:'Old TV'},
+];
+
+// ─── Scene-engine keyframe arrays (ported from emo2.cpp SC_* arrays) ────────
+// Each entry: {t:ms, l:{form,dx,dy,sy}, r:{form,dx,dy,sy}}
+// sy = scaleY fraction (firmware syq/100). form = web FORM name (mood→form map).
+// mood→form: M_NEUTRAL→'neutral', M_HAPPY→'happy', M_SAD→'sad', M_ANGRY→'angry',
+//            M_UPSET→'upset', M_SLEEP→'sleep', M_CIRCLE→'circle', M_LOVE→'circle',
+//            M_OVAL_TALL→'oval_tall', M_CROSS→'cross'
+const _SCENE_SC_RAGE2 = [
+  {t:   0, l:{form:'neutral',  dx:0,  dy:0,  sy:1.00}, r:{form:'neutral',  dx:0,  dy:0,  sy:1.00}},
+  {t: 160, l:{form:'angry',    dx:0,  dy:3,  sy:0.70}, r:{form:'angry',    dx:0,  dy:3,  sy:0.70}},
+  {t: 420, l:{form:'angry',    dx:-6, dy:-2, sy:0.75}, r:{form:'angry',    dx:6,  dy:3,  sy:0.75}},
+  {t: 600, l:{form:'angry',    dx:6,  dy:3,  sy:0.75}, r:{form:'angry',    dx:-6, dy:-2, sy:0.75}},
+  {t: 780, l:{form:'angry',    dx:-6, dy:-2, sy:0.75}, r:{form:'angry',    dx:6,  dy:3,  sy:0.75}},
+  {t: 960, l:{form:'angry',    dx:6,  dy:3,  sy:0.75}, r:{form:'angry',    dx:-6, dy:-2, sy:0.75}},
+  {t:1180, l:{form:'neutral',  dx:0,  dy:-6, sy:1.32}, r:{form:'neutral',  dx:0,  dy:-6, sy:1.32}},
+  {t:1450, l:{form:'angry',    dx:0,  dy:1,  sy:0.85}, r:{form:'angry',    dx:0,  dy:1,  sy:0.85}},
+  {t:1750, l:{form:'neutral',  dx:0,  dy:0,  sy:1.00}, r:{form:'neutral',  dx:0,  dy:0,  sy:1.00}},
+];
+const _SCENE_SC_LOVE2 = [
+  {t:   0, l:{form:'neutral',  dx:0,  dy:0,  sy:1.00}, r:{form:'neutral',  dx:0,  dy:0,  sy:1.00}},
+  {t: 120, l:{form:'neutral',  dx:0,  dy:0,  sy:0.20}, r:{form:'neutral',  dx:0,  dy:0,  sy:0.20}},
+  {t: 260, l:{form:'circle',   dx:4,  dy:0,  sy:1.10}, r:{form:'circle',   dx:4,  dy:0,  sy:1.10}},
+  {t: 440, l:{form:'circle',   dx:-2, dy:-3, sy:1.30}, r:{form:'circle',   dx:-2, dy:-3, sy:1.30}},
+  {t: 740, l:{form:'circle',   dx:0,  dy:-2, sy:1.20}, r:{form:'circle',   dx:0,  dy:-2, sy:1.20}},
+  {t:1080, l:{form:'circle',   dx:0,  dy:0,  sy:1.10}, r:{form:'circle',   dx:0,  dy:0,  sy:1.10}},
+  {t:1450, l:{form:'happy',    dx:8,  dy:2,  sy:0.70}, r:{form:'happy',    dx:8,  dy:2,  sy:0.70}},
+  {t:1750, l:{form:'happy',    dx:8,  dy:2,  sy:0.28}, r:{form:'happy',    dx:8,  dy:2,  sy:0.28}},
+  {t:2050, l:{form:'circle',   dx:0,  dy:0,  sy:1.10}, r:{form:'circle',   dx:0,  dy:0,  sy:1.10}},
+  {t:2400, l:{form:'neutral',  dx:0,  dy:0,  sy:1.00}, r:{form:'neutral',  dx:0,  dy:0,  sy:1.00}},
+];
+const _SCENE_SC_SUSPICION = [
+  {t:   0, l:{form:'neutral',  dx:0,  dy:0,  sy:1.00}, r:{form:'neutral',  dx:0,  dy:0,  sy:1.00}},
+  {t: 320, l:{form:'upset',    dx:0,  dy:0,  sy:0.55}, r:{form:'neutral',  dx:0,  dy:0,  sy:1.00}},
+  {t: 720, l:{form:'upset',    dx:-7, dy:0,  sy:0.55}, r:{form:'neutral',  dx:-7, dy:0,  sy:1.00}},
+  {t:1120, l:{form:'upset',    dx:7,  dy:0,  sy:0.55}, r:{form:'neutral',  dx:7,  dy:0,  sy:1.00}},
+  {t:1480, l:{form:'upset',    dx:0,  dy:0,  sy:0.50}, r:{form:'upset',    dx:0,  dy:0,  sy:0.50}},
+  {t:1780, l:{form:'upset',    dx:0,  dy:-2, sy:0.72}, r:{form:'upset',    dx:0,  dy:-2, sy:0.72}},
+  {t:1980, l:{form:'neutral',  dx:0,  dy:-4, sy:1.22}, r:{form:'neutral',  dx:0,  dy:-4, sy:1.22}},
+  {t:2350, l:{form:'neutral',  dx:0,  dy:0,  sy:1.00}, r:{form:'neutral',  dx:0,  dy:0,  sy:1.00}},
+];
+const _SCENE_SC_DIZZY2 = [
+  {t:   0, l:{form:'neutral',  dx:0,  dy:0,  sy:1.00}, r:{form:'neutral',  dx:0,  dy:0,  sy:1.00}},
+  {t: 250, l:{form:'neutral',  dx:6,  dy:0,  sy:1.00}, r:{form:'neutral',  dx:-6, dy:0,  sy:1.00}},
+  {t: 500, l:{form:'neutral',  dx:8,  dy:-4, sy:1.00}, r:{form:'neutral',  dx:-8, dy:4,  sy:1.00}},
+  {t: 760, l:{form:'neutral',  dx:4,  dy:4,  sy:1.00}, r:{form:'neutral',  dx:-4, dy:-4, sy:1.00}},
+  {t:1020, l:{form:'neutral',  dx:-4, dy:4,  sy:1.00}, r:{form:'neutral',  dx:4,  dy:-4, sy:1.00}},
+  {t:1280, l:{form:'neutral',  dx:-8, dy:-4, sy:1.00}, r:{form:'neutral',  dx:8,  dy:4,  sy:1.00}},
+  {t:1540, l:{form:'neutral',  dx:8,  dy:-4, sy:1.00}, r:{form:'neutral',  dx:-8, dy:4,  sy:1.00}},
+  {t:1820, l:{form:'neutral',  dx:0,  dy:4,  sy:0.72}, r:{form:'neutral',  dx:0,  dy:4,  sy:0.72}},
+  {t:2080, l:{form:'neutral',  dx:-4, dy:0,  sy:1.00}, r:{form:'neutral',  dx:4,  dy:0,  sy:1.00}},
+  {t:2320, l:{form:'neutral',  dx:4,  dy:0,  sy:1.00}, r:{form:'neutral',  dx:-4, dy:0,  sy:1.00}},
+  {t:2600, l:{form:'neutral',  dx:0,  dy:0,  sy:1.00}, r:{form:'neutral',  dx:0,  dy:0,  sy:1.00}},
+];
+const _SCENE_SC_PANIC = [
+  {t:   0, l:{form:'neutral',  dx:0,  dy:0,  sy:1.00}, r:{form:'neutral',  dx:0,  dy:0,  sy:1.00}},
+  {t: 120, l:{form:'circle',   dx:0,  dy:-3, sy:1.35}, r:{form:'circle',   dx:0,  dy:-3, sy:1.35}},
+  {t: 350, l:{form:'circle',   dx:-8, dy:2,  sy:1.30}, r:{form:'circle',   dx:5,  dy:-4, sy:1.30}},
+  {t: 520, l:{form:'circle',   dx:7,  dy:-3, sy:1.30}, r:{form:'circle',   dx:-6, dy:3,  sy:1.30}},
+  {t: 700, l:{form:'circle',   dx:-5, dy:3,  sy:1.30}, r:{form:'circle',   dx:8,  dy:-2, sy:1.30}},
+  {t: 900, l:{form:'oval_tall',dx:2,  dy:0,  sy:1.20}, r:{form:'oval_tall',dx:-2, dy:0,  sy:1.20}},
+  {t:1050, l:{form:'oval_tall',dx:-2, dy:0,  sy:1.20}, r:{form:'oval_tall',dx:2,  dy:0,  sy:1.20}},
+  {t:1300, l:{form:'upset',    dx:0,  dy:2,  sy:0.52}, r:{form:'upset',    dx:0,  dy:2,  sy:0.52}},
+  {t:1550, l:{form:'upset',    dx:2,  dy:2,  sy:0.52}, r:{form:'upset',    dx:-2, dy:2,  sy:0.52}},
+  {t:1750, l:{form:'upset',    dx:-2, dy:2,  sy:0.52}, r:{form:'upset',    dx:2,  dy:2,  sy:0.52}},
+  {t:2050, l:{form:'neutral',  dx:0,  dy:0,  sy:1.00}, r:{form:'neutral',  dx:0,  dy:0,  sy:1.00}},
+];
+const _SCENE_SC_MISCHIEF = [
+  {t:   0, l:{form:'neutral',  dx:0,  dy:0,  sy:1.00}, r:{form:'neutral',  dx:0,  dy:0,  sy:1.00}},
+  {t: 300, l:{form:'upset',    dx:0,  dy:0,  sy:0.65}, r:{form:'upset',    dx:0,  dy:0,  sy:0.65}},
+  {t: 650, l:{form:'upset',    dx:7,  dy:0,  sy:0.65}, r:{form:'upset',    dx:7,  dy:0,  sy:0.65}},
+  {t: 850, l:{form:'happy',    dx:7,  dy:0,  sy:0.65}, r:{form:'happy',    dx:7,  dy:0,  sy:0.12}},
+  {t:1050, l:{form:'happy',    dx:7,  dy:0,  sy:0.65}, r:{form:'happy',    dx:7,  dy:0,  sy:0.65}},
+  {t:1350, l:{form:'happy',    dx:-3, dy:-2, sy:0.80}, r:{form:'happy',    dx:-3, dy:2,  sy:0.80}},
+  {t:1600, l:{form:'happy',    dx:0,  dy:-5, sy:0.95}, r:{form:'happy',    dx:0,  dy:-5, sy:0.95}},
+  {t:1820, l:{form:'happy',    dx:0,  dy:0,  sy:1.00}, r:{form:'happy',    dx:0,  dy:0,  sy:1.00}},
+  {t:2050, l:{form:'neutral',  dx:0,  dy:0,  sy:1.00}, r:{form:'neutral',  dx:0,  dy:0,  sy:1.00}},
+];
+const _SCENE_SC_SOB = [
+  {t:   0, l:{form:'neutral',  dx:0,  dy:0,  sy:1.00}, r:{form:'neutral',  dx:0,  dy:0,  sy:1.00}},
+  {t: 400, l:{form:'sad',      dx:0,  dy:4,  sy:0.80}, r:{form:'sad',      dx:0,  dy:4,  sy:0.80}},
+  {t: 800, l:{form:'sad',      dx:0,  dy:5,  sy:0.55}, r:{form:'sad',      dx:0,  dy:5,  sy:0.55}},
+  {t:1100, l:{form:'sad',      dx:-2, dy:5,  sy:0.55}, r:{form:'sad',      dx:2,  dy:5,  sy:0.55}},
+  {t:1300, l:{form:'sad',      dx:2,  dy:5,  sy:0.55}, r:{form:'sad',      dx:-2, dy:5,  sy:0.55}},
+  {t:1500, l:{form:'sad',      dx:-3, dy:3,  sy:0.60}, r:{form:'sad',      dx:3,  dy:6,  sy:0.60}},
+  {t:1700, l:{form:'sad',      dx:3,  dy:6,  sy:0.60}, r:{form:'sad',      dx:-3, dy:3,  sy:0.60}},
+  {t:1950, l:{form:'upset',    dx:0,  dy:-2, sy:0.80}, r:{form:'upset',    dx:0,  dy:-2, sy:0.80}},
+  {t:2200, l:{form:'sad',      dx:0,  dy:5,  sy:0.60}, r:{form:'sad',      dx:0,  dy:5,  sy:0.60}},
+  {t:2850, l:{form:'neutral',  dx:0,  dy:0,  sy:1.00}, r:{form:'neutral',  dx:0,  dy:0,  sy:1.00}},
+];
+const _SCENE_SC_WAKE2 = [
+  {t:   0, l:{form:'sleep',    dx:0,  dy:0,  sy:1.00}, r:{form:'sleep',    dx:0,  dy:0,  sy:1.00}},
+  {t: 480, l:{form:'neutral',  dx:0,  dy:0,  sy:0.22}, r:{form:'sleep',    dx:0,  dy:0,  sy:1.00}},
+  {t: 880, l:{form:'neutral',  dx:0,  dy:0,  sy:0.40}, r:{form:'neutral',  dx:0,  dy:0,  sy:0.30}},
+  {t:1240, l:{form:'neutral',  dx:0,  dy:0,  sy:0.64}, r:{form:'neutral',  dx:0,  dy:0,  sy:0.60}},
+  {t:1560, l:{form:'neutral',  dx:0,  dy:-2, sy:1.20}, r:{form:'neutral',  dx:0,  dy:-2, sy:1.20}},
+  {t:1880, l:{form:'neutral',  dx:0,  dy:0,  sy:0.96}, r:{form:'neutral',  dx:0,  dy:0,  sy:0.96}},
+  {t:2180, l:{form:'neutral',  dx:-6, dy:0,  sy:1.00}, r:{form:'neutral',  dx:-6, dy:0,  sy:1.00}},
+  {t:2480, l:{form:'neutral',  dx:6,  dy:0,  sy:1.00}, r:{form:'neutral',  dx:6,  dy:0,  sy:1.00}},
+  {t:2800, l:{form:'neutral',  dx:0,  dy:0,  sy:1.00}, r:{form:'neutral',  dx:0,  dy:0,  sy:1.00}},
+];
+
+// Ease-in-out cubic (mirrors firmware: u*u*(3-2*u))
+function _sceneEaseInOut(u){ return u * u * (3.0 - 2.0 * u); }
+
+// sceneFrame(keys, t_sec) — mirrors firmware scene_run.
+// keys: array of {t:ms, l:{form,dx,dy,sy}, r:{form,dx,dy,sy}}
+// t_sec: elapsed time in SECONDS (wraps by last keyframe ms)
+// Returns: {formL,dxL,dyL,scaleY_L, formR,dxR,dyR,scaleY_R}
+function sceneFrame(keys, t_sec){
+  const loopMs = keys[keys.length - 1].t;
+  const dtMs   = (t_sec * 1000) % loopMs;
+  // Find bracketing keyframes
+  let i = 0;
+  while (i < keys.length - 2 && dtMs >= keys[i + 1].t) i++;
+  const a = keys[i], b = keys[i + 1];
+  const span = b.t - a.t;
+  let u = span > 0 ? (dtMs - a.t) / span : 1.0;
+  u = _sceneEaseInOut(Math.max(0, Math.min(1, u)));
+  // Linear lerp of per-eye dx/dy/scaleY; mood held from lower keyframe (keyframe a)
+  const lerpV = (av, bv) => av + (bv - av) * u;
+  return {
+    formL:   a.l.form,
+    dxL:     lerpV(a.l.dx, b.l.dx),
+    dyL:     lerpV(a.l.dy, b.l.dy),
+    scaleY_L:lerpV(a.l.sy, b.l.sy),
+    formR:   a.r.form,
+    dxR:     lerpV(a.r.dx, b.r.dx),
+    dyR:     lerpV(a.r.dy, b.r.dy),
+    scaleY_R:lerpV(a.r.sy, b.r.sy),
+  };
+}
+
+// Per-canim preview animator. t = seconds elapsed. Returns {form, dx, dy, scaleY}.
+// Loop period ~2 s. Forms must exist in FORM_LIST / recognized by all chars.
+const CANIM_FRAME = {
+  wakeup:     (t)=>{ const p=(t%2);     const sy=p<1?p:1; const blink=(p>1.7&&p<1.9)?Math.max(0,1-Math.abs((p-1.8)/0.09)*10):1; return {form:'neutral', dx:0, dy:0, scaleY:sy*blink}; },
+  sneeze:     (t)=>{ const p=(t%2);     const form=p<0.6?'upset':p<1.0?'neutral':'happy'; const dy=p>0.7&&p<1.1? (p-0.7)/0.4*5-2 : 0; const sy=p>=0.6&&p<1.0?1.18:1; return {form, dx:0, dy, scaleY:sy}; },
+  laugh:      (t)=>{ const p=(t%2);     return {form:'happy', dx:0, dy:-4*Math.abs(Math.sin(p*Math.PI*2.5)), scaleY:1}; },
+  cry:        (t)=>{ const p=(t%2);     const dx=3*Math.sin(p*TAU*3.5); return {form:'sad', dx, dy:3, scaleY:1}; },
+  dizzy:      (t)=>{ const u=t*TAU/2;   return {form:'neutral', dx:5*Math.cos(u), dy:4*Math.sin(u), scaleY:1}; },
+  sleep:      (t)=>{ const p=(t%2);     const blink=p<0.6?1:p<0.7?Math.max(0.05,1-(p-0.6)/0.1*0.95):p<0.9?0.05:p<1.0?(p-0.9)/0.1:1; return {form:'neutral', dx:0, dy:0, scaleY:blink}; },
+  dance:      (t)=>{ const u=t*TAU/2;   return {form:'happy', dx:6*Math.sin(u), dy:-2+2*Math.sin(u*2), scaleY:1}; },
+  shock:      (t)=>{ const p=(t%2);     const sy=p<0.12?1+1.5*p/0.12:p<0.3?1+1.5*(1-(p-0.12)/0.18)*0.8:1; const dy=p<0.2?(p/0.2)*-3+3:0; return {form:'neutral', dx:0, dy, scaleY:sy}; },
+  scan:       (t)=>{ const p=(t%2)/2;   const dx=-6+12*p; return {form:'neutral', dx, dy:0, scaleY:1}; },
+  lovestruck: (t)=>{ const p=(t%2);     const beat=1+0.2*Math.max(0,Math.sin(p*TAU*2)); const dy=-2+2*Math.sin(p*TAU); return {form:'circle', dx:0, dy, scaleY:beat}; },
+  suspicious: (t)=>{ const p=(t%2);     return {form:'upset', dx:4*Math.sin(p*TAU*0.7), dy:0, scaleY:1}; },
+  flirt:      (t)=>{ const p=(t%2);     const dip=p<0.3?1-Math.sin(p/0.3*Math.PI)*0.7:1; return {form:'happy', dx:0, dy:0, scaleY:dip}; },
+  peek:       (t)=>{ const p=(t%2);     const dx=p<1?-7+14*p:-7+14*(2-p); return {form:'neutral', dx, dy:0, scaleY:1}; },
+  roll:       (t)=>{ const u=t*TAU/2;   return {form:'upset', dx:5*Math.sin(u), dy:-4*Math.cos(u), scaleY:1}; },
+  giggle:     (t)=>{ const p=(t%2);     return {form:'happy', dx:0, dy:-3+3*Math.abs(Math.sin(p*TAU*4)), scaleY:1}; },
+  rage:       (t)=>{                    return {form:'angry', dx:4*Math.sin(t*30), dy:3*Math.sin(t*33), scaleY:1}; },
+  ponder:     (t)=>{                    return {form:'upset', dx:-4, dy:-5+2*Math.sin(t*4), scaleY:1}; },
+  agree:      (t)=>{                    return {form:'happy', dx:0, dy:7*Math.sin(t*TAU/1.2), scaleY:1}; },
+  disagree:   (t)=>{                    return {form:'sad',   dx:10*Math.sin(t*TAU), dy:0, scaleY:1}; },
+  melt:       (t)=>{ const p=(t%2.8)/2.8; return {form:'sad', dx:1.5*Math.sin(t*2.4), dy:15*p, scaleY:1-0.25*p}; },
+  // Scene-engine animations (ids 20-27) — use sceneFrame() for per-eye interpolation
+  rage2:       (t)=> sceneFrame(_SCENE_SC_RAGE2,      t),
+  lovestruck2: (t)=> sceneFrame(_SCENE_SC_LOVE2,      t),
+  suspicion:   (t)=> sceneFrame(_SCENE_SC_SUSPICION,  t),
+  dizzy_spell: (t)=> sceneFrame(_SCENE_SC_DIZZY2,     t),
+  panic:       (t)=> sceneFrame(_SCENE_SC_PANIC,       t),
+  mischief:    (t)=> sceneFrame(_SCENE_SC_MISCHIEF,    t),
+  sob:         (t)=> sceneFrame(_SCENE_SC_SOB,         t),
+  wake_up2:    (t)=> sceneFrame(_SCENE_SC_WAKE2,       t),
+  // Old-TV / CRT cycle (id 28). Web has no scaleX, so the horizontal collapse
+  // is approximated by the vertical bloom→collapse→re-bloom (full effect on device).
+  tv_crt:      (t)=>{ const p=(t%2.75); let sy=1, dy=0, form='rect_tv';
+                 if(p<0.14)      sy=0.06;
+                 else if(p<0.42) sy=0.06+1.14*((p-0.14)/0.28);          // bloom open (overshoot)
+                 else if(p<0.56) sy=1.20-0.20*((p-0.42)/0.14);          // settle
+                 else if(p<1.90){ const r=p-0.56; sy=1.0-((Math.floor(r/0.08)%6===0)?0.22:0); dy=4*Math.sin(r/0.48*TAU); } // live: roll+flicker
+                 else if(p<2.43) sy=Math.max(0.06, 1.0-0.94*((p-1.90)/0.53)); // collapse to a line
+                 else          { form='neutral'; sy=0.06+0.94*((p-2.43)/0.32); } // re-bloom as normal eyes
+                 return {form, dx:0, dy, scaleY:Math.max(0.05,sy)}; },
+};
+
 const ARC_FRAC=.75,ARC_S=CIRC_S*ARC_FRAC,ARC_W=CIRC_W*ARC_FRAC;
 let curS=0,curW=0,ws=null,reconnectTimer=null;
 let curLang='en',lastPayload=null,lastBLE={state:'disconnected',address:null};
 const I18N={
-  en:{usage:'Usage',anim:'Claude',cycle:'Cycle',refresh:'↻ Refresh',wpre:'W',
-      nextview:'Next view',nextanim:'Next anim',boot1:'BOOT',boot2:'BOOT ×2',reboot:'Reboot',reboot_confirm:'Reboot the device now? The BLE link will drop and reconnect.',diagnose:'Diagnose',
+  en:{usage:'Usage',anim:'Claude',cycle:'Cycle',refresh:'↻ Refresh data',wpre:'W',
+      nextview:'Next view',nextanim:'Next anim',boot1:'Cycle view',boot2:'Random emotion',debug_off:'🐞 Debug',debug_on:'🐞 Debug ON',reboot:'Reboot',reboot_confirm:'Reboot the device now? The BLE link will drop and reconnect.',diagnose:'Diagnose',
       status_group_title:'Per-status visuals',status_group_hint:'Pick a status — set its form, motion, colour.',
       layout_apply:'Make active',layout_close:'Close',
       manual_hint:'Auto-rotation off · motion tap = cycle',
@@ -747,7 +1460,7 @@ const I18N={
       text_src_off:'Off',text_src_session:'Session',text_src_weekly:'Weekly',text_src_both:'Both',
       text_fmt_pct:'%',text_fmt_pct_reset:'% + reset time',text_fmt_reset:'reset time',
       text_placement_top:'Top',text_placement_middle:'Middle',text_placement_bottom:'Bottom',
-      forms_label:'Forms',motions_label:'Motions',halo_color_label:'Halo colour',
+      forms_label:'Forms',motions_label:'Motions',forms_hint:'▢ multi · rotates ~20s',motions_hint:'↻ multi · fires ~8s',canim_hint:'✦ multi',character_label:'Character',orient_label:'Orientation',halo_color_label:'Halo colour',
       clock_title:'Clock',clock_hint:'Pick a clock style for the top of the ClauLi screen.',
       clock_style_off:'Off',
       clock_style_mono:'Mono',clock_style_major_mono:'Major Mono',clock_style_orbitron:'Orbitron',
@@ -771,9 +1484,46 @@ const I18N={
       auth_step3:'',
       auth_token_saved:'✓ Saved — applying on next poll (≤5s)',
       auth_token_error:'✕ ',
-      auth_alt:''},
-  ru:{usage:'Использование',anim:'Claude',cycle:'Цикл',refresh:'↻ Обновить',wpre:'Н',
-      nextview:'Сменить вид',nextanim:'Сменить анимацию',boot1:'BOOT',boot2:'BOOT ×2',reboot:'Перезагрузка',reboot_confirm:'Перезагрузить устройство? BLE-связь разорвётся и переподключится.',diagnose:'Диагностика',
+      auth_alt:'',
+      // Item 4 — mockup card
+      mockup_title:'Device preview',
+      mockup_previewing:'Previewing:',
+      // Item 3 — canim picker
+      canim_label:'Complex anims',
+      canim_separator_label:'Complex anims',
+      // Item 3 — canim on/off hint in status group
+      canim_hint:'✦ multi',
+      // Item 1 — status group hint update
+      status_group_hint_full:'Pick a status — set its form, motion, colour.',
+      // Forms/Motions section hints (for completeness, mirror EN)
+      forms_hint:'▢ multi · rotates ~20s',
+      motions_hint:'↻ multi · fires ~8s',
+      // OTA hardcoded strings
+      ota_confirm_prefix:'Flash ',
+      ota_confirm_suffix:'? The device will reboot into the new firmware.',
+      ota_pick_file:'Pick a .bin file first',
+      ota_too_small:'File too small',
+      ota_streaming:'Streaming over BLE…',
+      ota_flashed:'flashed — ESP will reboot in ~1.5s',
+      manual_preview_gate:'Enable Manual control to pick preview',
+      // Staged-editing UX (req #8 i18n)
+      apply_all:'APPLY ALL',
+      reset_settings:'REVERT',
+      reset_to_default:'DEFAULTS',
+      revert:'REVERT',
+      blocks_unsaved:'{n} unsaved',
+      anim_mode_rotation:'Rotation',
+      anim_mode_canim:'Canim',
+      anim_mode_help:'Canim mode: only complex animations run.',
+      bulk_all:'ALL',
+      bulk_none:'NONE',
+      unsaved_title:'Unsaved changes',
+      unsaved_apply:'Apply',
+      unsaved_discard:'Discard',
+      unsaved_cancel:'Cancel',
+      },
+  ru:{usage:'Использование',anim:'Claude',cycle:'Цикл',refresh:'↻ Обновить данные',wpre:'Н',
+      nextview:'Сменить вид',nextanim:'Сменить анимацию',boot1:'Сменить вид',boot2:'Случайная эмоция',debug_off:'🐞 Отладка',debug_on:'🐞 Отладка ВКЛ',reboot:'Перезагрузка',reboot_confirm:'Перезагрузить устройство? BLE-связь разорвётся и переподключится.',diagnose:'Диагностика',
       status_group_title:'Визуалы по статусам',status_group_hint:'Выберите статус — задайте форму, мотион, цвет.',
       layout_apply:'Сделать активным',layout_close:'Закрыть',
       manual_hint:'Авто-ротация выкл · тап мотиона = цикл',
@@ -781,7 +1531,7 @@ const I18N={
       settings:'Настройки',manual_mode:'Ручное управление',preview:'Предпросмотр',preview_hint:'Тап — мгновенный CTRL',
       manual_confirm_msg:'Включён ручной режим — отключить его, чтобы менять авто-настройки?',manual_confirm_yes:'Отключить',manual_confirm_no:'Отмена',
       stats_title:'% Layout',stats_hint:'Как % сессии и недели рисуются на экране ESP. Тап — переключить.',stats_edit:'Изменить выбор в галерее',stats_pending:'Применится когда firmware получит поддержку этих % layouts.',stats_text_label:'ТЕКСТ',
-      layout_title:'Layout',layout_hint:'Выберите раскладку статистики на экране — применяется ко всем статусам. ПКМ по плитке делает её раскладкой по умолчанию (★).',
+      layout_title:'Раскладка',layout_hint:'Выберите раскладку статистики на экране — применяется ко всем статусам. ПКМ по плитке делает её раскладкой по умолчанию (★).',
       layout_bezel_orbit:'Рамка',layout_twin_columns:'Колонки',layout_hud_ribbon:'Лента',
       layout_brows:'Брови',layout_tear_pearls:'Слёзы',layout_corner_chip:'Чип',layout_ecg_monitor:'ЭКГ',
       layout_classic:'Классика',layout_none:'Выкл',
@@ -793,14 +1543,14 @@ const I18N={
       gradient_mode_label:'Интерполяция',gradient_mode_step:'ШАГ',gradient_mode_smooth:'ПЛАВНО',
       gradient_saved:'СОХР',gradient_unsaved:'НЕ СОХР',gradient_preset_name_prompt:'Название (макс 8 симв):',
       cp_cancel:'ОТМЕНА',cp_apply:'ПРИМЕНИТЬ',
-      layout_color_label:'ЦВЕТ LAYOUT',color_settings:'Цвет',
+      layout_color_label:'ЦВЕТ РАСКЛАДКИ',color_settings:'Цвет',
       layout_color_cyan:'Cyan',layout_color_amber:'Amber',layout_color_red:'Red',layout_color_auto:'Авто',layout_color_custom:'Свой',
       clock_color_default:'Стиль',clock_color_auto:'Авто',clock_color_custom:'Свой',
       text_source_label:'ИСТОЧНИК ТЕКСТА',text_format_label:'ФОРМАТ ТЕКСТА',text_placement_label:'РАЗМЕЩЕНИЕ ТЕКСТА',
       text_src_off:'Выкл',text_src_session:'Сессия',text_src_weekly:'Неделя',text_src_both:'Обе',
       text_fmt_pct:'%',text_fmt_pct_reset:'% + время сброса',text_fmt_reset:'время сброса',
       text_placement_top:'Сверху',text_placement_middle:'Посередине',text_placement_bottom:'Снизу',
-      forms_label:'Формы',motions_label:'Motions',halo_color_label:'Цвет halo',
+      forms_label:'Формы',motions_label:'Движения',forms_hint:'▢ неск. · ротация ~20с',motions_hint:'↻ неск. · каждые ~8с',canim_hint:'✦ неск.',character_label:'Герой',orient_label:'Ориентация',halo_color_label:'Цвет halo',
       clock_title:'Часы',clock_hint:'Стиль часов в верхней зоне экрана ClauLi.',
       clock_style_off:'Выкл',
       clock_style_mono:'Mono',clock_style_major_mono:'Major Mono',clock_style_orbitron:'Orbitron',
@@ -824,9 +1574,44 @@ const I18N={
       auth_step3:'',
       auth_token_saved:'✓ Сохранено — применяется в течение 5 с',
       auth_token_error:'✕ ',
-      auth_alt:''}};
+      auth_alt:'',
+      // Item 4 — mockup card
+      mockup_title:'Предпросмотр устройства',
+      mockup_previewing:'Просмотр:',
+      // Item 3 — canim picker
+      canim_label:'Сложные анимации',
+      canim_separator_label:'Сложные анимации',
+      canim_hint:'✦ мульти',
+      // Item 1 — status group
+      status_group_hint_full:'Выберите статус — задайте форму, мотион, цвет.',
+      forms_hint:'▢ мульти · смена ~20с',
+      motions_hint:'↻ мульти · срабатывает ~8с',
+      // OTA strings
+      ota_confirm_prefix:'Прошить ',
+      ota_confirm_suffix:'? Устройство перезагрузится в новую прошивку.',
+      ota_pick_file:'Выберите .bin файл',
+      ota_too_small:'Файл слишком мал',
+      ota_streaming:'Передача по BLE…',
+      ota_flashed:'прошито — ESP перезагрузится через ~1.5 с',
+      manual_preview_gate:'Включите ручной режим, чтобы выбирать превью',
+      // Staged-editing UX (req #8 i18n)
+      apply_all:'ПРИМЕНИТЬ ВСЁ',
+      reset_settings:'СБРОСИТЬ',
+      reset_to_default:'ПО УМОЛЧАНИЮ',
+      revert:'ОТМЕНИТЬ',
+      blocks_unsaved:'{n} не сохр.',
+      anim_mode_rotation:'Формы+Motions',
+      anim_mode_canim:'Сложные аним.',
+      anim_mode_help:'Режим Canim: работают только сложные анимации.',
+      bulk_all:'ВСЕ',
+      bulk_none:'НЕТ',
+      unsaved_title:'Есть несохранённые изменения',
+      unsaved_apply:'Применить',
+      unsaved_discard:'Отменить',
+      unsaved_cancel:'Отмена',
+      }};
 function t(k){return (I18N[curLang]||I18N.en)[k]}
-function applyI18n(){document.querySelectorAll('[data-i18n]').forEach(el=>{el.textContent=t(el.dataset.i18n)});document.getElementById('w-pre').textContent=t('wpre');updateBLE(lastBLE.state,lastBLE.address);if(lastPayload)updateData(lastPayload)}
+function applyI18n(){document.querySelectorAll('[data-i18n]').forEach(el=>{el.textContent=t(el.dataset.i18n)});const _wp=document.getElementById('w-pre');if(_wp)_wp.textContent=t('wpre');updateBLE(lastBLE.state,lastBLE.address);if(lastPayload)updateData(lastPayload)}
 function pctColor(p){return p>=80?'var(--red)':p>=50?'var(--amber)':'var(--green)'}
 function pctColorRaw(p){return p>=80?'#c4503a':p>=50?'#d97757':'#8fa66e'}
 function fmtReset(m){if(m<0)return t('none');if(m<60)return`${t('resetIn')} ${m}${t('um')}`;if(m<1440)return`${t('resetIn')} ${Math.floor(m/60)}${t('uh')} ${m%60}${t('um')}`;return`${t('resetIn')} ${Math.floor(m/1440)}${t('ud')} ${Math.floor((m%1440)/60)}${t('uh')}`}
@@ -1476,6 +2261,8 @@ function refreshGradApplyState(){
                        + ' · ' + gradMode.toUpperCase();
     stat.classList.toggle('dirty', dirty);
   }
+  // Keep global apply bar in sync whenever the gradient dirty state changes.
+  if (typeof refreshGlobalApplyBar === 'function') refreshGlobalApplyBar();
 }
 async function applyGradStops(){
   if (!_isGradDirty()) return;
@@ -1491,32 +2278,49 @@ async function applyGradStops(){
     });
     const j = await r.json().catch(()=>({}));
     if (r.ok && j.config) {
-      emo2StatsCfg = j.config;
+      // Adopt ONLY the gradient's own keys into staged — replacing the whole
+      // emo2StatsCfg (the old behaviour) wiped sibling staged edits (e.g. an
+      // unsaved clock/layout change) when applyAll() runs the gradient BEFORE
+      // those blocks, so they'd silently revert.
+      if (emo2StatsCfg){
+        if (j.config.color_stops)   emo2StatsCfg.color_stops   = _cloneCfg(j.config.color_stops);
+        if (j.config.gradient_mode) emo2StatsCfg.gradient_mode = j.config.gradient_mode;
+      }
       // Snapshot server-confirmed state so dirty flag clears.
       gradStopsServer = payload.map(s => ({pct:s.pct, color:s.color}));
       gradModeServer  = gradMode;
+      // Also update the stats server snapshot for these keys.
+      if (!emo2StatsCfgServer) emo2StatsCfgServer = {};
+      emo2StatsCfgServer.color_stops   = gradStopsServer.map(s => ({...s}));
+      emo2StatsCfgServer.gradient_mode = gradMode;
       // Gradient changed → invalidate form-tile cache so auto-coloured
       // tiles repaint with the new threshold colours on next RAF.
       _lastFormColorKey = null;
-      _lastFormDraw = new WeakMap();
+      _lastFormDraw = new WeakMap(); _lastOpDraw = new WeakMap();
     }
   } catch(e){ /* offline — keep dirty so user can retry */ }
   if (btn) btn.textContent = origLabel || (t('gradient_apply') || 'APPLY');
   refreshGradApplyState();
+  refreshGlobalApplyBar();
 }
-function syncGradStopsFromCfg(cfg){
+// fromServer=true: a genuine server load — update gradStopsServer snapshot.
+// fromServer=false (default): a staged re-render (e.g. resetAllToDefault) —
+// only update the staged gradStops but do NOT touch gradStopsServer.
+function syncGradStopsFromCfg(cfg, fromServer){
+  if (fromServer === undefined) fromServer = true;
   const stored = cfg && cfg.color_stops;
   const validStops = Array.isArray(stored) && stored.length >= 2 && stored.length <= 4;
   // Also pick up the server's interpolation mode if present (default to
   // 'step' so old daemons that don't ship the field stay back-compat).
   if (cfg && (cfg.gradient_mode === 'step' || cfg.gradient_mode === 'smooth')) {
-    gradModeServer = cfg.gradient_mode;
+    if (fromServer) gradModeServer = cfg.gradient_mode;
     // Adopt server mode locally too, but only if user isn't mid-edit.
     if (!_isGradDirty()) gradMode = cfg.gradient_mode;
   }
   if (validStops) {
     const normalized = stored.map(s => ({pct:s.pct, color:s.color}));
-    gradStopsServer = normalized.map(s => ({...s}));
+    // Only update server snapshot on genuine server loads.
+    if (fromServer) gradStopsServer = normalized.map(s => ({...s}));
     if (!_isGradDirty() ||
         JSON.stringify(_sortStops(gradStops)) ===
           JSON.stringify(_sortStops(normalized))) {
@@ -1550,7 +2354,7 @@ function refreshTestCursor(){
     const k = colorAtPct(gradStops, v);
     if (k !== _lastFormColorKey) {
       _lastFormColorKey = k;
-      _lastFormDraw = new WeakMap();
+      _lastFormDraw = new WeakMap(); _lastOpDraw = new WeakMap();
     }
   }
   // Push the test pct to the ESP so the user can SEE every threshold
@@ -1668,11 +2472,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const vF = document.getElementById('paceFormVal');
   if (sA && vA) {
     sA.oninput = () => { _paceDragging = true; vA.textContent = _paceFormat(parseInt(sA.value, 10)); };
-    sA.onchange = () => { _paceDragging = false; _postPace('anim_pace_x10', parseInt(sA.value, 10)); };
+    sA.onchange = () => { _paceDragging = false; _stageEmo2Stats({ anim_pace_x10: parseInt(sA.value, 10) }); };
   }
   if (sF && vF) {
     sF.oninput = () => { _paceDragging = true; vF.textContent = _paceFormat(parseInt(sF.value, 10)); };
-    sF.onchange = () => { _paceDragging = false; _postPace('form_pace_x10', parseInt(sF.value, 10)); };
+    sF.onchange = () => { _paceDragging = false; _stageEmo2Stats({ form_pace_x10: parseInt(sF.value, 10) }); };
   }
 });
 
@@ -1704,9 +2508,14 @@ function updateData(payload){
   const newColor = colorAtPct(gradStops, payload.s || 0);
   if (newColor !== _lastFormColorKey) {
     _lastFormColorKey = newColor;
-    _lastFormDraw = new WeakMap();
+    _lastFormDraw = new WeakMap(); _lastOpDraw = new WeakMap();
   }
-  lastPayload=payload;const s=payload.s||0,w=payload.w||0;const sc=pctColorRaw(s),wc=pctColorRaw(w);updateGradientCursor(s);setArc('ind-s',CIRC_S,ARC_S,s);setArc('ind-w',CIRC_W,ARC_W,w);setGlow('glow-s',CIRC_S,ARC_S,s,sc);setGlow('glow-w',CIRC_W,ARC_W,w,wc);animateNum(document.getElementById('s-num'),curS,s,800);animateNum(document.getElementById('w-num'),curW,w,800);document.getElementById('s-num').style.color=pctColor(s);document.getElementById('w-num').style.color=pctColor(w);document.getElementById('dot-s').style.background=pctColorRaw(s);document.getElementById('dot-w').style.background=pctColorRaw(w);document.getElementById('s-reset').textContent=t('sess')+' · '+fmtReset(payload.sr);document.getElementById('w-reset').textContent=t('week')+' · '+fmtReset(payload.wr);const s1=document.querySelector('#gs stop:first-child'),s2=document.querySelector('#gs stop:last-child');if(s>=80){s1.setAttribute('stop-color','#c4503a');s2.setAttribute('stop-color','#e85535')}else if(s>=50){s1.setAttribute('stop-color','#d97757');s2.setAttribute('stop-color','#e8956a')}else{s1.setAttribute('stop-color','#8fa66e');s2.setAttribute('stop-color','#c4a462')}curS=s;curW=w;const g=document.getElementById('gauge');g.classList.remove('pulse');void g.offsetWidth;g.classList.add('pulse')
+  // Gauge + reset readouts were removed from the dashboard. Keep only the
+  // bookkeeping the rest of the UI still needs: lastPayload (re-render on lang
+  // switch), the gradient test cursor, and curS/curW.
+  lastPayload=payload;const s=payload.s||0,w=payload.w||0;
+  if(typeof updateGradientCursor==='function')updateGradientCursor(s);
+  curS=s;curW=w;
 }
 // Tracks the last resolved auto-colour so the cache only flushes when the
 // pct actually crosses a threshold (otherwise we'd repaint every minute).
@@ -1716,11 +2525,6 @@ function updateBLE(state,address){
   const dot=document.getElementById('ble-dot'),txt=document.getElementById('ble-status');
   if(state==='connected'){dot.className='status-dot on';txt.textContent=address?t('connected')+' · '+address:t('connected')}
   else{dot.className='status-dot';txt.textContent=t('disconnected')}
-  // Also refresh Bluetooth settings pane (if it's open).
-  const s = document.getElementById('bt-status-text');
-  const a = document.getElementById('bt-address-text');
-  if (s) s.textContent = state === 'connected' ? t('connected') : t('disconnected');
-  if (a) a.textContent = address || '—';
   // Phase L7 polish — light up the device mockup's outer ring when the
   // physical device is actually attached.
   const mock = document.getElementById('deviceMockup');
@@ -1742,54 +2546,31 @@ function updateAuth(ok){
     if (st) st.textContent = '';
   }
 }
-function setLangUI(l){
+function _applyLangUI(l){
   if(l!=='en'&&l!=='ru')l='en';
   curLang=l;
   const en=document.getElementById('lang-en'),ru=document.getElementById('lang-ru');
   en.classList.toggle('accent',l==='en');ru.classList.toggle('accent',l==='ru');
-  // Item 2: language must apply to EVERYTHING instantly. applyI18n() only
-  // walks [data-i18n]; JS-built controls (status tabs, pills, colour-picker
-  // labels) bake t()/curLang at build time and otherwise refresh only when
-  // their block is rebuilt on interaction. Re-invoke the dynamic renderers so
-  // the new language propagates now. Order matters: buildStatusGroup() resets
-  // the shared `tiles` array, so buildPreviewTiles() must run after it to
-  // re-register the preview tiles. renderEmo2Stats() re-mounts the clock /
-  // layout / colour pickers. applyI18n() runs LAST so freshly-created
-  // [data-i18n] nodes get translated.
+  // Item 2: language must apply to EVERYTHING instantly. buildStatusGroup()
+  // rebuilds panes — re-wire per-tab apply/mode/bulk handlers in the rebuild.
   if(typeof buildStatusGroup==='function')buildStatusGroup();
   if(typeof buildPreviewTiles==='function')buildPreviewTiles();
   if(typeof renderEmo2Stats==='function'&&typeof emo2StatsCfg!=='undefined'&&emo2StatsCfg)renderEmo2Stats(emo2StatsCfg);
+  if(typeof _updateStatusInactiveNotes==='function')_updateStatusInactiveNotes();
+  // Re-wire apply states after rebuild.
+  refreshAllStatusApplyStates();
+  refreshStatsBlockApplyStates();
   applyI18n();
 }
-function connectWS(){const proto=location.protocol==='https:'?'wss:':'ws:';ws=new WebSocket(`${proto}//${location.host}/api/ws`);ws.onopen=()=>{clearTimeout(reconnectTimer)};ws.onmessage=e=>{try{const msg=JSON.parse(e.data);if(msg.type==='data')updateData(msg.payload);else if(msg.type==='ble'){updateBLE(msg.state,msg.address);if(msg.state==='connected')loadEmo2Stats();}else if(msg.type==='lang')setLangUI(msg.lang);else if(msg.type==='orient')applyOrientFromDaemon(msg.value);else if(msg.type==='auth')updateAuth(msg.ok);else if(msg.type==='ota')updateOTA(msg);else if(msg.type==='emo2_state')updateEmo2State(msg.state)}catch{}};ws.onclose=()=>{reconnectTimer=setTimeout(connectWS,3000)};ws.onerror=()=>{ws.close()}}
-async function sendScreen(name){
-  // Tab UI synced with the actual screen on ESP. Click on the top-row
-  // button OR the tab — both call this; tab UI flips here.
-  setSettingsTab(name);
-  try{await fetch('/api/screen',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({screen:name})})}catch{}
+function setLangUI(l){
+  guardUnsaved(() => _applyLangUI(l));
 }
-function setSettingsTab(screen){
-  // Map alternate names: "bt" → "bluetooth"; everything else passes through.
-  if (screen === 'bt') screen = 'bluetooth';
-  document.querySelectorAll('#screenTabs .screen-tab').forEach(t => {
-    t.classList.toggle('active', t.dataset.screen === screen);
-  });
-  document.querySelectorAll('.screen-pane').forEach(p => {
-    p.style.display = (p.dataset.screen === screen) ? '' : 'none';
-  });
-  // Update BT pane data when switching to it.
-  if (screen === 'bluetooth') {
-    const s = document.getElementById('bt-status-text');
-    const a = document.getElementById('bt-address-text');
-    if (s) s.textContent = lastBLE.state === 'connected' ? t('connected') : t('disconnected');
-    if (a) a.textContent = lastBLE.address || '—';
-  }
-}
-
-// Wire click handlers + initial state once DOM is ready (script runs at body end).
-document.querySelectorAll('#screenTabs .screen-tab').forEach(tab => {
-  tab.onclick = () => sendScreen(tab.dataset.screen);
-});
+function connectWS(){const proto=location.protocol==='https:'?'wss:':'ws:';ws=new WebSocket(`${proto}//${location.host}/api/ws`);ws.onopen=()=>{clearTimeout(reconnectTimer)};ws.onmessage=e=>{try{const msg=JSON.parse(e.data);if(msg.type==='data')updateData(msg.payload);else if(msg.type==='ble'){updateBLE(msg.state,msg.address);if(msg.state==='connected'){
+  // WS reconnect: refresh server snapshots only; don't clobber staged edits.
+  loadEmo2Config(); loadEmo2Stats();
+}}else if(msg.type==='lang')_applyLangUI(msg.lang);else if(msg.type==='orient')applyOrientFromDaemon(msg.value);else if(msg.type==='character')applyCharFromDaemon(msg.value);else if(msg.type==='auth')updateAuth(msg.ok);else if(msg.type==='ota')updateOTA(msg);else if(msg.type==='emo2_state')updateEmo2State(msg.state)}catch{}};ws.onclose=()=>{reconnectTimer=setTimeout(connectWS,3000)};ws.onerror=()=>{ws.close()}}
+// screenTabs + sendScreen/setSettingsTab removed — the ClauLi configurator is
+// the only settings screen now, so there's no tab to switch or screen to push.
 
 // ─── Orientation toggle (ClauLi pane) ────────────────────────────────────
 // 2 pills (Vertical / Horizontal). Click sends CTRL via /api/orientation;
@@ -1889,11 +2670,19 @@ function applyTileOrient(){
     if (o.canvas.height !== td.h) o.canvas.height = td.h;
     if (o.el) o.el.style.aspectRatio = td.w + ' / ' + td.h;
   }
-  _lastFormDraw = new WeakMap();
+  _lastFormDraw = new WeakMap(); _lastOpDraw = new WeakMap();
 }
 renderOrientPills();
 async function sendRefresh(){try{await fetch('/api/refresh',{method:'POST'})}catch{}}
 async function sendAction(a){try{await fetch('/api/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:a})})}catch{}}
+// Debug overlay toggle — shows live state/mode/animation name on the device.
+let _dbgOn = false;
+function toggleDebugOverlay(){
+  _dbgOn = !_dbgOn;
+  sendAction(_dbgOn ? 'debug_on' : 'debug_off');
+  const b = document.getElementById('dbgBtn');
+  if (b){ b.dataset.i18n = _dbgOn ? 'debug_on' : 'debug_off'; b.textContent = t(b.dataset.i18n); b.classList.toggle('accent', _dbgOn); }
+}
 async function saveOAuthToken(){
   const inp = document.getElementById('auth-token-input');
   const st  = document.getElementById('auth-token-status');
@@ -1980,6 +2769,389 @@ const COLOR_LIST = ['auto','custom'];
 let emo2Config = null;
 let emo2CurrentState = null;
 let saveTimer = null;
+
+// ═══════════════════════════════════════════════════════════════
+//  STAGED-EDITING LAYER  (req #1)
+// ═══════════════════════════════════════════════════════════════
+// JS mirrors of daemon DEFAULT_EMO2_CONFIG / DEFAULT_EMO2_STATS (req #6).
+// Values copied verbatim from daemon/claude_usage_daemon.py lines 478-505 / 362-413.
+const DEFAULT_EMO2_CONFIG = {
+  connected:     {forms:['neutral','circle','happy'],   ops:['blink','wave'],       color:'auto',   text_source:'both',   text_format:'reset',     text_placement:'middle', layout_color:'auto'},
+  connecting:    {forms:['circle'],                     ops:['pulse_alt'],           color:'cyan',   text_source:'off',    text_format:'pct',       text_placement:'middle', layout_color:'auto'},
+  ble_off:       {forms:['cross','upset'],              ops:['shake'],               color:'red',    text_source:'off',    text_format:'pct',       text_placement:'middle', layout_color:'amber'},
+  token_expired: {forms:['cross','angry'],              ops:['warning'],             color:'red',    text_source:'off',    text_format:'pct',       text_placement:'middle', layout_color:'red'},
+};
+const DEFAULT_EMO2_STATS = {
+  default:'bezel_orbit',
+  extras:['twin_columns','hud_ribbon','corner_chip','ecg_monitor','tear_pearls'],
+  active:'bezel_orbit',
+  layout_color:'auto',
+  clock_style:'off',
+  clock_color:'default',
+  anim_pace_x10:20,
+  form_pace_x10:20,
+  color_stops:[
+    {pct:0,  color:'#00E5E5'},
+    {pct:20, color:'#00FF66'},
+    {pct:50, color:'#FFD200'},
+    {pct:80, color:'#FF1818'},
+  ],
+  gradient_mode:'step',
+  _stops_v:2,
+  layouts:{
+    bezel_orbit: {text_source:'both',  text_format:'pct_reset', text_placement:'middle'},
+    twin_columns:{text_source:'both',  text_format:'pct',       text_placement:'middle'},
+    hud_ribbon:  {text_source:'off',   text_format:'pct',       text_placement:'middle'},
+    corner_chip: {text_source:'both',  text_format:'pct',       text_placement:'middle'},
+    ecg_monitor: {text_source:'off',   text_format:'pct',       text_placement:'bottom'},
+    tear_pearls: {text_source:'both',  text_format:'pct_reset', text_placement:'middle'},
+    classic:     {text_source:'both',  text_format:'pct_reset', text_placement:'middle'},
+    none:        {text_source:'off',   text_format:'pct',       text_placement:'middle'},
+  },
+};
+
+// Deep-clone helper.
+function _cloneCfg(o){ return o ? JSON.parse(JSON.stringify(o)) : o; }
+
+// Server-confirmed snapshots — Apply buttons compare staged globals against these.
+let emo2ConfigServer  = null;
+let emo2StatsCfgServer = null;
+
+// Per-status dirty check.
+function _isStatusDirty(sid){
+  if (!emo2Config || !emo2ConfigServer) return false;
+  return JSON.stringify(emo2Config[sid] || {}) !== JSON.stringify(emo2ConfigServer[sid] || {});
+}
+// Stats block dirty check (compare a list of top-level keys, plus optional 'layouts').
+function _isStatsBlockDirty(keys){
+  if (!emo2StatsCfg || !emo2StatsCfgServer) return false;
+  for (const k of keys){
+    if (k === 'layouts'){
+      if (JSON.stringify(emo2StatsCfg.layouts || {}) !== JSON.stringify(emo2StatsCfgServer.layouts || {})) return true;
+    } else {
+      if (JSON.stringify(emo2StatsCfg[k]) !== JSON.stringify(emo2StatsCfgServer[k])) return true;
+    }
+  }
+  return false;
+}
+// Any dirty → global apply bar lights up.
+function isAnyDirty(){
+  if (!emo2Config || !emo2ConfigServer || !emo2StatsCfg || !emo2StatsCfgServer) return false;
+  for (const [sid] of STATES){ if (_isStatusDirty(sid)) return true; }
+  if (_isGradDirty()) return true;
+  if (_isStatsBlockDirty(['default','extras','active','layout_color','layouts'])) return true;
+  if (_isStatsBlockDirty(['clock_style','clock_color'])) return true;
+  if (_isStatsBlockDirty(['anim_pace_x10','form_pace_x10'])) return true;
+  return false;
+}
+
+// Stage a stats patch (req #2 — replaces direct _postEmo2Stats calls from setters).
+function _stageEmo2Stats(patch){
+  if (!emo2StatsCfg) return;
+  // Handle nested `layouts` merge.
+  if (patch.layouts){
+    emo2StatsCfg.layouts = Object.assign({}, emo2StatsCfg.layouts || {}, patch.layouts);
+    const rest = Object.assign({}, patch);
+    delete rest.layouts;
+    Object.assign(emo2StatsCfg, rest);
+  } else {
+    Object.assign(emo2StatsCfg, patch);
+  }
+  renderEmo2Stats(emo2StatsCfg);
+  refreshStatsBlockApplyStates();
+  refreshGlobalApplyBar();
+}
+
+// ── Per-block Apply/Refresh helpers ──────────────────────────────────────────
+// Stats block IDs for the Apply rows (layout / clock / timing).
+// Each entry: {blockId, applyFn, keys, applyBtnId, statusId}
+const _STATS_APPLY_BLOCKS = [
+  {blockId:'layoutBlock',  applyBtnId:'layoutApplyBtn',  statusId:'layoutApplyStatus',  keys:['default','extras','active','layout_color','layouts']},
+  {blockId:'clockBlock',   applyBtnId:'clockApplyBtn',   statusId:'clockApplyStatus',   keys:['clock_style','clock_color']},
+  {blockId:'timingBlock',  applyBtnId:'timingApplyBtn',  statusId:'timingApplyStatus',  keys:['anim_pace_x10','form_pace_x10']},
+];
+
+function _refreshBlockApplyRow(cfg){
+  const {applyBtnId, statusId, keys} = cfg;
+  const btn  = document.getElementById(applyBtnId);
+  const stat = document.getElementById(statusId);
+  if (!btn) return;
+  const dirty = _isStatsBlockDirty(keys);
+  btn.disabled = !dirty;
+  if (stat){
+    stat.textContent = dirty ? (t('gradient_unsaved') || 'UNSAVED') : (t('gradient_saved') || 'SAVED');
+    stat.classList.toggle('dirty', dirty);
+  }
+}
+function refreshStatsBlockApplyStates(){
+  _STATS_APPLY_BLOCKS.forEach(cfg => _refreshBlockApplyRow(cfg));
+  refreshGlobalApplyBar();
+}
+function refreshStatusApplyState(sid){
+  const btn  = document.getElementById('statusApplyBtn_' + sid);
+  const stat = document.getElementById('statusApplyStatus_' + sid);
+  if (!btn) return;
+  const dirty = _isStatusDirty(sid);
+  btn.disabled = !dirty;
+  if (stat){
+    stat.textContent = dirty ? (t('gradient_unsaved') || 'UNSAVED') : (t('gradient_saved') || 'SAVED');
+    stat.classList.toggle('dirty', dirty);
+  }
+  refreshGlobalApplyBar();
+}
+function refreshAllStatusApplyStates(){
+  for (const [sid] of STATES) refreshStatusApplyState(sid);
+}
+function refreshGlobalApplyBar(){
+  const bar    = document.getElementById('globalApplyBar');
+  const btn    = document.getElementById('gabApply');
+  const count  = document.getElementById('gabCount');
+  if (!bar) return;
+  const dirty = isAnyDirty();
+  if (btn) btn.disabled = !dirty;
+  if (count){
+    if (!dirty){ count.textContent = ''; count.classList.remove('dirty'); }
+    else {
+      // Count dirty blocks.
+      let n = 0;
+      for (const [sid] of STATES){ if (_isStatusDirty(sid)) n++; }
+      if (_isGradDirty()) n++;
+      _STATS_APPLY_BLOCKS.forEach(c => { if (_isStatsBlockDirty(c.keys)) n++; });
+      const tmpl = t('blocks_unsaved') || '{n} unsaved';
+      count.textContent = tmpl.replace('{n}', n);
+      count.classList.add('dirty');
+    }
+  }
+  updateMockupSummary();
+}
+
+// Applied/changed settings list under the device preview. Reflects the STAGED
+// config (what the preview shows); dirty rows are flagged so the user sees the
+// pending changes vs what's on the device.
+function updateMockupSummary(){
+  const box = document.getElementById('mockupSummary');
+  if (!box) return;
+  if (typeof emo2Config === 'undefined' || !emo2Config){ box.innerHTML = ''; return; }
+  const ru  = (curLang === 'ru');
+  const sid = (window.activeStatusTab || (typeof emo2CurrentState !== 'undefined' ? emo2CurrentState : null) || 'connected');
+  const sc  = emo2Config[sid] || {};
+  const stx = (typeof emo2StatsCfg !== 'undefined' && emo2StatsCfg) ? emo2StatsCfg : {};
+  const st  = (STATES || []).find(s => s[0] === sid);
+  const stLbl = st ? (ru ? st[2] : st[1]) : sid;
+  const colName = (c) => { if (!c || c === 'auto') return ru ? 'авто' : 'auto'; if (c === 'cyan') return ru ? 'бирюзовый' : 'cyan'; if (c === 'amber') return ru ? 'янтарный' : 'amber'; if (c === 'red') return ru ? 'красный' : 'red'; return c; };
+  const canimLbl = (id) => { const e = (typeof CANIM_LIST !== 'undefined' ? CANIM_LIST : []).find(c => c.id === id); return e ? (ru ? e.ru : (e.en || e.id)) : id; };
+  const join = (a) => { if (!a || !a.length) return '—'; const N = 8;
+    return a.length > N ? a.slice(0, N).join(', ') + ` …+${a.length - N}` : a.join(', '); };
+  const isCanim = (sc.mode === 'canim');
+  const lay  = (stx.layouts || {})[stx.active] || {};
+  const tsrc = lay.text_source || stx.text_source, tfmt = lay.text_format || stx.text_format, tpl = lay.text_placement || stx.text_placement;
+  const charName = ((typeof CHAR_DEFS !== 'undefined' ? CHAR_DEFS : []).find(c => c.id === currentChar) || {}).name || currentChar;
+  const sdirty = (typeof _isStatusDirty === 'function') && _isStatusDirty(sid);
+  const D = (keys) => (typeof _isStatsBlockDirty === 'function') && _isStatsBlockDirty(keys);
+  const rows = [
+    [ru ? 'Герой' : 'Character', charName, false],
+    [ru ? 'Раскладка' : 'Layout', stx.active || stx.default || '—', D(['active', 'default'])],
+    [ru ? 'Превью статуса' : 'Status (preview)', stLbl, false],
+    [ru ? 'Режим' : 'Mode', isCanim ? (ru ? 'сложная анимация' : 'complex anim') : (ru ? 'ротация форм' : 'form rotation'), sdirty],
+    isCanim
+      ? [ru ? 'Анимации' : 'Anims', join((sc.canims || []).map(canimLbl)), sdirty]
+      : [ru ? 'Формы' : 'Forms', join(sc.forms), sdirty],
+    [ru ? 'Движения' : 'Motions', join(sc.ops), sdirty],
+    [ru ? 'Цвет глаз' : 'Eye color', colName(sc.color), sdirty],
+    [ru ? 'Цвет раскладки' : 'Layout color', colName(stx.layout_color), D(['layout_color'])],
+    [ru ? 'Часы' : 'Clock', (stx.clock_style || 'off'), D(['clock_style', 'clock_color'])],
+    [ru ? 'Текст' : 'Text', [tsrc, tfmt, tpl].filter(Boolean).join(' · ') || '—', false],
+    [ru ? 'Темп' : 'Pace', `${ru ? 'аним' : 'anim'} ${((stx.anim_pace_x10 || 20) / 10).toFixed(1)}× · ${ru ? 'форма' : 'form'} ${((stx.form_pace_x10 || 20) / 10).toFixed(1)}×`, D(['anim_pace_x10', 'form_pace_x10'])],
+  ];
+  const anyDirty = (typeof isAnyDirty === 'function') && isAnyDirty();
+  const esc = (s) => ('' + s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  box.innerHTML =
+    `<div class="ms-head">${ru ? 'Настройки превью' : 'Preview settings'}${anyDirty ? `<span class="ms-badge">${ru ? 'не сохранено' : 'unsaved'}</span>` : ''}</div>` +
+    rows.map(([k, v, d]) => `<div class="ms-row${d ? ' ms-dirty' : ''}"><span class="ms-k">${esc(k)}</span><span class="ms-v" title="${esc(v)}">${esc(v)}</span></div>`).join('');
+}
+
+// ── Per-status Apply ─────────────────────────────────────────────────────────
+async function applyStatus(sid){
+  const btn  = document.getElementById('statusApplyBtn_' + sid);
+  const orig = btn ? btn.textContent : null;
+  if (btn){ btn.disabled = true; btn.textContent = '…'; }
+  try {
+    const r = await fetch('/api/emo2-config', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({config: {[sid]: emo2Config[sid]}})
+    });
+    const j = await r.json().catch(()=>({}));
+    if (r.ok && j.config && j.config[sid]){
+      // Adopt the server's CANONICAL form into BOTH the staged copy and the
+      // snapshot. The daemon merges via dict.update(), so its stored state can
+      // carry keys the web's staged object omits (e.g. after "По умолчанию",
+      // which stages a 7-key default while the device keeps layout/canims/mode)
+      // — and it may normalise values. Comparing the *sent* staged object
+      // against that echo with order-sensitive JSON.stringify would leave the
+      // block permanently "unsaved". Cloning the echo into staged guarantees
+      // staged === snapshot → the dirty flag clears. (Bug: "1/5 не сохр.")
+      const canon = _cloneCfg(j.config[sid]);
+      if (!emo2ConfigServer) emo2ConfigServer = {};
+      emo2ConfigServer[sid] = _cloneCfg(canon);
+      emo2Config[sid]       = canon;
+    }
+  } catch(e){ /* offline */ }
+  if (btn) btn.textContent = orig || (t('gradient_apply') || 'APPLY');
+  // Re-render tiles so any server normalisation (and the adopted full key set)
+  // is reflected in the per-status pickers.
+  if (typeof refreshTileSelections === 'function') refreshTileSelections();
+  refreshStatusApplyState(sid);
+}
+
+// ── Per-block Stats Apply ─────────────────────────────────────────────────────
+async function _applyStatsBlock(keys, applyBtnId, statusId){
+  const btn  = document.getElementById(applyBtnId);
+  const orig = btn ? btn.textContent : null;
+  if (btn){ btn.disabled = true; btn.textContent = '…'; }
+  try {
+    // Build partial payload — only the keys this block owns.
+    const body = {};
+    for (const k of keys){
+      if (k === 'layouts') body.layouts = _cloneCfg(emo2StatsCfg.layouts);
+      else if (emo2StatsCfg[k] !== undefined) body[k] = emo2StatsCfg[k];
+    }
+    const r = await fetch('/api/emo2-stats-config', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    });
+    const j = await r.json().catch(()=>({}));
+    if (r.ok && j.config){
+      // Adopt the server's canonical form into BOTH the snapshot AND the staged
+      // copy for the keys this block owns. The daemon sanitises/normalises
+      // (_enforce_layout_invariants, legacy remaps, clamps) so the echo can
+      // differ from what was sent; without adopting it into staged the
+      // order-sensitive dirty check never equalises and the block stays
+      // "unsaved" forever. (Bug: "1/5 не сохр." after Apply-all / По умолчанию.)
+      if (!emo2StatsCfgServer) emo2StatsCfgServer = {};
+      for (const k of keys){
+        if (k === 'layouts'){
+          emo2StatsCfgServer.layouts = _cloneCfg(j.config.layouts);
+          emo2StatsCfg.layouts       = _cloneCfg(j.config.layouts);
+        } else {
+          emo2StatsCfgServer[k] = _cloneCfg(j.config[k]);
+          emo2StatsCfg[k]       = _cloneCfg(j.config[k]);
+        }
+      }
+      // Reflect any server normalisation in the UI (safe: renderEmo2Stats →
+      // syncGradStopsFromCfg(false) never touches the gradient server snapshot).
+      if (typeof renderEmo2Stats === 'function') renderEmo2Stats(emo2StatsCfg);
+    }
+  } catch(e){ /* offline */ }
+  if (btn) btn.textContent = orig || (t('gradient_apply') || 'APPLY');
+  _refreshBlockApplyRow({applyBtnId, statusId, keys});
+  refreshGlobalApplyBar();
+}
+function applyLayout(){ return _applyStatsBlock(_STATS_APPLY_BLOCKS[0].keys, _STATS_APPLY_BLOCKS[0].applyBtnId, _STATS_APPLY_BLOCKS[0].statusId); }
+function applyClock() { return _applyStatsBlock(_STATS_APPLY_BLOCKS[1].keys, _STATS_APPLY_BLOCKS[1].applyBtnId, _STATS_APPLY_BLOCKS[1].statusId); }
+function applyTiming(){ return _applyStatsBlock(_STATS_APPLY_BLOCKS[2].keys, _STATS_APPLY_BLOCKS[2].applyBtnId, _STATS_APPLY_BLOCKS[2].statusId); }
+
+// ── Apply All / Reset All ─────────────────────────────────────────────────────
+async function applyAll(){
+  const btn = document.getElementById('gabApply');
+  if (btn){ btn.disabled = true; btn.textContent = '…'; }
+  // Sequential: status tabs first, then gradient, then each stats block.
+  for (const [sid] of STATES){ if (_isStatusDirty(sid)) await applyStatus(sid); }
+  if (_isGradDirty()) await applyGradStops();
+  for (const blk of _STATS_APPLY_BLOCKS){
+    if (_isStatsBlockDirty(blk.keys)) await _applyStatsBlock(blk.keys, blk.applyBtnId, blk.statusId);
+  }
+  if (btn) btn.textContent = t('apply_all') || 'APPLY ALL';
+  refreshGlobalApplyBar();
+}
+async function resetAllToDevice(){
+  if (isAnyDirty() && !(await _confirmDiscard())) return;
+  // Explicit user reset → FORCE-discard staged edits. Without force, the
+  // loaders' keepStaged guard (which protects against WS/focus reloads
+  // clobbering edits) would keep the staged values → "Сбросить" appeared to
+  // do nothing (dirty count stayed). force=true bypasses that guard.
+  await loadEmo2Config(true);
+  await loadEmo2Stats(true);
+}
+function resetAllToDefault(){
+  emo2Config = _cloneCfg(DEFAULT_EMO2_CONFIG);
+  // Merge default stats preserving server-confirmed keys not in the default dict.
+  emo2StatsCfg = Object.assign({}, emo2StatsCfg || {}, _cloneCfg(DEFAULT_EMO2_STATS));
+  renderEmo2Stats(emo2StatsCfg);
+  refreshTileSelections();
+  refreshAllStatusApplyStates();
+  refreshStatsBlockApplyStates();
+  // Sync gradient to default stats stops.
+  syncGradStopsFromCfg(emo2StatsCfg, false);
+  refreshGlobalApplyBar();
+}
+function resetStatusToDefault(sid){
+  if (!emo2Config) return;
+  emo2Config[sid] = _cloneCfg(DEFAULT_EMO2_CONFIG[sid] || {});
+  refreshTileSelections();
+  refreshStatusApplyState(sid);
+  _lastFormDraw = new WeakMap(); _lastOpDraw = new WeakMap();
+}
+
+// ── Bulk select All/None for a picker type ───────────────────────────────────
+function bulkSet(sid, kind, all){
+  if (!emo2Config) return;
+  const st = emo2Config[sid] || (emo2Config[sid] = {forms:[], ops:[], canims:[], color:'auto'});
+  if (kind === 'forms'){
+    st.forms = all ? [...FORM_LIST] : [];
+  } else if (kind === 'ops'){
+    st.ops   = all ? [...OP_LIST]   : [];
+  } else if (kind === 'canims'){
+    const visible = CANIM_LIST.filter(a => !a.hidden).map(a => a.id);
+    st.canims = all ? [...visible] : [];
+  }
+  refreshTileSelections();
+  _lastFormDraw = new WeakMap(); _lastOpDraw = new WeakMap();
+  refreshStatusApplyState(sid);
+}
+
+// ── Unsaved-changes guard modal ───────────────────────────────────────────────
+// Returns a Promise resolved with 'apply'|'discard'|'cancel'.
+function _showUnsavedModal(){
+  return new Promise(resolve => {
+    if (document.getElementById('unsavedModal')) resolve('cancel');
+    const ov = document.createElement('div');
+    ov.id = 'unsavedModal';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(3px)';
+    const card = document.createElement('div');
+    card.className = 'modal-card';
+    card.style.cssText = 'max-width:360px;margin:20px;background:var(--surface,#14140f);border:1px solid rgba(255,176,46,.40);border-radius:12px;padding:20px 22px;box-shadow:0 0 0 1px rgba(0,0,0,.4),0 18px 50px rgba(0,0,0,.6)';
+    const msg = document.createElement('div');
+    msg.style.cssText = "font:600 13px/1.5 'Onest',sans-serif;color:var(--text,#e8e8e3);margin-bottom:18px";
+    msg.textContent = t('unsaved_title') || 'Unsaved changes';
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap';
+    const mkBtn = (cls, label, val) => {
+      const b = document.createElement('button');
+      b.className = cls; b.textContent = label;
+      b.onclick = () => { ov.remove(); resolve(val); };
+      row.appendChild(b);
+    };
+    mkBtn('btn', t('unsaved_cancel')  || 'Cancel',  'cancel');
+    mkBtn('btn', t('unsaved_discard') || 'Discard', 'discard');
+    mkBtn('btn accent', t('unsaved_apply') || 'Apply', 'apply');
+    ov.onclick = (e) => { if (e.target === ov){ ov.remove(); resolve('cancel'); } };
+    card.appendChild(msg); card.appendChild(row);
+    ov.appendChild(card);
+    document.body.appendChild(ov);
+  });
+}
+// guardUnsaved(proceed) — if dirty, show modal; Apply→applyAll then proceed;
+// Discard→resetAllToDevice then proceed; Cancel→nothing.
+async function guardUnsaved(proceed){
+  if (!isAnyDirty()){ proceed(); return; }
+  const choice = await _showUnsavedModal();
+  if (choice === 'cancel') return;
+  if (choice === 'apply')   await applyAll();
+  if (choice === 'discard') await loadEmo2Config().then(() => loadEmo2Stats());
+  proceed();
+}
+// Convenience for discarding only (used inside resetAllToDevice).
+function _confirmDiscard(){ return Promise.resolve(true); }
 
 // ─────── Path primitives (single-eye, radius = r) ───────
 function _path_squircle(ctx, r, n){
@@ -2157,22 +3329,36 @@ function drawTileEye(ctx, cx, cy, form, color, r, opts){
   ctx.restore();
 }
 
-function pairEye(ctx, form, color, opts){
+function pairEye(ctx, form, color, opts, charOverride){
+  const ch = charOverride || currentChar;
+  if (ch === 'pixl'){
+    _pairEyePixl(ctx, form, color, opts || {});
+    return;
+  }
+  // clauli (+ tv, which overlays scanlines after this) — per-eye form/dx/dy
   const W = ctx.canvas.width, H = ctx.canvas.height;
   ctx.clearRect(0,0,W,H);
   const r = Math.min(W,H) * 0.20;
   const gap = r * 0.7;
-  const cy = H/2 + (opts.dy || 0);
-  const lx = W/2 - r - gap/2 + (opts.dx || 0);
-  const rx = W/2 + r + gap/2 + (opts.dx || 0);
+  // Per-eye form, dx, dy (fall back to shared opts fields when absent)
+  const formL = opts.formL != null ? opts.formL : form;
+  const formR = opts.formR != null ? opts.formR : form;
+  const dxL   = opts.dxL  != null ? opts.dxL   : (opts.dx || 0);
+  const dxR   = opts.dxR  != null ? opts.dxR   : (opts.dx || 0);
+  const dyL   = opts.dyL  != null ? opts.dyL   : (opts.dy || 0);
+  const dyR   = opts.dyR  != null ? opts.dyR   : (opts.dy || 0);
+  const lx = W/2 - r - gap/2 + dxL;
+  const rx = W/2 + r + gap/2 + dxR;
+  const cyL = H/2 + dyL;
+  const cyR = H/2 + dyR;
   const lOpts = Object.assign({}, opts);
   const rOpts = Object.assign({}, opts);
   if (opts.scaleY_L != null) lOpts.scaleY = opts.scaleY_L;
   if (opts.scaleY_R != null) rOpts.scaleY = opts.scaleY_R;
   if (opts.scale_L  != null) lOpts.scale  = opts.scale_L;
   if (opts.scale_R  != null) rOpts.scale  = opts.scale_R;
-  drawTileEye(ctx, lx, cy, form, color, r, lOpts);
-  drawTileEye(ctx, rx, cy, form, color, r, rOpts);
+  drawTileEye(ctx, lx, cyL, formL, color, r, lOpts);
+  drawTileEye(ctx, rx, cyR, formR, color, r, rOpts);
 }
 
 // ─────── Op preview animators (return frame() that returns opts) ───────
@@ -2230,11 +3416,21 @@ function makeTile(spec){
       // repaint on next RAF using the new colour. (Tiles in other states
       // also re-render but use their own per-state colour, so no visual
       // glitch — just a one-off repaint cost.)
-      _lastFormDraw = new WeakMap();
+      _lastFormDraw = new WeakMap(); _lastOpDraw = new WeakMap();
     }
-    debouncedSave();
+    // Staged: no auto-save. Mark dirty + refresh per-status apply row.
+    refreshStatusApplyState(sid);
   });
-  tiles.push({el:t, canvas:cv, ctx:cv.getContext('2d'), spec});
+  const tileObj = {el:t, canvas:cv, ctx:cv.getContext('2d'), spec};
+  // Op-tiles animate only while hovered — attach hover tracking listeners.
+  if (spec.kind === 'op') {
+    t.addEventListener('pointerenter', () => { _hoveringOpTiles.add(tileObj); });
+    t.addEventListener('pointerleave', () => {
+      _hoveringOpTiles.delete(tileObj);
+      _lastOpDraw.delete(tileObj);  // force idle-frame redraw on next pass
+    });
+  }
+  tiles.push(tileObj);
   return t;
 }
 
@@ -2321,7 +3517,7 @@ function mountColorPicker(host, opts){
           // Flush the static-form cache so the animated visual previews
           // repaint with the new tint on next RAF (was a Phase-L4 regression:
           // the old colour tiles flushed here, mountColorPicker didn't).
-          _lastFormDraw = new WeakMap();
+          _lastFormDraw = new WeakMap(); _lastOpDraw = new WeakMap();
           // Re-mount with the new value so the swatch + active state
           // reflect the pick without a full UI rebuild.
           mountColorPicker(host, { ...opts, value: newHex });
@@ -2329,7 +3525,7 @@ function mountColorPicker(host, opts){
         return;
       }
       onChange(id);
-      _lastFormDraw = new WeakMap();
+      _lastFormDraw = new WeakMap(); _lastOpDraw = new WeakMap();
       mountColorPicker(host, { ...opts, value: id });
     };
     host.appendChild(pill);
@@ -2347,14 +3543,25 @@ function buildStatusGroup(){
   tabsEl.innerHTML = '';
   contEl.innerHTML = '';
   tiles.length = 0;
+  // Reset canim canvas registry — buildPreviewTiles() will re-add its own
+  // entries; buildStatusGroup adds per-state entries. Prevents stale refs.
+  canimCanvases = [];
   const lang = curLang;
   // Tab pills
   for (const [sid, en, ru] of STATES) {
     const tab = document.createElement('div');
-    tab.className = 'status-tab' + (sid === activeStatusTab ? ' active' : '');
+    tab.className = 'status-tab state-' + sid + (sid === activeStatusTab ? ' active' : '');
     tab.dataset.state = sid;
     tab.innerHTML = `<span class="state-dot"></span>${lang === 'ru' ? ru : en}`;
-    tab.onclick = () => setActiveStatusTab(sid);
+    tab.onclick = () => {
+      if (sid === activeStatusTab) return;
+      // Only prompt when the *specific* tab being left has unsaved changes.
+      if (_isStatusDirty(activeStatusTab)){
+        guardUnsaved(() => setActiveStatusTab(sid));
+      } else {
+        setActiveStatusTab(sid);
+      }
+    };
     tabsEl.appendChild(tab);
   }
   // Content panes (all built, only active visible)
@@ -2363,37 +3570,46 @@ function buildStatusGroup(){
     pane.className = 'status-pane';
     pane.dataset.state = sid;
     pane.style.display = (sid === activeStatusTab) ? 'block' : 'none';
-    // Phase L3 — 2-column pane:
-    //   col-1 (left) : Forms + Motions tile grids
-    //   col-2 (right): Text source/format/placement pills (layout is global)
-    //   bottom (full): Halo colour | Layout colour (unified mountColorPicker)
-    // Each section keeps its old data-* selectors so the existing renderers
-    // (renderStateTextPills / renderStateTextPlacementPills) keep working.
+    // Item 1 — inactive-state note banner. Hidden when editing the live state.
+    // Item 2 — right column now only has halo colour (text controls moved to #layoutBlock).
+    // Item 3 — canim picker added below forms+ops.
     pane.innerHTML = `
-      <div class="pane-grid">
-        <div class="pane-col pane-col-left">
-          <div class="section-label">Forms <span class="hint">▢ multi · rotates ~20s</span></div>
+      <div class="status-inactive-note" id="statusInactiveNote_${sid}"></div>
+      <!-- Req #8: mode segmented control (Rotation / Canim) -->
+      <div class="pane-mode-row">
+        <span class="pane-mode-label" style="margin-right:4px">${t('anim_mode_rotation')||'Rotation'}</span>
+        <div class="ge-mode" id="paneMode_${sid}">
+          <button class="active" data-mode="rotation">${t('anim_mode_rotation')||'Forms+Motions'}</button>
+          <button data-mode="canim">${t('anim_mode_canim')||'Canim'}</button>
+        </div>
+      </div>
+      <div class="pane-grid" style="grid-template-columns:1fr">
+        <div class="pane-col pane-col-left pane-rotation-section">
+          <!-- Req #5: bulk all/none buttons -->
+          <div class="section-label">${t('forms_label')||'Forms'} <span class="hint">${t('forms_hint')||'▢ multi · rotates ~20s'}</span><span class="bulk-row"><button class="ge-btn bulk" onclick="bulkSet('${sid}','forms',true)">${t('bulk_all')||'ALL'}</button><button class="ge-btn bulk" onclick="bulkSet('${sid}','forms',false)">${t('bulk_none')||'NONE'}</button></span></div>
           <div class="tile-grid" data-kind="form" data-state="${sid}"></div>
-          <div class="section-label">Motions <span class="hint">↻ multi · fires ~8s</span></div>
+          <div class="section-label">${t('motions_label')||'Motions'} <span class="hint">${t('motions_hint')||'↻ multi · fires ~8s'}</span><span class="bulk-row"><button class="ge-btn bulk" onclick="bulkSet('${sid}','ops',true)">${t('bulk_all')||'ALL'}</button><button class="ge-btn bulk" onclick="bulkSet('${sid}','ops',false)">${t('bulk_none')||'NONE'}</button></span></div>
           <div class="tile-grid" data-kind="op" data-state="${sid}"></div>
         </div>
-        <div class="pane-col pane-col-right">
-          <!-- Layout is GLOBAL now (single #statsPills picker above) — not per-state. -->
-          <div class="section-label" data-i18n="text_source_label">TEXT SOURCE</div>
-          <div class="state-text-source" data-state="${sid}" style="display:flex;flex-wrap:wrap;gap:6px;padding:0 4px 4px"></div>
-          <div class="section-label" data-i18n="text_format_label">TEXT FORMAT</div>
-          <div class="state-text-format" data-state="${sid}" style="display:flex;flex-wrap:wrap;gap:6px;padding:0 4px 4px"></div>
-          <div class="section-label" data-i18n="text_placement_label">TEXT PLACEMENT</div>
-          <div class="state-text-placement" data-state="${sid}" style="display:flex;flex-wrap:wrap;gap:6px;padding:0 4px 4px"></div>
+        <div class="pane-col pane-col-left pane-canim-section" style="display:none">
+          <div class="pane-inactive-caption">${t('anim_mode_help')||'Canim mode: only complex animations run.'}</div>
+          <div class="section-label">${t('canim_label')||'Complex anims'} <span class="hint">${t('canim_hint')||'✦ multi'}</span><span class="bulk-row"><button class="ge-btn bulk" onclick="bulkSet('${sid}','canims',true)">${t('bulk_all')||'ALL'}</button><button class="ge-btn bulk" onclick="bulkSet('${sid}','canims',false)">${t('bulk_none')||'NONE'}</button></span></div>
+          <div class="canim-btn-grid state-canim-grid" data-state="${sid}" style="padding:0 0 6px"></div>
         </div>
-        <div class="pane-color-row">
+        <div class="pane-color-row" style="grid-column:1/-1">
           <div class="pane-color-cell">
             <div class="section-label" data-i18n="halo_color_label">HALO COLOUR</div>
             <div class="state-halo-color-host" data-state="${sid}"></div>
           </div>
-          <!-- Layout colour moved to the global #layoutBlock (it's a global,
-               not per-status, setting). Only HALO colour is per-status. -->
         </div>
+      </div>
+      <!-- Req #3: per-status Apply row -->
+      <div class="ge-actions" style="margin-top:8px;padding:0 4px 4px">
+        <button class="ge-btn ghost" onclick="resetStatusToDefault('${sid}')" title="${t('reset_to_default')||'Defaults'}">${t('reset_to_default')||'ПО УМОЛЧ.'}</button>
+        <button class="ge-btn ghost" onclick="if(emo2ConfigServer&&emo2Config){emo2Config['${sid}']=_cloneCfg(emo2ConfigServer['${sid}']);refreshTileSelections();_lastFormDraw=new WeakMap();_lastOpDraw=new WeakMap();refreshStatusApplyState('${sid}')}" title="${t('revert')||'Revert'}">${t('revert')||'ОТМЕНИТЬ'}</button>
+        <div class="ge-spacer"></div>
+        <span class="ge-status" id="statusApplyStatus_${sid}">${t('gradient_saved')||'SAVED'}</span>
+        <button class="ge-btn apply" id="statusApplyBtn_${sid}" onclick="applyStatus('${sid}')" disabled>${t('gradient_apply')||'APPLY'}</button>
       </div>
     `;
     contEl.appendChild(pane);
@@ -2411,10 +3627,46 @@ function buildStatusGroup(){
       }));
     }
 
-    // Unified colour pickers (Phase L4) — halo + layout colour for THIS state.
-    // mountColorPicker handles the auto/custom pill row + HSV popover and
-    // re-mounts itself on commit so the swatch reflects the picked hex.
-    const haloHost   = pane.querySelector('.state-halo-color-host');
+    // Item 3 — canim picker tiles for this state
+    const canimStateGrid = pane.querySelector('.state-canim-grid');
+    if (canimStateGrid) {
+      const dpr2 = window.devicePixelRatio || 1;
+      const CV_W2 = 64, CV_H2 = 38;
+      CANIM_LIST.forEach(anim => {
+        if (anim.hidden) return;            // removed from UI (slot kept in firmware for id alignment)
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'canim-btn';
+        btn.dataset.canimId = anim.id;
+        btn.dataset.state = sid;
+        btn.title = curLang === 'ru' ? anim.ru : (anim.en || anim.id);
+        const cv = document.createElement('canvas');
+        cv.width = Math.round(CV_W2 * dpr2);
+        cv.height = Math.round(CV_H2 * dpr2);
+        cv.style.width = CV_W2 + 'px';
+        cv.style.height = CV_H2 + 'px';
+        btn.appendChild(cv);
+        const lbl = document.createElement('span');
+        lbl.textContent = curLang === 'ru' ? anim.ru : (anim.en || anim.id);
+        btn.appendChild(lbl);
+        // Toggle selection — staged, no auto-save
+        btn.onclick = () => {
+          if (!emo2Config) return;
+          const st = emo2Config[sid] || (emo2Config[sid] = {forms:[], ops:[], canims:[], color:'auto'});
+          if (!Array.isArray(st.canims)) st.canims = [];
+          const idx = st.canims.indexOf(anim.id);
+          if (idx >= 0) { st.canims.splice(idx, 1); btn.classList.remove('on'); }
+          else          { st.canims.push(anim.id);  btn.classList.add('on'); }
+          refreshStatusApplyState(sid);
+        };
+        // Register for canim preview loop
+        canimCanvases.push({cv, id: anim.id});
+        canimStateGrid.appendChild(btn);
+      });
+    }
+
+    // Unified colour pickers (Phase L4) — halo colour for THIS state.
+    const haloHost = pane.querySelector('.state-halo-color-host');
     if (haloHost) {
       mountColorPicker(haloHost, {
         value:     _stateValue(sid, 'color', 'auto'),
@@ -2423,32 +3675,41 @@ function buildStatusGroup(){
       });
     }
 
-    // Phase D: text source / text format / text placement — rendered
-    // per-state. Layout is GLOBAL (single #statsPills picker). Each renderer
-    // reads emo2Config[sid].<field> and commits POST /api/emo2-config on click.
-    renderStateTextPills(pane, sid, 'state-text-source', 'text_source', TEXT_SOURCES_LIST, 'text_src_');
-    renderStateTextPills(pane, sid, 'state-text-format', 'text_format', TEXT_FORMATS_LIST, 'text_fmt_');
-    renderStateTextPlacementPills(pane, sid);
+    // Req #8: wire mode segmented control for this pane.
+    const modeWrap = pane.querySelector('#paneMode_' + sid);
+    const rotSection  = pane.querySelector('.pane-rotation-section');
+    const canimSection = pane.querySelector('.pane-canim-section');
+    function _applyPaneMode(mode){
+      if (!emo2Config) return;
+      const st = emo2Config[sid] || (emo2Config[sid] = {forms:[], ops:[], canims:[], color:'auto'});
+      st.mode = mode;
+      if (modeWrap) modeWrap.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+      if (rotSection)   rotSection.style.display   = (mode === 'canim')    ? 'none'  : '';
+      if (canimSection) canimSection.style.display = (mode === 'rotation') ? 'none'  : '';
+      refreshStatusApplyState(sid);
+    }
+    if (modeWrap){
+      modeWrap.querySelectorAll('button').forEach(b => {
+        b.onclick = () => _applyPaneMode(b.dataset.mode);
+      });
+      // Apply current mode from staged config.
+      const curMode = _stateValue(sid, 'mode', 'rotation');
+      _applyPaneMode(curMode);
+    }
   }
 }
 
 // ─────────────────────────────────────────────────────────────────
 // Phase D — per-state render helpers + setters
 // ─────────────────────────────────────────────────────────────────
-// POST a single field change for one state. Daemon validates and
-// triggers a debounced cfg push to ESP.
-async function setStateField(sid, field, value){
+// Pure stager — mutates staged emo2Config, marks dirty. No fetch.
+function setStateField(sid, field, value){
   if (!emo2Config) return;
   if (!emo2Config[sid]) emo2Config[sid] = {};
   if (emo2Config[sid][field] === value) return;
   emo2Config[sid][field] = value;
-  try {
-    await fetch('/api/emo2-config', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ config: { [sid]: { [field]: value } } }),
-    });
-  } catch(e) { /* offline — local state updated, ESP will catch up on reconnect */ }
+  _lastFormDraw = new WeakMap(); _lastOpDraw = new WeakMap();
+  refreshStatusApplyState(sid);
 }
 
 function _stateValue(sid, field, fallback){
@@ -2465,7 +3726,14 @@ function renderStateTextPills(pane, sid, containerCls, field, valueList, i18nPre
   // Default per field — `off` for source so OFF-state stays muted; `pct`
   // for format so a fresh state shows a clean default.
   const dflt = (field === 'text_source') ? 'off' : 'pct';
-  const cur = _stateValue(sid, field, dflt);
+  // Text source/format are PER-LAYOUT (the device applies the ACTIVE layout's
+  // value, not a per-state one), so read+write the active-layout value — these
+  // status-tab pills now agree with the device AND the layout editor instead
+  // of showing a stale per-state value the firmware ignores.
+  const _alay = (emo2StatsCfg && (emo2StatsCfg.active || emo2StatsCfg.default)) || 'bezel_orbit';
+  const cur = (field === 'text_source') ? getLayoutTextSource(emo2StatsCfg, _alay)
+            : (field === 'text_format') ? getLayoutTextFormat(emo2StatsCfg, _alay)
+            : _stateValue(sid, field, dflt);
   valueList.forEach(id => {
     const pill = document.createElement('div');
     pill.className = 'text-subpill' + (id === cur ? ' active' : '');
@@ -2476,8 +3744,10 @@ function renderStateTextPills(pane, sid, containerCls, field, valueList, i18nPre
     lb.style.cssText = "font-family:'Azeret Mono',monospace;font-size:9.5px;letter-spacing:.8px;text-transform:uppercase";
     lb.textContent = t(i18nPrefix + id) || id;
     pill.appendChild(lb);
-    pill.onclick = async () => {
-      await setStateField(sid, field, id);
+    pill.onclick = () => {
+      if      (field === 'text_source') setTextSource(id);   // per-layout staged setters
+      else if (field === 'text_format') setTextFormat(id);
+      else setStateField(sid, field, id);
       renderStateTextPills(pane, sid, containerCls, field, valueList, i18nPrefix);
     };
     wrap.appendChild(pill);
@@ -2494,7 +3764,9 @@ function renderStateTextPlacementPills(pane, sid){
   wrap.innerHTML = '';
   const layout  = emo2StatsCfg.active || emo2StatsCfg.default || 'bezel_orbit';
   const allowed = placementAllowed(layout, currentOrient);
-  const cur     = _stateValue(sid, 'text_placement', 'middle');
+  // PER-LAYOUT placement (the device applies the active layout's value, not a
+  // per-state one) — read the active-layout value so the pills match the device.
+  const cur     = getLayoutTextPlacement(emo2StatsCfg, layout);
   TEXT_PLACEMENTS_LIST.forEach(id => {
     const isAllowed = allowed.includes(id);
     const pill = document.createElement('div');
@@ -2520,8 +3792,8 @@ function renderStateTextPlacementPills(pane, sid){
     lb.textContent = t('text_placement_' + id) || id;
     pill.appendChild(lb);
     if (isAllowed) {
-      pill.onclick = async () => {
-        await setStateField(sid, 'text_placement', id);
+      pill.onclick = () => {
+        setTextPlacement(id);   // per-layout staged setter (was per-state setStateField)
         renderStateTextPlacementPills(pane, sid);
       };
     }
@@ -2572,12 +3844,30 @@ function renderStateLayoutColorPills(pane, sid){
     wrap.appendChild(pill);
   });
 }
+// Item 1 — helper: refresh inactive-state note banners for all panes.
+function _updateStatusInactiveNotes(){
+  STATES.forEach(([sid, en, ru]) => {
+    const el = document.getElementById('statusInactiveNote_' + sid);
+    if (!el) return;
+    const isLive = (sid === emo2CurrentState);
+    if (isLive) {
+      el.classList.remove('visible');
+      el.textContent = '';
+    } else {
+      const label = curLang === 'ru' ? ru : en;
+      el.textContent = curLang === 'ru'
+        ? `Настройка статуса «${label}» — применится, когда устройство в этом состоянии`
+        : `Editing the "${label}" state — applies when the device is in it`;
+      el.classList.add('visible');
+    }
+  });
+}
 function setActiveStatusTab(sid){
   activeStatusTab = sid;
   window._statusTabUserPicked = true;
-  // Invalidate static-form tile cache — these only draw once per visibility
+  // Invalidate static-tile caches — these only draw once per visibility
   // transition, so newly-visible tiles need to redraw on the next RAF tick.
-  _lastFormDraw = new WeakMap();
+  _lastFormDraw = new WeakMap(); _lastOpDraw = new WeakMap();
   document.querySelectorAll('#statusTabs .status-tab').forEach(t => {
     t.classList.toggle('active', t.dataset.state === sid);
   });
@@ -2590,13 +3880,25 @@ function setActiveStatusTab(sid){
     const st = STATES.find(s => s[0] === sid);
     sum.textContent = st ? (curLang === 'ru' ? st[2] : st[1]) : sid;
   }
+  // Item 1 — refresh note banners after tab switch
+  _updateStatusInactiveNotes();
 }
 // Back-compat shim for old call sites — keeps `buildStateBlocks()` working.
 const buildStateBlocks = buildStatusGroup;
 
 // ─────── Tile animation loop ───────
 let _lastFormDraw = new WeakMap();
+// Op-tiles are static by default; only animate the one currently hovered.
+// _hoveringOpTiles tracks which tile objects are under the pointer.
+// _lastOpDraw tracks whether the idle (frame-0) static has been drawn once.
+const _hoveringOpTiles = new WeakSet();
+let _lastOpDraw = new WeakMap();
+let _lastTileFrame = 0;
 function tileLoop(now){
+  // Throttle to ~22fps and pause when the tab is hidden — the form/op tile
+  // previews don't need 60fps and were the main source of UI lag.
+  if (document.hidden || (now - _lastTileFrame) < 45) { requestAnimationFrame(tileLoop); return; }
+  _lastTileFrame = now;
   // Cheap visibility gate: only redraw tiles whose parent is visible.
   // Supports two parent kinds: <details> (uses .open) and any plain element
   // (status-pane / preview-block) using offsetParent !== null + display test.
@@ -2616,17 +3918,30 @@ function tileLoop(now){
       }
     }
     if (spec.kind === 'form') {
-      if (_lastFormDraw.get(tile)) continue;     // static — draw once
+      if (_lastFormDraw.get(tile)) continue;     // static — draw once per character
       // resolveTileColor: per-state colour for state-block tiles, global
-      // halo pick for preview tiles. Cache invalidated on relevant picks.
-      pairEye(ctx, spec.value, resolveTileColor(spec), {});
-      _lastFormDraw.set(tile, true);
+      // halo pick for preview tiles. Cache invalidated on character/colour picks.
+      const baseColor = resolveTileColor(spec);
+      // Form previews are STATIC for every character (no per-frame life layer —
+      // that ran 100+ canvases/frame and lagged the UI). The "living" motion
+      // lives on the device mockup instead.
+      pairEye(ctx, spec.value, baseColor, {}, currentChar);
+      _lastFormDraw.set(tile, true);             // cache for ALL characters
     } else if (spec.kind === 'op') {
+      // Animate only while hovered; otherwise draw the neutral static frame once.
+      if (!_hoveringOpTiles.has(tile)) {
+        if (_lastOpDraw.get(tile)) continue;     // static frame already drawn
+        const base = resolveTileColor(spec);
+        pairEye(ctx, 'neutral', base, {}, currentChar);
+        _lastOpDraw.set(tile, true);
+        continue;
+      }
+      // Hovered — run the full animation frame.
       const fn = OP_FRAME[spec.value];
       const f  = fn ? fn(now) : {};
       const base = resolveTileColor(spec);
       const color = f.warm ? PALETTE.warm : base;
-      pairEye(ctx, 'neutral', color, f);
+      pairEye(ctx, 'neutral', color, f, currentChar);
     }
   }
   requestAnimationFrame(tileLoop);
@@ -2635,10 +3950,58 @@ function tileLoop(now){
 // been cleared by the browser while it was hidden).
 document.addEventListener('toggle', (ev) => {
   if (ev.target.classList && ev.target.classList.contains('state-block')) {
-    _lastFormDraw = new WeakMap();
+    _lastFormDraw = new WeakMap(); _lastOpDraw = new WeakMap();
   }
 }, true);
 requestAnimationFrame(tileLoop);
+
+// ─── Canim preview loop (~15fps) ────────────────────────────────────────────
+// Draws an animated eye preview for each complex-animation button.
+// Gated on: tab hidden + previewBlock collapsed + no registered canvases.
+let _lastCanimFrame = 0;
+const _CANIM_INTERVAL = 66; // ~15fps
+function canimPreviewLoop(now){
+  requestAnimationFrame(canimPreviewLoop);
+  // Bail fast when tab not visible or no canvases registered.
+  if (document.hidden || canimCanvases.length === 0) return;
+  if ((now - _lastCanimFrame) < _CANIM_INTERVAL) return;
+  _lastCanimFrame = now;
+
+  const t = now * 0.001; // seconds
+  // Pick the char's default color (not tied to pct gradient — stays constant
+  // so the preview is readable at all times regardless of usage level).
+  const charDef = CHAR_DEFS.find(c => c.id === currentChar) || CHAR_DEFS[0];
+  const color = charDef.color;
+
+  for (const entry of canimCanvases) {
+    const {cv, id} = entry;
+    // Skip canvases in hidden panels (status panes with display:none, or closed details)
+    if (cv.offsetParent === null) continue;
+    const ctx = cv.getContext('2d');
+    const fn = CANIM_FRAME[id];
+    if (!fn) { ctx.clearRect(0, 0, cv.width, cv.height); continue; }
+    const frame = fn(t);
+    // Build opts: forward per-eye fields when present (scene-engine frames),
+    // otherwise fall back to the shared dx/dy/scaleY/form fields.
+    const hasPerEye = frame.formL != null || frame.formR != null ||
+                      frame.dxL   != null || frame.dxR   != null ||
+                      frame.dyL   != null || frame.dyR   != null ||
+                      frame.scaleY_L != null || frame.scaleY_R != null;
+    const opts = hasPerEye
+      ? { formL:    frame.formL,    formR:    frame.formR,
+          dxL:      frame.dxL    || 0, dxR:   frame.dxR    || 0,
+          dyL:      frame.dyL    || 0, dyR:   frame.dyR    || 0,
+          scaleY_L: frame.scaleY_L != null ? frame.scaleY_L : 1,
+          scaleY_R: frame.scaleY_R != null ? frame.scaleY_R : 1 }
+      : { dx: frame.dx || 0, dy: frame.dy || 0,
+          scaleY: frame.scaleY != null ? frame.scaleY : 1 };
+    // For per-eye frames use formL as the shared `form` argument (pairEye* use
+    // formL/formR from opts when present, so the form arg is ignored then).
+    const formArg = hasPerEye ? (frame.formL || 'neutral') : (frame.form || 'neutral');
+    pairEyeForChar(ctx, formArg, color, opts, currentChar);
+  }
+}
+requestAnimationFrame(canimPreviewLoop);
 
 function debouncedSave(){
   clearTimeout(saveTimer);
@@ -2658,21 +4021,60 @@ function refreshTileSelections(){
     document.querySelectorAll(`.cs[data-state="${sid}"]`).forEach(t => {
       t.classList.toggle('on', t.dataset.value === (st.color || 'auto'));
     });
+    // Item 3 — canim selection sync
+    document.querySelectorAll(`.state-canim-grid[data-state="${sid}"] .canim-btn`).forEach(btn => {
+      btn.classList.toggle('on', (st.canims || []).includes(btn.dataset.canimId));
+    });
   }
   // Highlight current state block
   document.querySelectorAll('.state-block').forEach(b => {
     b.dataset.current = (b.dataset.state === emo2CurrentState) ? '1' : '0';
   });
+  // Sync the per-status MODE toggle + which picker is shown — buildStatusGroup
+  // applies it on build, but a server reload (loadEmo2Config) repopulates
+  // emo2Config WITHOUT rebuilding, so the toggle would stay on the stale default
+  // → web wouldn't match the ESP. Re-sync here (called by every refresh + load).
+  refreshPaneModes();
+  // Item 1 — update inactive note banners
+  _updateStatusInactiveNotes();
+}
+// Reflect each status's staged mode (rotation/canim) onto its toggle + sections.
+function refreshPaneModes(){
+  if (!emo2Config) return;
+  for (const sid of Object.keys(emo2Config)){
+    const wrap = document.getElementById('paneMode_' + sid);
+    if (!wrap) continue;
+    const mode = (emo2Config[sid] && emo2Config[sid].mode === 'canim') ? 'canim' : 'rotation';
+    wrap.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+    const row  = wrap.closest('.pane-mode-row');
+    const pane = row ? row.parentElement : null;
+    if (pane){
+      const rot = pane.querySelector('.pane-rotation-section');
+      const can = pane.querySelector('.pane-canim-section');
+      if (rot) rot.style.display = (mode === 'canim')    ? 'none' : '';
+      if (can) can.style.display = (mode === 'rotation') ? 'none' : '';
+    }
+  }
 }
 
-async function loadEmo2Config(){
+async function loadEmo2Config(force){
   try {
     const r = await fetch('/api/emo2-config'); const d = await r.json();
-    emo2Config = d.config;
+    // Dirtiness MUST be measured against the PREVIOUS snapshot, BEFORE we
+    // replace it — otherwise every load (incl. the first) looks "dirty" and the
+    // staged globals never populate, so the web never reflects the device.
+    // force=true (explicit "Сбросить") discards staged edits unconditionally.
+    const keepStaged = !force && (emo2ConfigServer != null) && (typeof STATES !== 'undefined') &&
+                       STATES.some(([sid]) => _isStatusDirty(sid));
+    emo2ConfigServer = _cloneCfg(d.config);
+    if (!keepStaged){
+      emo2Config = _cloneCfg(d.config);
+    }
     emo2CurrentState = d.state || null;
     document.getElementById('manualMode').checked = !!d.manual;
     applyManualGate(!!d.manual);
     refreshTileSelections();
+    refreshAllStatusApplyStates();
   } catch(e){ console.error('emo2 config load', e); }
 }
 function updateEmo2State(s){
@@ -2685,10 +4087,12 @@ function updateEmo2State(s){
     t.classList.toggle('live', t.dataset.state === s);
   });
   // Auto-focus the live tab on first state report (only if user hasn't
-  // explicitly switched). Cheap UX: page-load lands on the real state.
-  if (!window._statusTabUserPicked && s !== activeStatusTab) {
+  // explicitly switched AND there are no staged edits).
+  if (!window._statusTabUserPicked && s !== activeStatusTab && !isAnyDirty()) {
     setActiveStatusTab(s);
   }
+  // Item 1 — refresh inactive-state notes after any real-state change
+  _updateStatusInactiveNotes();
 }
 
 async function saveEmo2Config(){
@@ -2719,7 +4123,7 @@ function applyManualGate(on){
     if (!g) return;
     g.style.opacity       = on ? '' : '0.4';
     g.style.pointerEvents = on ? '' : 'none';
-    g.title = on ? '' : 'Включите Manual control чтобы выбирать превью';
+    g.title = on ? '' : (t('manual_preview_gate') || 'Enable Manual control to pick preview');
   });
   // Auto-state config blocks — dimmed (and click-gated, see the capturing
   // interceptor below) when manual is ON. Opacity only — NOT pointer-events,
@@ -2806,7 +4210,16 @@ function makeFireTile(spec){
     if (!document.getElementById('manualMode')?.checked) return;   // gate matches applyManualGate()
     fireOnce();
   });
-  tiles.push({el:t, canvas:cv, ctx:cv.getContext('2d'), spec});
+  const fireTileObj = {el:t, canvas:cv, ctx:cv.getContext('2d'), spec};
+  // Op-tiles animate only while hovered — attach hover tracking listeners.
+  if (spec.kind === 'op') {
+    t.addEventListener('pointerenter', () => { _hoveringOpTiles.add(fireTileObj); });
+    t.addEventListener('pointerleave', () => {
+      _hoveringOpTiles.delete(fireTileObj);
+      _lastOpDraw.delete(fireTileObj);  // force idle-frame redraw on next pass
+    });
+  }
+  tiles.push(fireTileObj);
   return t;
 }
 // Compatibility shim — setManual() still calls this. Now a no-op since
@@ -2851,6 +4264,60 @@ function buildPreviewTiles(){
     allowAuto: true,
     onChange:  (v) => _applyHaloColor(v),
   });
+
+  // ── Complex animations — placed after a visual separator ──────────────────
+  // Remove any previous canim injection (idempotent rebuild support).
+  const oldSep = previewBlock.querySelector('.canim-separator');
+  if (oldSep) oldSep.remove();
+  const oldGrid = previewBlock.querySelector('.canim-btn-grid');
+  if (oldGrid) oldGrid.remove();
+
+  const sep = document.createElement('div');
+  sep.className = 'canim-separator';
+  sep.innerHTML = '<div class="canim-separator-line"></div>'
+    + '<span class="canim-separator-label">' + (t('canim_separator_label') || 'Complex anims') + '</span>'
+    + '<div class="canim-separator-line"></div>';
+  previewBlock.appendChild(sep);
+
+  // Append preview-block canim canvases to the registry.
+  // buildStatusGroup() (called before this) already reset canimCanvases and
+  // added the per-state entries; we just extend the list here.
+
+  const canimGrid = document.createElement('div');
+  canimGrid.className = 'canim-btn-grid';
+  const dpr = window.devicePixelRatio || 1;
+  // Logical size of each preview canvas (CSS pixels).
+  const CV_W = 64, CV_H = 38;
+  CANIM_LIST.forEach(anim => {
+    if (anim.hidden) return;                // removed from UI (slot kept in firmware for id alignment)
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'canim-btn';
+    const canimLabel = curLang === 'ru' ? anim.ru : (anim.en || anim.id);
+    btn.title = canimLabel;
+
+    // DPR-aware canvas above the label.
+    const cv = document.createElement('canvas');
+    cv.width  = Math.round(CV_W * dpr);
+    cv.height = Math.round(CV_H * dpr);
+    cv.style.width  = CV_W + 'px';
+    cv.style.height = CV_H + 'px';
+    btn.appendChild(cv);
+
+    const lbl = document.createElement('span');
+    lbl.textContent = canimLabel;
+    btn.appendChild(lbl);
+
+    btn.onclick = () => {
+      btn.classList.remove('fired'); void btn.offsetWidth; btn.classList.add('fired');
+      setTimeout(() => btn.classList.remove('fired'), 700);
+      sendAction('canim_' + anim.id);
+    };
+
+    canimCanvases.push({cv, id: anim.id});
+    canimGrid.appendChild(btn);
+  });
+  previewBlock.appendChild(canimGrid);
 }
 
 // "Halo colour" pick from the Preview block. null = no explicit pick yet
@@ -2871,7 +4338,7 @@ async function _applyHaloColor(c){
   // custom-pick HSV popover, so this just commits the value `c` ('auto' or
   // a '#RRGGBB' hex) to the device.
   _haloPreviewColor = c;
-  _lastFormDraw = new WeakMap();
+  _lastFormDraw = new WeakMap(); _lastOpDraw = new WeakMap();
   // Built-in palette names still go through the existing CTRL fast-path
   // (instant retint on ESP). Custom hex values land via cfg JSON only.
   if (c === 'cyan' || c === 'amber' || c === 'red' || c === 'auto') {
@@ -2946,22 +4413,42 @@ function resolveTileColor(spec) {
 // first state's pane threw, the whole settings panel went blank.
 
 // ───────── % Layout settings (read-only display, edit happens in gallery) ──
-async function loadEmo2Stats(){
+async function loadEmo2Stats(force){
   try {
     const r = await fetch('/api/emo2-stats-config');
     if (!r.ok) return;
     const j = await r.json();
-    // item 10 — adopt the device's orientation (tracked host-side by the
-    // daemon) so the page opens in the right aspect instead of the
-    // hardcoded portrait, and so ribbon/ecg placement coerces correctly.
-    if (j.orient === 'vertical' || j.orient === 'horizontal') {
-      currentOrient = j.orient;
-      renderOrientPills();
-      applyMockupOrient();
-      applyTileOrient();       // forms/motions tiles flip to match device
+    // Measure dirtiness against the PREVIOUS snapshot BEFORE replacing it (else
+    // the first load looks dirty and never adopts the device's settings).
+    // force=true (explicit "Сбросить") discards staged edits unconditionally.
+    const keepStaged = !force && (emo2StatsCfgServer != null) &&
+      (_isStatsBlockDirty(['active','default','extras','layouts','layout_color','clock_style','clock_color','anim_pace_x10','form_pace_x10'])
+       || (typeof _isGradDirty === 'function' && _isGradDirty()));
+    emo2StatsCfgServer = _cloneCfg(j.config || {});
+    if (!keepStaged){
+      // item 10 — adopt the device's orientation.
+      if (j.orient === 'vertical' || j.orient === 'horizontal') {
+        currentOrient = j.orient;
+        renderOrientPills();
+        applyMockupOrient();
+        applyTileOrient();
+      }
+      renderEmo2Stats(j.config || {});
+      coerceActivePlacement();
+    } else {
+      // Dirty: just re-compute dirty indicators; don't alter staged globals.
+      refreshStatsBlockApplyStates();
     }
-    renderEmo2Stats(j.config || {});
-    coerceActivePlacement();   // ribbon/ecg → TOP-only when landscape
+    // Always sync grad stops from server (fromServer=true) so snapshot is fresh.
+    syncGradStopsFromCfg(j.config || {}, true);
+    // Force reset also discards a dirty gradient (syncGradStopsFromCfg keeps
+    // staged stops when _isGradDirty()), so explicitly adopt the server stops.
+    if (force && typeof gradStopsServer !== 'undefined'){
+      gradStops = (gradStopsServer || []).map(s => ({...s}));
+      gradMode  = gradModeServer;
+      if (typeof renderGradEditor === 'function') renderGradEditor();
+      if (typeof refreshGradApplyState === 'function') refreshGradApplyState();
+    }
   } catch (e) { /* offline — leave dashes */ }
 }
 let emo2StatsCfg = { default:'bezel_orbit', extras:[], active:'bezel_orbit', layouts:{} };
@@ -3004,10 +4491,123 @@ function _haloRGB(pct){
   if (pct < 90) return lerp(_CY, _AMBER, (pct - 70) / 20);
   return lerp(_AMBER, _RED, Math.min(1, (pct - 90) / 10));
 }
+// ── Device-mockup faithful render ────────────────────────────────────────────
+// While _mockupBigEyes is set (during the device-preview paint) _drawEyes
+// renders the REAL character eyes (pairEyeForChar, offscreen) at the layout's
+// eye position — animated per the active status's mode — instead of the tiny
+// schematic dots used by the small layout thumbnails.
+let _mockupBigEyes = false, _mockupEye = null, _mockEyeCanvas = null;
+function _statusEyeColor(sc, pct){
+  const c = sc && sc.color;
+  if (c === 'cyan')  return _CY;
+  if (c === 'amber') return _AMBER;
+  if (c === 'red')   return _RED;
+  if (typeof c === 'string' && /^#[0-9a-f]{6}$/i.test(c)) return c;
+  return _haloRGB(pct);   // 'auto' → per-% gradient
+}
 function _drawEyes(ctx, cx, cy, r, color){
+  if (_mockupBigEyes && _mockupEye){
+    const W = ctx.canvas.width;
+    const ow = Math.max(48, Math.round(W * 0.80)), oh = Math.round(ow * 0.46);
+    if (!_mockEyeCanvas) _mockEyeCanvas = document.createElement('canvas');
+    if (_mockEyeCanvas.width !== ow || _mockEyeCanvas.height !== oh){ _mockEyeCanvas.width = ow; _mockEyeCanvas.height = oh; }
+    const octx = _mockEyeCanvas.getContext('2d');
+    octx.clearRect(0, 0, ow, oh);
+    try { pairEyeForChar(octx, _mockupEye.form, _mockupEye.color || color, _mockupEye.opts || {}, currentChar); } catch(e){}
+    ctx.drawImage(_mockEyeCanvas, Math.round(cx - ow/2), Math.round(cy - oh/2));
+    return;
+  }
+  if (currentChar === 'pixl'){
+    // Pixl: 2×2 pixel block per eye
+    const pSz = r * 1.2;
+    ctx.fillStyle = color;
+    ctx.save(); ctx.shadowColor = color; ctx.shadowBlur = 8;
+    _drawPixlEye(ctx, cx - r*1.7, cy, color, r, 'neutral', false);
+    _drawPixlEye(ctx, cx + r*1.7, cy, color, r, 'neutral', true);
+    ctx.restore();
+    return;
+  }
+  // clauli / tv — original
   ctx.fillStyle = color;
   ctx.beginPath(); ctx.arc(cx - r*1.7, cy, r, 0, Math.PI*2); ctx.fill();
   ctx.beginPath(); ctx.arc(cx + r*1.7, cy, r, 0, Math.PI*2); ctx.fill();
+}
+
+// ── Device-preview chrome overlay: clock + configured usage text ─────────────
+// The tiny layout pills are schematic, but the BIG device mockup must be a
+// faithful preview — it has to show the CLOCK and the configurable usage TEXT
+// (text_source / text_format / text_placement), which the layout cases alone
+// never draw. Mirrors the firmware exactly: clock at top-centre (CLOCK_Y=18 on
+// the 240×280 panel) and the session/weekly rows at the firmware's per-
+// placement Y tables, composed as "Сессия: 42%" / "…: 3ч 20м" / "…: 42% / 3ч 20м".
+const _MOCK_INFO_S_Y = [172, 184, 216];   // firmware INFO_S_Y_TBL (top/middle/bottom)
+const _MOCK_INFO_W_Y = [192, 220, 240];   // firmware INFO_W_Y_TBL
+function _mockupChrome(ctx, W, H, sess, weekly){
+  const cfg  = (typeof emo2StatsCfg !== 'undefined' && emo2StatsCfg) ? emo2StatsCfg : {};
+  const ru   = (typeof curLang !== 'undefined' && curLang === 'ru');
+  const land = (typeof currentOrient !== 'undefined' && currentOrient === 'horizontal');
+  const devW = land ? 280 : 240, devH = land ? 240 : 280;
+  const sy = H / devH;
+  const active = cfg.active || cfg.default || 'hud_ribbon';
+  const lay = (cfg.layouts || {})[active] || {};
+  const src = lay.text_source || cfg.text_source || 'both';
+  const fmt = lay.text_format || cfg.text_format || 'pct';
+  let   pl  = lay.text_placement || cfg.text_placement || 'middle';
+  // Firmware coerces ribbon/ecg to TOP in landscape (no vertical room).
+  if (land && (active === 'hud_ribbon' || active === 'ecg_monitor')) pl = 'top';
+  const pIdx = (pl === 'top') ? 0 : (pl === 'bottom') ? 2 : 1;
+
+  // ---- Clock (top-centre, all styles) ----
+  const cs = cfg.clock_style || 'off';
+  if (cs && cs !== 'off'){
+    const d = new Date();
+    const hhmm = ('0'+d.getHours()).slice(-2) + ':' + ('0'+d.getMinutes()).slice(-2);
+    let col = _CY;
+    const cc = cfg.clock_color || 'default';
+    if (cc === 'auto')                       col = _haloRGB(sess);
+    else if (/^#[0-9a-f]{6}$/i.test(cc))     col = cc;
+    else if (cs === 'bracket')               col = _AMBER;   // default colour for bracket style
+    const fpx = Math.max(10, Math.round(20 * sy));
+    const cy  = Math.round(18 * sy + fpx * 0.55);
+    ctx.save();
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = 'bold ' + fpx + 'px "Azeret Mono",monospace';
+    if (cs === 'neon'){ ctx.shadowColor = col; ctx.shadowBlur = 8; }
+    if (cs === 'bracket'){
+      ctx.fillStyle = '#555';
+      ctx.fillText('[', W/2 - fpx*1.7, cy); ctx.fillText(']', W/2 + fpx*1.7, cy);
+      ctx.fillStyle = col; ctx.fillText(hhmm, W/2, cy);
+    } else {
+      if (cs === 'orbitron' || cs === 'major_mono'){ try { ctx.letterSpacing = '2px'; } catch(e){} }
+      ctx.fillStyle = col; ctx.fillText(hhmm, W/2, cy);
+      try { ctx.letterSpacing = '0px'; } catch(e){}
+    }
+    ctx.restore();
+  }
+
+  // ---- Usage text rows (session / weekly) ----
+  if (src && src !== 'off' && fmt){
+    const showS = (src === 'session' || src === 'both');
+    const showW = (src === 'weekly'  || src === 'both');
+    const sLbl = ru ? 'Сессия' : 'Session', wLbl = ru ? 'Неделя' : 'Week';
+    const sReset = ru ? '3ч 20м' : '3h 20m', wReset = ru ? '2д 4ч' : '2d 4h';
+    const compose = (lbl, pct, reset) => {
+      if (fmt === 'pct')   return lbl + ': ' + (pct|0) + '%';
+      if (fmt === 'reset') return lbl + ': ' + reset;
+      return lbl + ': ' + (pct|0) + '% / ' + reset;   // pct_reset
+    };
+    // Firmware special-cases ribbon+BOTTOM (info_s_y/info_w_y): step the rows
+    // up to 200/220 so they sit cleanly ABOVE the ribbon chrome at H-40/H-22.
+    let sY = _MOCK_INFO_S_Y[pIdx], wY = _MOCK_INFO_W_Y[pIdx];
+    if (active === 'hud_ribbon' && pl === 'bottom'){ sY = 200; wY = 220; }
+    const fpx = Math.max(9, Math.round(15 * sy));
+    ctx.save();
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.font = fpx + 'px "Azeret Mono",monospace';
+    if (showS){ ctx.fillStyle = '#dfe7ea'; ctx.fillText(compose(sLbl, sess,   sReset), W/2, sY * sy); }
+    if (showW){ ctx.fillStyle = '#9aa3a6'; ctx.fillText(compose(wLbl, weekly, wReset), W/2, wY * sy); }
+    ctx.restore();
+  }
 }
 
 // id = layout name. t = 0..1 phase. Canvas should be 60×72 or similar
@@ -3142,15 +4742,19 @@ function paintLayoutThumb(ctx, id, t){
     }
     case 'hud_ribbon': {
       _drawEyes(ctx, cx, H*0.30, 3.5, halo);
+      // Device ribbon chrome lives at the very BOTTOM (firmware H-40 / H-22 ≈
+      // 0.86 / 0.92 H), with the usage text overlaid ABOVE it. Match that here
+      // so the big mockup is faithful and the bottom-placed text clears the
+      // segments (was 0.65 / 0.80 — too high, collided with the overlay text).
       const segs = 8, segW = (W-10)/segs - 0.6, segH = 4, gap = 0.6;
       const lit_s = Math.round(segs * sess / 100);
       const lit_w = Math.round(segs * weekly / 100);
       for (let i = 0; i < segs; i++){
         const sx = 5 + i * (segW + gap);
         ctx.fillStyle = i < lit_s ? halo : _DIM;
-        ctx.fillRect(sx, H*0.65, segW, segH);
+        ctx.fillRect(sx, H*0.855, segW, segH);
         ctx.fillStyle = i < lit_w ? haloW : _DIM;
-        ctx.fillRect(sx, H*0.80, segW, segH);
+        ctx.fillRect(sx, H*0.925, segW, segH);
       }
       break;
     }
@@ -3177,12 +4781,30 @@ function paintLayoutThumb(ctx, id, t){
     }
     case 'corner_chip': {
       _drawEyes(ctx, cx, H*0.35, 3, halo);
-      // framed badge in bottom-right
-      ctx.strokeStyle = '#555'; ctx.lineWidth = 1;
-      const bx = W - 26, by = H - 22, bw = 22, bh = 18;
-      _pathRoundRect(ctx, bx, by, bw, bh, 3); ctx.stroke();
-      ctx.fillStyle = halo;
-      ctx.font = 'bold 11px "Azeret Mono",monospace';
+      // Item 5 — frame-fill chip: border rises from bottom per sess%.
+      // Only the border recolours (filled portion cyan; unfilled dim).
+      // Inside stays transparent (background shows through).
+      const bx = W - 26, by = H - 22, bw = 22, bh = 18, br = 3;
+      const chipPerim = 2*(bw + bh);   // total border length
+      const chipFill  = chipPerim * Math.min(sess, 100) / 100;  // filled arc
+      // Draw dim full border first
+      ctx.strokeStyle = '#444'; ctx.lineWidth = 1.5;
+      _pathRoundRect(ctx, bx, by, bw, bh, br); ctx.stroke();
+      // Draw lit border — clip to bottom chipFill px rising upward.
+      // Strategy: lit portion = bottom bar → right side → right top corner → …
+      // Simpler approach: use clip rect anchored at bottom of chip.
+      if (chipFill > 0) {
+        ctx.save();
+        const fillH = bh * Math.min(sess, 100) / 100;
+        ctx.beginPath(); ctx.rect(bx - 2, by + bh - fillH, bw + 4, fillH + 2);
+        ctx.clip();
+        ctx.strokeStyle = halo; ctx.lineWidth = 1.5;
+        _pathRoundRect(ctx, bx, by, bw, bh, br); ctx.stroke();
+        ctx.restore();
+      }
+      // Text label (% value) in chip centre — uses halo colour
+      ctx.fillStyle = sess > 0 ? halo : '#555';
+      ctx.font = 'bold 9px "Azeret Mono",monospace';
       ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
       ctx.fillText(`${sess|0}`, bx + bw/2, by + bh/2);
       ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
@@ -3213,19 +4835,26 @@ function paintLayoutThumb(ctx, id, t){
     }
     case 'classic': {
       _drawEyes(ctx, cx, H*0.25, 3.5, halo);
-      // tiny text lines (S/W with % values)
+      // tiny text lines (S/W with % values) — schematic pills only; the big
+      // device mockup draws the real configured usage text via _mockupChrome().
       ctx.fillStyle = '#cfcfcf'; ctx.font = '7px "Azeret Mono",monospace';
       ctx.textBaseline = 'middle';
-      ctx.fillText(`S ${sess|0}%`, 5, H*0.55);
-      ctx.fillText(`W ${weekly|0}%`, 5, H*0.72);
-      // tiny bars
+      if (!_mockupBigEyes){
+        ctx.fillText(`S ${sess|0}%`, 5, H*0.55);
+        ctx.fillText(`W ${weekly|0}%`, 5, H*0.72);
+      }
+      // tiny bars — on the big mockup the device classic bars sit BELOW the
+      // usage text (firmware BAR table ≈ 0.71 / 0.84 H), so the overlay text
+      // from _mockupChrome() clears them. Compact pills keep 0.62 / 0.79.
+      const cb_s = _mockupBigEyes ? H*0.72 : H*0.62;
+      const cb_w = _mockupBigEyes ? H*0.85 : H*0.79;
       ctx.fillStyle = _DIM;
-      ctx.fillRect(5, H*0.62, W-10, 2);
-      ctx.fillRect(5, H*0.79, W-10, 2);
+      ctx.fillRect(5, cb_s, W-10, 2);
+      ctx.fillRect(5, cb_w, W-10, 2);
       ctx.fillStyle = halo;
-      ctx.fillRect(5, H*0.62, (W-10) * sess / 100, 2);
+      ctx.fillRect(5, cb_s, (W-10) * sess / 100, 2);
       ctx.fillStyle = haloW;
-      ctx.fillRect(5, H*0.79, (W-10) * weekly / 100, 2);
+      ctx.fillRect(5, cb_w, (W-10) * weekly / 100, 2);
       ctx.textBaseline = 'alphabetic';
       break;
     }
@@ -3234,6 +4863,9 @@ function paintLayoutThumb(ctx, id, t){
       _drawEyes(ctx, cx, H/2, 4, halo);
       break;
   }
+  // Faithful device-preview overlays (clock + configured usage text). Only on
+  // the big device mockup — the tiny layout pills stay schematic.
+  if (_mockupBigEyes) _mockupChrome(ctx, W, H, sess, weekly);
 }
 
 // Mini-thumbnails for text-mode pills: 4 modes × portrait canvas.
@@ -3406,26 +5038,58 @@ function paintClockThumb(ctx, style, now){
 // Single phase shared across all live thumbs. Period = 8 s.
 const LAYOUT_THUMB_PERIOD = 8000;
 let _mockupLastSid = null;
+let _lastThumbFrame = 0;
+let _lastMockFrame = 0;
 function layoutThumbLoop(now){
+  // Throttle to ~22fps + pause when tab hidden.
+  if (document.hidden || (now - _lastThumbFrame) < 45) { requestAnimationFrame(layoutThumbLoop); return; }
+  _lastThumbFrame = now;
   const t = (now % LAYOUT_THUMB_PERIOD) / LAYOUT_THUMB_PERIOD;
   // Pearls + ECG sub-loops also need raw `now` so they animate
   // independently of the global cycle. Pass both.
   document.querySelectorAll('canvas[data-thumb-kind]').forEach(cv => {
     const kind = cv.dataset.thumbKind || 'layout';
     if (!cv.isConnected) return;
+    // Skip thumbs inside a collapsed panel (offsetParent null = display:none
+    // up the chain). The live device mockup always draws.
+    if (kind !== 'mockup' && cv.offsetParent === null) return;
     try {
       if (kind === 'mockup') {
-        // Phase L5 — live device mockup. Pulls the active state from
-        // emo2CurrentState (real device state) or activeStatusTab (user
-        // selection) and renders that state's layout. Re-uses
-        // paintLayoutThumb at higher resolution.
-        const sid = emo2CurrentState || activeStatusTab || 'connected';
+        // The full-screen mockup is the heaviest always-on draw (esp. for
+        // pixl/blob). Cap it to ~11fps independently of the 22fps thumbs.
+        if (now - _lastMockFrame < 90) return;
+        _lastMockFrame = now;
+        // Phase L5 — live device mockup. Priority: activeStatusTab (user
+        // is editing it) → emo2CurrentState (real device state).
+        const sid = activeStatusTab || emo2CurrentState || 'connected';
         // Layout is global now — the mockup shows the single active layout.
         const layoutId = emo2StatsCfg.active || emo2StatsCfg.default || 'hud_ribbon';
+        // Faithful eyes: render the active status's eye. To avoid the preview
+        // "мельтешит" (flickering through every selected form/canim each frame),
+        // LOCK to a SINGLE animation: canim mode → the first selected canim
+        // (its own internal fn(t*4) keeps it alive — one looping animation);
+        // rotation mode → the first selected form, held static.
+        try {
+          const sc = (typeof emo2Config !== 'undefined' && emo2Config) ? (emo2Config[sid] || {}) : {};
+          const pctNow = 30 + 60 * Math.abs(Math.sin(t * Math.PI));
+          let form = 'neutral', opts = { scaleY: 1 };
+          if (sc.mode === 'canim' && (sc.canims || []).length && typeof CANIM_FRAME !== 'undefined') {
+            const cid = sc.canims[0];                       // one fixed animation, no cycling
+            const fn = CANIM_FRAME[cid];
+            if (fn) { const fr = fn(t * 4); form = fr.formL || fr.form || 'neutral'; opts = fr; }
+          } else {
+            const forms = (sc.forms && sc.forms.length) ? sc.forms : ['neutral'];
+            form = forms[0] || 'neutral';                   // one fixed form, no cycling
+          }
+          _mockupEye = { form, opts, color: _statusEyeColor(sc, pctNow) };
+        } catch(e) { _mockupEye = { form: 'neutral', opts: {}, color: _CY }; }
+        _mockupBigEyes = true;
         paintLayoutThumb(cv.getContext('2d'), layoutId, t);
+        _mockupBigEyes = false;
         // Update the label only when sid changes (cheap DOM write).
         if (sid !== _mockupLastSid) {
           _mockupLastSid = sid;
+          if (typeof updateMockupSummary === 'function') updateMockupSummary();
           const lbl = document.getElementById('deviceMockupStateLabel');
           if (lbl) {
             const st = STATES.find(s => s[0] === sid);
@@ -3557,8 +5221,10 @@ function getClockCustomHex(cfg){
 }
 function renderEmo2Stats(cfg){
   emo2StatsCfg = cfg;
-  // Adopt server-side colour stops if they changed (server is source of truth).
-  syncGradStopsFromCfg(cfg);
+  // Pass fromServer=false — staged re-renders must NOT update gradStopsServer.
+  // Genuine server loads call syncGradStopsFromCfg(cfg, true) directly from
+  // loadEmo2Stats() instead.
+  syncGradStopsFromCfg(cfg, false);
   // Sync pace sliders too (slider position only — not while user is dragging).
   syncPaceSlidersFromCfg(cfg);
   const def    = cfg.default || 'bezel_orbit';
@@ -3778,9 +5444,8 @@ function renderEmo2Stats(cfg){
     });
   }
 }
-// setClockColor — accepts 'default', 'auto' or '#RRGGBB' hex. POSTs to
-// /api/emo2-stats-config which validates + persists + triggers a cfg push.
-async function setClockColor(id){
+// setClockColor — staged setter. Accepts 'default', 'auto' or '#RRGGBB' hex.
+function setClockColor(id){
   if (!id) return;
   const cur = (emo2StatsCfg && emo2StatsCfg.clock_color) || 'default';
   if (id === cur) return;
@@ -3788,7 +5453,7 @@ async function setClockColor(id){
   document.querySelectorAll('#clockColorPills .text-subpill').forEach(p => {
     p.classList.toggle('active', p.dataset.id === (isHex ? 'custom' : id));
   });
-  await _postEmo2Stats({ clock_color: id });
+  _stageEmo2Stats({ clock_color: id });
 }
 async function _postEmo2Stats(body){
   try {
@@ -3802,53 +5467,60 @@ async function _postEmo2Stats(body){
     else renderEmo2Stats(emo2StatsCfg);
   } catch(e){ renderEmo2Stats(emo2StatsCfg); }
 }
-async function setTextSource(id){
+function setTextSource(id){
   if (!id) return;
   const active = emo2StatsCfg.active || emo2StatsCfg.default || 'bezel_orbit';
   if (id === getLayoutTextSource(emo2StatsCfg, active)) return;
   document.querySelectorAll('#textSourcePills .text-subpill').forEach(p => {
     p.classList.toggle('active', p.dataset.id === id);
   });
-  await _postEmo2Stats({ text_source: id });
+  // Merge into the active layout's text_source in the layouts map.
+  const layouts = _cloneCfg(emo2StatsCfg.layouts || {});
+  if (!layouts[active]) layouts[active] = {};
+  layouts[active].text_source = id;
+  _stageEmo2Stats({ layouts });
 }
-async function setTextFormat(id){
+function setTextFormat(id){
   if (!id) return;
   const active = emo2StatsCfg.active || emo2StatsCfg.default || 'bezel_orbit';
   if (id === getLayoutTextFormat(emo2StatsCfg, active)) return;
   document.querySelectorAll('#textFormatPills .text-subpill').forEach(p => {
     p.classList.toggle('active', p.dataset.id === id);
   });
-  await _postEmo2Stats({ text_format: id });
+  const layouts = _cloneCfg(emo2StatsCfg.layouts || {});
+  if (!layouts[active]) layouts[active] = {};
+  layouts[active].text_format = id;
+  _stageEmo2Stats({ layouts });
 }
-async function setTextPlacement(id){
+function setTextPlacement(id){
   if (!id) return;
   const active = emo2StatsCfg.active || emo2StatsCfg.default || 'bezel_orbit';
   if (id === getLayoutTextPlacement(emo2StatsCfg, active)) return;
   document.querySelectorAll('#textPlacementPills .text-subpill').forEach(p => {
     p.classList.toggle('active', p.dataset.id === id);
   });
-  await _postEmo2Stats({ text_placement: id });
+  const layouts = _cloneCfg(emo2StatsCfg.layouts || {});
+  if (!layouts[active]) layouts[active] = {};
+  layouts[active].text_placement = id;
+  _stageEmo2Stats({ layouts });
 }
-async function setLayoutColor(id){
+function setLayoutColor(id){
   if (!id) return;
-  // `id` is either a built-in keyword ("auto"/"cyan"/"amber"/"red") OR a
-  // raw "#RRGGBB" hex from the custom-picker callback. The server
-  // accepts both shapes in the `layout_color` field.
   const cur = (emo2StatsCfg && emo2StatsCfg.layout_color) || 'auto';
   if (id === cur) return;
   const isHex = (typeof id === 'string') && /^#[0-9a-f]{6}$/i.test(id);
   document.querySelectorAll('#layoutColorPills .text-subpill').forEach(p => {
     p.classList.toggle('active', p.dataset.id === (isHex ? 'custom' : id));
   });
-  await _postEmo2Stats({ layout_color: id });
+  _stageEmo2Stats({ layout_color: id });
 }
-async function setClockStyle(id){
+function setClockStyle(id){
   if (!id) return;
   if (id === getClockStyle(emo2StatsCfg)) return;
   document.querySelectorAll('#clockStylePills .text-subpill').forEach(p => {
     p.classList.toggle('active', p.dataset.id === id);
   });
-  await _postEmo2Stats({ clock_style: id });
+  _stageEmo2Stats({ clock_style: id });
 }
 // Back-compat — old code paths POST {text_mode:...}. Server still accepts it
 // and maps to (source, format) via _LEGACY_TEXT_MODE_MAP.
@@ -3859,51 +5531,19 @@ async function setEmo2TextMode(id){
 
 // Layout help-modal removed — pills now embed live canvas previews
 // rendered by paintLayoutThumb() inline (above).
-async function setEmo2Default(id){
+function setEmo2Default(id){
   if (!id) return;
-  try {
-    const r = await fetch('/api/emo2-stats-config', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ default: id })
-    });
-    const j = await r.json().catch(()=>({}));
-    if (r.ok && j.config) renderEmo2Stats(j.config);
-  } catch(e){}
+  _stageEmo2Stats({ default: id });
 }
-async function setEmo2Layout(id){
+function setEmo2Layout(id){
   if (!id || id === emo2StatsCfg.active) return;
-  // Optimistic UI flip — daemon confirms by re-broadcasting on success.
-  document.querySelectorAll('#statsPills .stats-pill').forEach(p => {
-    p.classList.toggle('active', p.dataset.id === id);
-  });
-  const sum = document.getElementById('statsCurrent');
-  if (sum) sum.textContent = t('layout_' + id) || id;
-  try {
-    const r = await fetch('/api/emo2-stats-config', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ active: id })
-    });
-    const j = await r.json().catch(()=>({}));
-    if (r.ok && j.config) {
-      emo2StatsCfg = j.config;
-      // Re-render so text_placement / text_format pills update their
-      // active state + per-layout allowed-set (item 4). Without this the
-      // user clicks a new layout but the placement section still shows
-      // the OLD layout's enabled pills.
-      renderEmo2Stats(emo2StatsCfg);
-      coerceActivePlacement();   // item 9 — push a valid placement if the new layout disallows the current one
-    } else {
-      // Roll back UI on failure.
-      renderEmo2Stats(emo2StatsCfg);
-    }
-  } catch (e) {
-    renderEmo2Stats(emo2StatsCfg);
-  }
+  _stageEmo2Stats({ active: id });
+  coerceActivePlacement();
 }
 // Refresh after focus — gallery edits in a new tab; coming back should sync.
-window.addEventListener('focus', loadEmo2Stats);
+// Guard: if there are staged edits, only update server snapshots (dirty check
+// then re-evaluate indicators) — do NOT clobber staged globals.
+window.addEventListener('focus', () => { loadEmo2Config(); loadEmo2Stats(); });
 
 // ───────── BLE OTA upload ──────────────────────────────────────────────────
 function fmtKB(n){ return (n/1024).toFixed(1) + ' KB'; }
@@ -3981,7 +5621,13 @@ function updateOTA(msg){
     otaLog('✕ ' + (msg.error || 'unknown'), '#FF4D4D');
   }
 }
-async function sendLang(l){setLangUI(l);try{await fetch('/api/lang',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lang:l})})}catch{}}
+async function sendLang(l){
+  // User-initiated lang switch: guard unsaved changes, then apply + POST.
+  guardUnsaved(async () => {
+    _applyLangUI(l);
+    try{await fetch('/api/lang',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lang:l})})}catch{}
+  });
+}
 // Bootstrap: order matters — these consume const tables declared above
 // (STATS_LAYOUTS, TEXT_SOURCES_LIST, TEXT_FORMATS_LIST, TEXT_PLACEMENTS_
 // LIST, LAYOUT_PLACEMENT_ALLOWED). Calling them earlier in the script
@@ -3989,10 +5635,29 @@ async function sendLang(l){setLangUI(l);try{await fetch('/api/lang',{method:'POS
 // per-state pane render — keep them here, last.
 buildStateBlocks();
 buildPreviewTiles();
+renderCharacterPills();
 loadEmo2Config();
 loadEmo2Stats();
+// Item 1 — default tab is 'connected'; show initial inactive notes
+setActiveStatusTab('connected');
 applyI18n();
-fetch('/api/status').then(r=>r.json()).then(d=>{updateBLE(d.ble_connected?'connected':'disconnected',d.ble_address);setLangUI(d.lang||'en');updateAuth(!d.auth_error);if(d.last_data)updateData(d.last_data)}).catch(()=>{});
+// Init apply bar + block states (snapshots may be null at this point but
+// no harm — dirty checks return false and bar stays greyed out).
+refreshAllStatusApplyStates();
+refreshStatsBlockApplyStates();
+refreshGlobalApplyBar();
+// Load initial character — try /api/character first, fall back to 'clauli'
+fetch('/api/character').then(r=>r.json()).then(d=>{
+  if (d && d.character) applyCharFromDaemon(d.character);
+}).catch(()=>{});
+fetch('/api/status').then(r=>r.json()).then(d=>{
+  updateBLE(d.ble_connected?'connected':'disconnected',d.ble_address);
+  _applyLangUI(d.lang||'en');
+  updateAuth(!d.auth_error);
+  if(d.last_data)updateData(d.last_data);
+  if(d.character) applyCharFromDaemon(d.character);
+  // Use _applyLangUI for server-pushed lang (no guard needed — not user-initiated).
+}).catch(()=>{});
 connectWS();
 </script>
 </body>

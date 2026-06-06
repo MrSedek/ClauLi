@@ -61,7 +61,7 @@ def _site_packages(prefix, real_prefix, global_site_packages):
         )
 
 
-_site_packages('/Volumes/Data/_pet-projects/ClauLi/daemon/.venv', '/Library/Frameworks/Python.framework/Versions/3.12', 0)
+_site_packages('/private/tmp/clauli_build_venv', '/opt/homebrew/opt/python@3.12', 0)
 
 def _chdir_resource():
     import os
@@ -184,7 +184,7 @@ def _recipes_pil_prescript(plugins):
     Image.init = init
 
 
-_recipes_pil_prescript(['XVThumbImagePlugin', 'IptcImagePlugin', 'FtexImagePlugin', 'ImtImagePlugin', 'PngImagePlugin', 'IcoImagePlugin', 'FitsImagePlugin', 'PixarImagePlugin', 'WmfImagePlugin', 'FliImagePlugin', 'XbmImagePlugin', 'McIdasImagePlugin', 'TgaImagePlugin', 'BlpImagePlugin', 'GifImagePlugin', 'PsdImagePlugin', 'GribStubImagePlugin', 'MpegImagePlugin', 'MspImagePlugin', 'EpsImagePlugin', 'DcxImagePlugin', 'BufrStubImagePlugin', 'PdfImagePlugin', 'CurImagePlugin', 'Hdf5StubImagePlugin', 'MicImagePlugin', 'PcxImagePlugin', 'SpiderImagePlugin', 'Jpeg2KImagePlugin', 'BmpImagePlugin', 'SgiImagePlugin', 'FpxImagePlugin', 'DdsImagePlugin', 'WebPImagePlugin', 'GbrImagePlugin', 'SunImagePlugin', 'PcdImagePlugin', 'PpmImagePlugin', 'ImImagePlugin', 'IcnsImagePlugin', 'JpegImagePlugin', 'TiffImagePlugin', 'QoiImagePlugin', 'MpoImagePlugin', 'AvifImagePlugin', 'PalmImagePlugin', 'XpmImagePlugin'])
+_recipes_pil_prescript(['WebPImagePlugin', 'Hdf5StubImagePlugin', 'XVThumbImagePlugin', 'ImImagePlugin', 'XbmImagePlugin', 'PcxImagePlugin', 'FpxImagePlugin', 'SunImagePlugin', 'PngImagePlugin', 'IcnsImagePlugin', 'MpegImagePlugin', 'SpiderImagePlugin', 'TgaImagePlugin', 'MpoImagePlugin', 'QoiImagePlugin', 'McIdasImagePlugin', 'IcoImagePlugin', 'PcdImagePlugin', 'PsdImagePlugin', 'SgiImagePlugin', 'AvifImagePlugin', 'FliImagePlugin', 'GbrImagePlugin', 'JpegImagePlugin', 'MicImagePlugin', 'CurImagePlugin', 'FitsImagePlugin', 'PpmImagePlugin', 'BmpImagePlugin', 'XpmImagePlugin', 'TiffImagePlugin', 'BlpImagePlugin', 'DdsImagePlugin', 'MspImagePlugin', 'ImtImagePlugin', 'PalmImagePlugin', 'IptcImagePlugin', 'FtexImagePlugin', 'WmfImagePlugin', 'DcxImagePlugin', 'Jpeg2KImagePlugin', 'BufrStubImagePlugin', 'PdfImagePlugin', 'GifImagePlugin', 'EpsImagePlugin', 'GribStubImagePlugin', 'PixarImagePlugin'])
 
 
 def _setup_ctypes():
@@ -221,9 +221,9 @@ def _setup_openssl():
     import os
     resourcepath = os.environ["RESOURCEPATH"]
     os.environ["SSL_CERT_FILE"] = os.path.join(
-        resourcepath, "openssl.ca", "no-such-file")
+        resourcepath, "openssl.ca", "cert.pem")
     os.environ["SSL_CERT_DIR"] = os.path.join(
-        resourcepath, "openssl.ca", "no-such-file")
+        resourcepath, "openssl.ca", "certs")
 
 _setup_openssl()
 

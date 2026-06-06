@@ -6,42 +6,30 @@
 	<dict>
 		<key>Resources/Info.plist</key>
 		<data>
-		3ONnmi5O7NhYCX0BQutpxML9rrw=
+		Wyg3Fzy29x2gkgOpmr/5O3+DIfw=
 		</data>
 	</dict>
 	<key>files2</key>
 	<dict>
 		<key>Resources/Info.plist</key>
 		<dict>
-			<key>hash</key>
-			<data>
-			3ONnmi5O7NhYCX0BQutpxML9rrw=
-			</data>
 			<key>hash2</key>
 			<data>
-			bZsoFDb/Ep+HpxhmYmV/d8L2nvErM727Fw6qp9XQN/Q=
+			xfWkA+16f2veV8LNh8lpS6xZI/jlh+lC626i+LdDBiY=
 			</data>
 		</dict>
 		<key>include/python3.12/pyconfig.h</key>
 		<dict>
-			<key>hash</key>
-			<data>
-			1K9SqFQ9THB/DMC/qxDlk62ug9k=
-			</data>
 			<key>hash2</key>
 			<data>
-			ugAKFkgFdKURxuR8Uu1CPY7tfONg0/mBU8EqVqA3jzs=
+			K/muI/BVP0LxBCxeN+I2mM8ZPcfMydY/ivo35ewPn14=
 			</data>
 		</dict>
 		<key>lib/python3.12/config-3.12-darwin/Makefile</key>
 		<dict>
-			<key>hash</key>
-			<data>
-			HXB/Ut9otBIO7WjJSPAkaGvjca4=
-			</data>
 			<key>hash2</key>
 			<data>
-			iVDkUZmY01ERNutrDqTBWZ6R+/2S/Rf/CbM43OlhYLg=
+			DnOS1x4XNGxJNA+kG4Z2vw0GIcB6iYnuGiy8gbO89zU=
 			</data>
 		</dict>
 	</dict>

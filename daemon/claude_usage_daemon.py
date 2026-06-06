@@ -700,6 +700,11 @@ class DaemonState:
     emo2_stats: dict = field(default_factory=lambda: dict(DEFAULT_EMO2_STATS))
     session: Optional["Session"] = None     # live BLE session (None when disconnected)
     ota_in_progress: bool = False           # one OTA at a time
+    # Serialised cfg blob of the LAST successful full-config push. Lets a
+    # reconnect skip re-pushing an unchanged ~1 KB config (the device restores
+    # it from NVS) — re-applying it on every reconnect is what amplified the
+    # watchdog-reboot churn. Empty on daemon start → first connect always pushes.
+    last_pushed_cfg_json: str = ""
 
 
 # ---------------------------------------------------------------------------
@@ -1506,8 +1511,10 @@ async def connect_and_run(
     # and then per-TICK form/op pushes, ship the whole config (per-state
     # forms/ops/colors + active layout + per-layout text mode) as one JSON
     # RX-write. ESP applies + persists to NVS — its local state machine
-    # takes over rotation from here.
-    await push_emo2_full_config(session, state)
+    # takes over rotation from here. force=False: skip the re-apply if the
+    # config is byte-identical to the last push (device has it in NVS) so a
+    # reconnect after a watchdog reboot doesn't re-trigger the churn storm.
+    await push_emo2_full_config(session, state, force=False)
 
     last_poll = 0.0
     used_successfully = False
@@ -2768,7 +2775,7 @@ def _schedule_push_emo2(state: "DaemonState", delay: float = 0.4) -> None:
     _push_emo2_task = asyncio.create_task(_fire())
 
 
-async def push_emo2_full_config(session: "Session", state: "DaemonState") -> None:
+async def push_emo2_full_config(session: "Session", state: "DaemonState", force: bool = True) -> None:
     """Send the whole per-state + layout config as one JSON RX-write. ESP
     parses, applies, and persists to NVS — daemon no longer drives form/op
     rotation tick-by-tick (Phase A moved that to firmware).
@@ -2785,20 +2792,35 @@ async def push_emo2_full_config(session: "Session", state: "DaemonState") -> Non
     # every Apply reliably re-syncs the WHOLE config. Combined with the 90s
     # LINK_DEAD_MS self-recovery, config converges within ~90s worst case.
     blob = build_emo2_cfg_blob(state)
-    ok = False
-    for attempt in range(4):
-        if session is None or not state.ble_connected:
-            break
-        try:
-            ok = await session.write_payload(blob)
-        except Exception as e:
-            log(f"emo2 cfg push exception (try {attempt + 1}): {e}")
-            ok = False
+    # Skip the heavy ~1 KB JSON re-apply if the config is unchanged since the last
+    # successful push AND the caller allows it (force=False on a reconnect). The
+    # device persists + restores its config from NVS, so re-applying an identical
+    # blob on every reconnect only piles parse+relayout+NVS work into the fragile
+    # post-(re)connect window — on the single-core C6 that can starve NimBLE
+    # (supervision-timeout drop) or hang the loop (TASK_WDT reboot), which trips
+    # another reconnect → another push → a self-amplifying churn storm. Live edits
+    # (force=True, default) always push. The cheap per-display CTRL bytes below
+    # are still replayed on every reconnect regardless.
+    blob_json = json.dumps(blob, separators=(",", ":"), sort_keys=True)
+    if force or blob_json != state.last_pushed_cfg_json:
+        ok = False
+        for attempt in range(4):
+            if session is None or not state.ble_connected:
+                break
+            try:
+                ok = await session.write_payload(blob)
+            except Exception as e:
+                log(f"emo2 cfg push exception (try {attempt + 1}): {e}")
+                ok = False
+            if ok:
+                break
+            await asyncio.sleep(0.4)
         if ok:
-            break
-        await asyncio.sleep(0.4)
-    if not ok:
-        log("emo2 cfg push FAILED after retries — firmware may be out of sync")
+            state.last_pushed_cfg_json = blob_json
+        else:
+            log("emo2 cfg push FAILED after retries — firmware may be out of sync")
+    else:
+        log("emo2 cfg unchanged since last push — skipping JSON re-apply on reconnect")
     # Replay the per-display knobs via CTRL bytes. Old firmware will ignore
     # any byte it doesn't recognise (default branch in CTRL dispatch).
     stats = state.emo2_stats or {}
