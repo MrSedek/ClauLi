@@ -20,9 +20,15 @@ daemon/.venv/
 __pycache__/
 *.pyc
 
+# PyInstaller build artifacts
+daemon/build/
+daemon/dist/
+
 # Logs
-merged.log/esp.log
-merged.log/merged.log
+merged.log/
+
+# Temp files
+pico.save
 
 # Internal agent notes — not part of the project
 CLAUDE.md
