@@ -126,6 +126,8 @@ class TrayState:
         self.connected: bool = False
         self.lang: str = "en"
         self.auth_error: bool = False
+        self.ble_unavailable: bool = False
+        self.ble_unavailable_reason: str = ""  # "denied"|"off"|"unsupported"|"unknown"|""
         self.last_seen: Optional[float] = None
 
     @property
@@ -140,8 +142,13 @@ class TrayState:
         self.connected = bool(data.get("ble_connected"))
         self.lang = data.get("lang", "en") or "en"
         self.auth_error = bool(data.get("auth_error"))
+        self.ble_unavailable = bool(data.get("ble_unavailable"))
+        self.ble_unavailable_reason = data.get("ble_unavailable_reason", "") or ""
         self.last_seen = time.time()
         return True
+
+    def open_bt_settings(self) -> None:
+        _http_post(f"http://localhost:{self.port}/api/open-bt-settings", {})
 
     def push_lang(self, lang: str) -> bool:
         ok = _http_post(
@@ -231,6 +238,7 @@ def _run_tray_macos(port: int, on_quit: Callable[[], None]) -> None:
                 rumps.MenuItem("Open dashboard", callback=self._on_dashboard),
                 rumps.MenuItem("Open in browser", callback=self._on_dashboard_browser),
                 rumps.MenuItem("Refresh", callback=self._on_refresh),
+                rumps.MenuItem("Open Bluetooth Settings", callback=self._on_bt_settings),
                 None,  # separator
                 ("Language", [
                     rumps.MenuItem("English",  callback=lambda _: self._set_lang("en")),
@@ -259,11 +267,20 @@ def _run_tray_macos(port: int, on_quit: Callable[[], None]) -> None:
                 label += "starting…"
             elif state.auth_error:
                 label += "auth expired"
+            elif state.ble_unavailable_reason == "denied":
+                label += "⚠ Bluetooth denied"
+            elif state.ble_unavailable_reason == "off":
+                label += "⚠ Bluetooth off"
+            elif state.ble_unavailable_reason in ("unsupported", "unknown"):
+                label += "⚠ Bluetooth unavailable"
             elif state.connected:
                 label += "● connected"
             else:
                 label += "○ disconnected"
             self.menu["Status: …"].title = label
+            # "Open Bluetooth Settings" — show only when access is denied
+            bt_item = self.menu["Open Bluetooth Settings"]
+            bt_item.hidden = (state.ble_unavailable_reason != "denied")
             # Language radio
             lang_menu = self.menu["Language"]
             lang_menu["English"].state  = 1 if state.lang == "en" else 0
@@ -313,6 +330,9 @@ def _run_tray_macos(port: int, on_quit: Callable[[], None]) -> None:
                 return
             sender.state = 1 if autostart.is_enabled() else 0
 
+        def _on_bt_settings(self, _sender):
+            state.open_bt_settings()
+
         def _on_quit(self, _sender):
             try:
                 on_quit()
@@ -344,6 +364,12 @@ def _run_tray_pystray(port: int, on_quit: Callable[[], None]) -> None:
                 return "Status: starting…"
             if state.auth_error:
                 return "Status: auth expired"
+            if state.ble_unavailable_reason == "denied":
+                return "Status: ⚠ Bluetooth denied"
+            if state.ble_unavailable_reason == "off":
+                return "Status: ⚠ Bluetooth off"
+            if state.ble_unavailable_reason in ("unsupported", "unknown"):
+                return "Status: ⚠ Bluetooth unavailable"
             if state.connected:
                 return "Status: ● connected"
             return "Status: ○ disconnected"

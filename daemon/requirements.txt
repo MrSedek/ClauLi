@@ -15,3 +15,7 @@ rumps>=0.4;   sys_platform == "darwin"
 # dashboard as a real app window instead of the default browser. Pairs with
 # pyobjc-framework-Cocoa, which rumps already pulls in. macOS-only.
 pyobjc-framework-WebKit>=10.0; sys_platform == "darwin"
+
+# Optional serial monitor — reads ESP32 USB-serial output and streams it
+# to the web dashboard. Imported lazily; daemon works without it.
+pyserial>=3.5

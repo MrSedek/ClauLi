@@ -492,6 +492,14 @@ def _load_persisted_oauth_token() -> None:
     except Exception as e:
         log(f"Failed to read {OAUTH_TOKEN_FILE}: {e}")
 
+
+def _token_source() -> str:
+    """Which credential the daemon will use for API calls — surfaced in the web
+    diagnostics so the user knows what's active. 'pasted' = env-var / file /
+    web-paste / OAuth-exchange token (replaceable via the re-auth UI);
+    'keychain' = the Claude Code login."""
+    return "pasted" if os.environ.get("CLAUDE_CODE_OAUTH_TOKEN") else "keychain"
+
 # emo2 state configuration. Each state has a list of forms / ops to rotate
 # through and a colour mode. The daemon pushes the right CTRL bytes when
 # the active state changes or its rotation timer fires.
@@ -574,6 +582,30 @@ API_BODY = {
     "max_tokens": 1,
     "messages": [{"role": "user", "content": "hi"}],
 }
+
+# Claude Code OAuth authorization-code flow (PKCE) — lets the web UI mint a
+# fresh token on demand (even when the current one still works), no terminal.
+# Constants match the public Claude Code client (same client_id as the refresh
+# grant above). Authorization is on claude.ai; the token + callback moved to
+# platform.claude.com (the old console.anthropic.com host now redirects there).
+# The token endpoint takes a JSON body. The token's organization is whatever
+# workspace is ACTIVE on claude.ai at authorize time — there is no org param in
+# the OAuth flow, so to target a specific org (e.g. a Team plan) the user must
+# switch their active workspace on claude.ai first. The exchange response
+# carries an `organization` object so we can show which org the token landed in.
+OAUTH_AUTHORIZE_URL = "https://claude.ai/oauth/authorize"
+OAUTH_TOKEN_URL     = "https://platform.claude.com/v1/oauth/token"
+OAUTH_REDIRECT_URI  = "https://platform.claude.com/oauth/code/callback"
+OAUTH_SCOPE         = "org:create_api_key user:profile user:inference"
+
+
+def _pkce_pair() -> tuple:
+    """Return (verifier, challenge) for an S256 PKCE exchange."""
+    import base64, hashlib, secrets
+    verifier = base64.urlsafe_b64encode(secrets.token_bytes(32)).decode().rstrip("=")
+    challenge = base64.urlsafe_b64encode(
+        hashlib.sha256(verifier.encode()).digest()).decode().rstrip("=")
+    return verifier, challenge
 
 
 # ---------------------------------------------------------------------------
@@ -685,10 +717,13 @@ class DaemonState:
     ws_clients: set = field(default_factory=set)
     api_client: Optional[Anthropic] = None
     auth_error: bool = False
+    auth_detail: str = ""                # last server-reported auth reason (401/403 body)
     auth_retry_count: int = 0            # consecutive failed Keychain re-reads
     ble_unavailable: bool = False        # BT powered off / access denied by macOS
     ble_unavailable_reason: str = ""     # "denied" | "off" | "unsupported" | "unknown"
     force_poll: bool = False             # set by /api/oauth-token to poll asap
+    oauth_pkce_verifier: str = ""        # transient: pending web OAuth authorize
+    token_org: str = ""                  # org name/uuid the active OAuth token landed in
     manual_mode: bool = False           # Settings → manual override
     emo2_config: dict = field(default_factory=lambda: {
         k: dict(v) for k, v in DEFAULT_EMO2_CONFIG.items()
@@ -705,6 +740,11 @@ class DaemonState:
     # it from NVS) — re-applying it on every reconnect is what amplified the
     # watchdog-reboot churn. Empty on daemon start → first connect always pushes.
     last_pushed_cfg_json: str = ""
+    # Serial monitor — USB UART stream from ESP32 (pyserial, optional).
+    serial_lines: list = field(default_factory=list)   # last 500 decoded lines
+    serial_active: bool = False
+    serial_port: str = ""
+    _serial_stop: threading.Event = field(default_factory=threading.Event)
 
 
 # ---------------------------------------------------------------------------
@@ -841,20 +881,40 @@ async def poll_api(client: Anthropic, state: DaemonState) -> Optional[dict]:
         log(f"API call failed: {e}")
         return None
 
-    if resp.status_code == 401:
-        if not state.auth_error:
-            log("AUTH: API returned 401 — token revoked or expired. "
-                "Open Claude Code and re-login (daemon auto-recovers ≤60s), "
-                "or paste a fresh long-lived token via the web banner.")
+    if resp.status_code in (401, 403):
+        # Pull the server's actual reason so the web banner / error viewer show
+        # it verbatim instead of a bare status code. 401 = token expired/revoked
+        # (re-login fixes it). 403 = authenticated but forbidden — typically an
+        # organization policy ("OAuth authentication is currently not allowed
+        # for this organization") or a scope gap; re-login alone does NOT fix an
+        # org-level block.
+        detail = ""
+        try:
+            err = (resp.json() or {}).get("error", {}) or {}
+            detail = (err.get("message", "") or "").strip()
+        except Exception:
+            detail = (resp.text or "").strip()[:300]
+        if resp.status_code == 401:
+            if not state.auth_error:
+                log("AUTH: API returned 401 — token revoked or expired. "
+                    "Open Claude Code and re-login (daemon auto-recovers ≤60s), "
+                    "or paste a fresh long-lived token via the web banner.")
+            state.auth_detail = detail or "401 — token expired or revoked"
+        else:
+            if not state.auth_error:
+                log(f"AUTH: API returned 403 — {detail or 'permission denied'}")
+                log("AUTH: this is an account/organization restriction on OAuth "
+                    "API access, NOT a token expiry. Re-login with an org that "
+                    "permits it, or clear a pasted setup-token so the Keychain "
+                    "session token is used (DELETE /api/oauth-token).")
+            state.auth_detail = detail or "403 — OAuth not allowed for this organization"
         state.auth_error = True
         # NOTE: we DON'T touch OAUTH_TOKEN_FILE here even if env_token was the
-        # culprit. Auto-deleting the persisted file caused "пасту слетает":
-        # one transient 401 at daemon startup nuked the user's saved token,
-        # forcing them to re-paste after every restart. A pasted token via
-        # the web overwrites the file regardless, so leaving it alone here
-        # has no downside — and if the token's genuinely dead the user just
-        # sees the banner and re-pastes. We still invalidate the SDK token
-        # cache so any Keychain-based refresh path retries fresh.
+        # culprit. Auto-deleting the persisted file caused "пасту слетает": one
+        # transient 401 at daemon startup nuked the user's saved token, forcing
+        # a re-paste after every restart. A pasted token via the web overwrites
+        # the file regardless, so leaving it alone here has no downside. We still
+        # invalidate the SDK token cache so any Keychain refresh path retries.
         try:
             await asyncio.to_thread(client._token_cache.invalidate)
         except Exception:
@@ -862,7 +922,8 @@ async def poll_api(client: Anthropic, state: DaemonState) -> Optional[dict]:
         return None
 
     if resp.status_code != 200:
-        log(f"API returned HTTP {resp.status_code} — skipping send")
+        detail = (resp.text or "").strip()[:300]
+        log(f"API returned HTTP {resp.status_code} — {detail}")
         return None
 
     def hdr(name: str, default: str = "0") -> str:
@@ -891,6 +952,7 @@ async def poll_api(client: Anthropic, state: DaemonState) -> Optional[dict]:
     # this is the only place we know the FULL chain (token + server) works.
     if state.auth_error:
         state.auth_error = False
+        state.auth_detail = ""
         log("AUTH: recovered — fresh credentials accepted by API")
 
     return {
@@ -1558,7 +1620,7 @@ async def connect_and_run(
                         state.api_client = await asyncio.to_thread(
                             _create_anthropic_client, True)
                         if not was_auth_error:
-                            await _broadcast_ws(state, {"type": "auth", "ok": False})
+                            await _broadcast_ws(state, {"type": "auth", "ok": False, "detail": state.auth_detail})
                             await session.write_ctrl(CTRL_TOKEN_EXPIRED)
                             state.auth_retry_count = 0
                         else:
@@ -1694,6 +1756,59 @@ async def _broadcast_ws(state: DaemonState, msg: dict) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Serial monitor (USB UART from ESP32 — optional, needs pyserial)
+# ---------------------------------------------------------------------------
+
+def _auto_detect_serial_port() -> str:
+    """Return the first plausible ESP32 USB-serial port path, or ''."""
+    import glob as _glob
+    candidates = (
+        _glob.glob("/dev/tty.usbmodem*")
+        + _glob.glob("/dev/cu.usbmodem*")
+        + _glob.glob("/dev/ttyACM*")
+        + _glob.glob("/dev/ttyUSB*")
+    )
+    return candidates[0] if candidates else ""
+
+
+def _serial_reader_thread(port_path: str, state, stop_event: threading.Event) -> None:
+    """Blocking thread: reads lines from serial port and appends to state.serial_lines."""
+    try:
+        import serial  # type: ignore
+    except ImportError:
+        log("Serial monitor: pyserial not installed — run: pip install pyserial")
+        state.serial_active = False
+        return
+    try:
+        port = serial.Serial(port_path, 115200, timeout=2)
+        log(f"Serial monitor: opened {port_path}")
+    except Exception as e:
+        log(f"Serial monitor: could not open {port_path}: {e}")
+        state.serial_active = False
+        return
+    try:
+        port.reset_input_buffer()
+        while not stop_event.is_set():
+            try:
+                raw = port.readline()
+            except Exception:
+                break
+            if not raw:
+                continue
+            line = raw.decode("utf-8", errors="replace").rstrip()
+            state.serial_lines.append(line)
+            if len(state.serial_lines) > 500:
+                state.serial_lines = state.serial_lines[-500:]
+    finally:
+        try:
+            port.close()
+        except Exception:
+            pass
+        state.serial_active = False
+        log(f"Serial monitor: closed {port_path}")
+
+
+# ---------------------------------------------------------------------------
 # HTTP server
 # ---------------------------------------------------------------------------
 
@@ -1709,13 +1824,73 @@ async def _handle_status(request: web.Request) -> web.Response:
     return web.json_response({
         "ble_connected": state.ble_connected,
         "ble_address": state.ble_address,
+        "ble_unavailable": state.ble_unavailable,
+        "ble_unavailable_reason": state.ble_unavailable_reason,
         "last_data": state.last_payload,
         "last_poll": state.last_poll_time,
         "poll_interval": state.poll_interval,
         "uptime": int(time.time() - state.start_time),
         "lang": state.firmware_lang,
         "auth_error": state.auth_error,
+        "auth_detail": state.auth_detail,
+        "token_source": _token_source(),
+        "token_org": state.token_org,
     })
+
+
+async def _handle_open_bt_settings(request: web.Request) -> web.Response:
+    """POST /api/open-bt-settings — open System Settings to the Bluetooth
+    privacy pane so the user can grant access in one click (macOS only)."""
+    if sys.platform == "darwin":
+        try:
+            subprocess.run(
+                ["open", "x-apple.systempreferences:com.apple.preference.security?Privacy_Bluetooth"],
+                check=False, timeout=5,
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            )
+            return web.json_response({"ok": True})
+        except Exception as e:
+            return web.json_response({"ok": False, "reason": str(e)}, status=500)
+    return web.json_response({"ok": False, "reason": "macOS only"}, status=400)
+
+
+async def _handle_serial_log(request: web.Request) -> web.Response:
+    """GET /api/serial-log — last 200 ESP32 serial lines + monitor state."""
+    state: DaemonState = request.app["state"]
+    return web.json_response({
+        "lines": state.serial_lines[-200:],
+        "port": state.serial_port,
+        "active": state.serial_active,
+    })
+
+
+async def _handle_serial_start(request: web.Request) -> web.Response:
+    """POST /api/serial-start — auto-detect port and start serial reader thread."""
+    state: DaemonState = request.app["state"]
+    if state.serial_active:
+        return web.json_response({"ok": True, "port": state.serial_port, "note": "already running"})
+    port = _auto_detect_serial_port()
+    if not port:
+        return web.json_response({"ok": False, "reason": "no serial port detected"}, status=404)
+    state.serial_port = port
+    state._serial_stop.clear()
+    state.serial_active = True
+    t = threading.Thread(
+        target=_serial_reader_thread,
+        args=(port, state, state._serial_stop),
+        name="ClauliSerial",
+        daemon=True,
+    )
+    t.start()
+    return web.json_response({"ok": True, "port": port})
+
+
+async def _handle_serial_stop(request: web.Request) -> web.Response:
+    """POST /api/serial-stop — stop the serial reader thread."""
+    state: DaemonState = request.app["state"]
+    state._serial_stop.set()
+    state.serial_active = False
+    return web.json_response({"ok": True})
 
 
 async def _handle_diag(request: web.Request) -> web.Response:
@@ -1753,6 +1928,7 @@ async def _handle_diag(request: web.Request) -> web.Response:
                                     max(1, len(state.ble_recent_uptimes)), 1),
         },
         "auth_error":    state.auth_error,
+        "auth_detail":   state.auth_detail,
         "lang":          state.firmware_lang,
         "log_file":      str(LOG_FILE),
         "log_tail":      tail_lines,
@@ -1948,6 +2124,7 @@ async def _handle_oauth_token(request: web.Request) -> web.Response:
         except Exception as e:
             log(f"Failed to delete {OAUTH_TOKEN_FILE}: {e}")
         os.environ.pop("CLAUDE_CODE_OAUTH_TOKEN", None)
+        state.token_org = ""
         # Rebuild client from Keychain.
         state.api_client = await asyncio.to_thread(_create_anthropic_client, True)
         state.force_poll = True
@@ -1989,6 +2166,131 @@ async def _handle_oauth_token(request: web.Request) -> web.Response:
     state.force_poll = True
     log("OAuth token accepted via web — applying on next poll (≤5s).")
     return web.json_response({"ok": True, "source": "web"})
+
+
+async def _handle_oauth_authorize_url(request: web.Request) -> web.Response:
+    """GET /api/oauth-authorize-url — start a fresh Claude Code OAuth flow.
+    Generates a PKCE pair, stashes the verifier, and returns the authorize URL
+    the user opens in a browser. After authorizing, the page shows a
+    `CODE#STATE` string the user pastes back to /api/oauth-exchange."""
+    from urllib.parse import urlencode
+    state: DaemonState = request.app["state"]
+    verifier, challenge = _pkce_pair()
+    state.oauth_pkce_verifier = verifier
+    params = {
+        "code": "true",
+        "client_id": CLAUDE_CODE_CLIENT_ID,
+        "response_type": "code",
+        "redirect_uri": OAUTH_REDIRECT_URI,
+        "scope": OAUTH_SCOPE,
+        "code_challenge": challenge,
+        "code_challenge_method": "S256",
+        "state": verifier,
+    }
+    log("OAuth authorize URL generated — awaiting pasted code.")
+    return web.json_response({"url": f"{OAUTH_AUTHORIZE_URL}?{urlencode(params)}"})
+
+
+async def _handle_oauth_exchange(request: web.Request) -> web.Response:
+    """POST /api/oauth-exchange  body: {"code": "CODE#STATE" | "CODE"}.
+    Exchanges the pasted authorization code (+ stored PKCE verifier) for a
+    fresh long-lived token, then persists/applies it like the paste flow."""
+    state: DaemonState = request.app["state"]
+    verifier = state.oauth_pkce_verifier
+    if not verifier:
+        return web.json_response(
+            {"error": "no pending authorization — click 'Get link' first"}, status=400)
+    try:
+        body = await request.json()
+    except Exception:
+        return web.json_response({"error": "invalid JSON"}, status=400)
+    raw = str(body.get("code", "")).strip()
+    if not raw:
+        return web.json_response({"error": "empty code"}, status=400)
+    # Accept whatever the user pastes: a bare CODE, a `CODE#STATE` string, the
+    # full callback URL, or a `code=…&state=…` query fragment. The platform.
+    # claude.com callback shows query params, not the `#` form, so be liberal.
+    code = ""
+    st = ""
+    if "code=" in raw:
+        from urllib.parse import parse_qs
+        qs = parse_qs(raw.split("?", 1)[-1] if "?" in raw else raw)
+        code = (qs.get("code") or [""])[0]
+        st = (qs.get("state") or [""])[0]
+    elif "#" in raw:
+        code, _, st = raw.partition("#")
+    else:
+        code = raw
+    code = code.strip()
+    st = st.strip() or verifier
+    payload = {
+        "grant_type": "authorization_code",
+        "code": code,
+        "state": st,
+        "client_id": CLAUDE_CODE_CLIENT_ID,
+        "redirect_uri": OAUTH_REDIRECT_URI,
+        "code_verifier": verifier,
+        "expires_in": 31536000,
+    }
+    try:
+        async with httpx.AsyncClient(timeout=20.0) as http:
+            resp = await http.post(OAUTH_TOKEN_URL, json=payload,
+                                   headers={"Content-Type": "application/json",
+                                            "User-Agent": "claude-code/2.1.5"})
+    except httpx.HTTPError as e:
+        return web.json_response({"error": f"network error: {e}"}, status=502)
+    if resp.status_code != 200:
+        detail = (resp.text or "")[:200]
+        log(f"OAuth exchange failed: HTTP {resp.status_code} {detail}")
+        retry_after = resp.headers.get("retry-after", "")
+        if resp.status_code == 429:
+            log("OAuth exchange 429 — retry-after=" + (retry_after or "n/a")
+                + "; ratelimit headers: "
+                + (", ".join(f"{k}={v}" for k, v in resp.headers.items()
+                             if "ratelimit" in k.lower()) or "none"))
+            wait = f"wait {retry_after}s" if retry_after else "wait ~15–60 min"
+            hint = (f" — your IP is rate-limited on Anthropic's OAuth token "
+                    f"endpoint (this ALSO throttles `claude setup-token` and "
+                    f"token refresh — it's one limit). Stop retrying and {wait}, "
+                    f"then do ONE clean attempt.")
+        else:
+            hint = ""
+        return web.json_response(
+            {"error": f"exchange failed (HTTP {resp.status_code}){hint}: {detail}",
+             "status": resp.status_code, "retry_after": retry_after},
+            status=400)
+    try:
+        tok = resp.json()
+    except Exception:
+        return web.json_response({"error": "bad token response"}, status=400)
+    access = str(tok.get("access_token", "")).strip()
+    if not access:
+        return web.json_response({"error": "no access_token in response"}, status=400)
+    # Which organization did this token land in? The response carries an
+    # `organization` object — surface its name/uuid so the user can confirm they
+    # got the org they wanted (e.g. a Team plan vs Personal).
+    org = tok.get("organization")
+    org_name = ""
+    if isinstance(org, dict):
+        org_name = str(org.get("name") or org.get("uuid") or "")
+    elif isinstance(org, str):
+        org_name = org
+    state.token_org = org_name
+    # Persist + apply exactly like the paste flow.
+    try:
+        OAUTH_TOKEN_FILE.parent.mkdir(parents=True, exist_ok=True)
+        OAUTH_TOKEN_FILE.write_text(access)
+        os.chmod(OAUTH_TOKEN_FILE, 0o600)
+    except Exception as e:
+        return web.json_response({"error": f"failed to persist token: {e}"}, status=500)
+    os.environ["CLAUDE_CODE_OAUTH_TOKEN"] = access
+    state.oauth_pkce_verifier = ""
+    state.api_client = await asyncio.to_thread(_create_anthropic_client, True)
+    state.auth_retry_count = 0
+    state.force_poll = True
+    log(f"OAuth authorization-code exchange OK — new token applied"
+        + (f" (org: {org_name})" if org_name else "") + ".")
+    return web.json_response({"ok": True, "org": org_name})
 
 
 async def _handle_ota_upload(request: web.Request) -> web.Response:
@@ -2910,7 +3212,7 @@ async def _handle_ws(request: web.Request) -> web.WebSocketResponse:
     await ws.send_str(json.dumps({"type": "lang", "lang": state.firmware_lang}))
     await ws.send_str(json.dumps({"type": "orient", "value": state.orientation}))
     await ws.send_str(json.dumps({"type": "character", "value": state.character}))
-    await ws.send_str(json.dumps({"type": "auth", "ok": not state.auth_error}))
+    await ws.send_str(json.dumps({"type": "auth", "ok": not state.auth_error, "detail": state.auth_detail}))
     await ws.send_str(json.dumps({"type": "emo2_state", "state": state.emo2_state}))
 
     try:
@@ -2970,6 +3272,8 @@ def create_http_app(state: DaemonState) -> web.Application:
     app.router.add_post("/api/halo-live", _handle_halo_live)
     app.router.add_post  ("/api/oauth-token", _handle_oauth_token)
     app.router.add_delete("/api/oauth-token", _handle_oauth_token)
+    app.router.add_get ("/api/oauth-authorize-url", _handle_oauth_authorize_url)
+    app.router.add_post("/api/oauth-exchange",      _handle_oauth_exchange)
     app.router.add_get ("/api/emo2-config", _handle_emo2_config)
     app.router.add_post("/api/emo2-config", _handle_emo2_config)
     app.router.add_get ("/api/emo2-stats-config", _handle_emo2_stats_config)
@@ -2984,6 +3288,12 @@ def create_http_app(state: DaemonState) -> web.Application:
     # Diagnostic endpoint — returns BLE reconnect counters + tail of daemon.log.
     # Curl-friendly for support ("send me curl http://localhost:8765/api/diag").
     app.router.add_get("/api/diag", _handle_diag)
+    # BT permission helper — opens macOS System Settings to the BT privacy pane.
+    app.router.add_post("/api/open-bt-settings", _handle_open_bt_settings)
+    # Serial monitor — streams ESP32 USB-UART output to the web dashboard.
+    app.router.add_get ("/api/serial-log",   _handle_serial_log)
+    app.router.add_post("/api/serial-start", _handle_serial_start)
+    app.router.add_post("/api/serial-stop",  _handle_serial_stop)
 
     # Static files (CSS, JS, images)
     if WEB_DIR.exists():

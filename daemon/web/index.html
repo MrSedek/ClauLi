@@ -441,21 +441,19 @@ body{
     <span class="status-dot" id="ble-dot"></span>
     <span id="ble-status">Disconnected</span>
   </div>
+  <!-- System health strip — always-visible per-subsystem status; click to expand details -->
+  <div id="health-strip" onclick="toggleHealthDetails()" style="display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;cursor:pointer;margin:8px 0 2px;font-size:11px;user-select:none;max-width:380px;width:100%"></div>
+  <div id="health-details" style="display:none;margin:2px 0 8px;font-size:11.5px;line-height:1.5;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:10px 12px;max-width:380px;width:100%;text-align:left"></div>
   <div id="auth-banner" style="display:none;background:rgba(255,176,46,.08);border:1px solid rgba(255,176,46,.35);border-radius:10px;padding:14px 16px;margin:8px 0;max-width:380px;width:100%;text-align:left;font-size:13px;line-height:1.55">
     <div style="font-weight:600;color:#FFB02E;margin-bottom:8px;font-size:13px;letter-spacing:.3px">⚠ <span id="auth-banner-title">OAuth-токен Claude протух</span></div>
-    <div style="color:#cfcfcf;font-size:12px">
-      <div id="auth-banner-s1" style="margin-bottom:8px"></div>
-      <div id="auth-banner-s2" style="margin-bottom:6px"></div>
-      <div style="display:flex;gap:6px;margin:6px 0 4px">
-        <input id="auth-token-input" type="text" autocomplete="off" spellcheck="false"
-               placeholder="sk-ant-oat01-..."
-               style="flex:1;min-width:0;font-family:ui-monospace,Menlo,monospace;font-size:11px;padding:7px 9px;border-radius:6px;border:1px solid rgba(255,255,255,.12);background:#0a0a0a;color:#e8e8e8;outline:none">
-        <button id="auth-token-save" onclick="saveOAuthToken()"
-                style="font-size:11px;font-weight:600;padding:7px 12px;border-radius:6px;border:0;background:#FFB02E;color:#000;cursor:pointer;letter-spacing:.3px">Save</button>
-      </div>
-      <div id="auth-token-status" style="font-size:10.5px;color:#888;min-height:14px"></div>
-      <div id="auth-banner-alt" style="color:#888;font-size:11px;margin-top:6px"></div>
-    </div>
+    <div id="auth-banner-detail" style="display:none;font-family:ui-monospace,Menlo,monospace;font-size:11px;color:#FFB02E;background:rgba(0,0,0,.28);border-radius:6px;padding:7px 9px;margin-bottom:8px;word-break:break-word"></div>
+    <!-- Re-auth component (A · browser OAuth + B · paste token) rendered by renderReauth('bauth') -->
+    <div id="auth-banner-reauth" style="color:#cfcfcf;font-size:12px"></div>
+  </div>
+  <div id="bt-banner" style="display:none;background:rgba(255,176,46,.08);border:1px solid rgba(255,176,46,.35);border-radius:10px;padding:14px 16px;margin:8px 0;max-width:380px;width:100%;text-align:left;font-size:13px;line-height:1.55">
+    <div style="font-weight:600;color:#FFB02E;margin-bottom:8px;font-size:13px;letter-spacing:.3px">⚠ <span id="bt-banner-title">Bluetooth access denied</span></div>
+    <div style="color:#cfcfcf;font-size:12px;margin-bottom:10px" id="bt-banner-body">Enable ClauLi in System Settings → Privacy &amp; Security → Bluetooth, then relaunch the app.</div>
+    <button onclick="openBtSettings()" style="font-size:11px;font-weight:600;padding:7px 14px;border-radius:6px;border:0;background:#FFB02E;color:#000;cursor:pointer;letter-spacing:.3px" data-i18n="bt_open_settings">Open System Settings → Bluetooth</button>
   </div>
   <!-- Top-row screen pickers (Usage/ClauLi/Claude/Bluetooth) used to live
        here but were redundant with the Settings tabs that already switch
@@ -756,6 +754,50 @@ body{
           </div>
           <div id="otaLog" style="font-family:'Azeret Mono',monospace;font-size:10px;color:#888;margin-top:6px;min-height:14px;word-break:break-word"></div>
         </div>
+      </details>
+
+      <!-- Daemon log viewer -->
+      <details id="logsBlock" class="state-block" style="margin-top:12px">
+        <summary>
+          <span style="font-size:13px">📋</span>
+          <span data-i18n="logs_title">Daemon logs</span>
+        </summary>
+        <div style="padding:6px 12px 12px">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+            <button class="btn" onclick="refreshLogs()" data-i18n="logs_refresh">Refresh</button>
+            <button class="btn" onclick="copyLogs()" data-i18n="logs_copy">Copy all</button>
+            <label style="display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--dim);cursor:pointer">
+              <input type="checkbox" id="logFilterDevice" onchange="refreshLogs()" style="accent-color:var(--cyan)">
+              <span data-i18n="logs_filter_ble">Device/BLE only</span>
+            </label>
+          </div>
+          <pre id="logPre" style="max-height:320px;overflow-y:auto;font-size:10.5px;font-family:ui-monospace,Menlo,monospace;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.06);border-radius:6px;padding:10px;margin:0;white-space:pre-wrap;word-break:break-all;color:#bbb;line-height:1.45"></pre>
+        </div>
+      </details>
+
+      <!-- ESP serial log viewer (USB) -->
+      <details id="serialBlock" class="state-block" style="margin-top:12px">
+        <summary>
+          <span style="font-size:13px">🔌</span>
+          <span data-i18n="serial_title">Device serial log (USB)</span>
+        </summary>
+        <div style="padding:6px 12px 12px">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+            <span id="serialPortLabel" style="font-size:11px;color:var(--dim);font-family:ui-monospace,Menlo,monospace">Port: —</span>
+            <button class="btn" id="serialToggleBtn" onclick="toggleSerial()" data-i18n="serial_start">Start monitoring</button>
+            <button class="btn" onclick="clearSerial()" data-i18n="serial_clear">Clear</button>
+          </div>
+          <pre id="serialPre" style="max-height:400px;overflow-y:auto;font-size:10.5px;font-family:ui-monospace,Menlo,monospace;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.06);border-radius:6px;padding:10px;margin:0;white-space:pre-wrap;word-break:break-all;color:#bbb;line-height:1.45"></pre>
+        </div>
+      </details>
+
+      <!-- Proactive re-authentication: OAuth browser link + setup-token paste -->
+      <details id="reauthBlock" class="state-block" style="margin-top:12px">
+        <summary>
+          <span style="font-size:13px">🔑</span>
+          <span id="reauth-title">Token / re-authenticate</span>
+        </summary>
+        <div id="reauth-body" style="padding:6px 12px 12px"></div>
       </details>
 
       <div class="controls" style="margin-top:12px;border-top:1px solid var(--line);padding-top:10px">
@@ -1485,6 +1527,7 @@ const I18N={
       auth_token_saved:'✓ Saved — applying on next poll (≤5s)',
       auth_token_error:'✕ ',
       auth_alt:'',
+      auth_server_label:'Anthropic says:',
       // Item 4 — mockup card
       mockup_title:'Device preview',
       mockup_previewing:'Previewing:',
@@ -1521,6 +1564,22 @@ const I18N={
       unsaved_apply:'Apply',
       unsaved_discard:'Discard',
       unsaved_cancel:'Cancel',
+      // BT permission banner
+      bt_denied_title:'Bluetooth access denied',
+      bt_denied_body:'macOS has denied Bluetooth to ClauLi. Go to System Settings → Privacy & Security → Bluetooth, enable the toggle for ClauLi (or your Terminal if running from source), then relaunch.',
+      bt_off_title:'Bluetooth is off',
+      bt_off_body:'Turn on Bluetooth in Control Center or System Settings → Bluetooth. The daemon will reconnect automatically.',
+      bt_open_settings:'Open System Settings → Bluetooth',
+      // Daemon log viewer
+      logs_title:'Daemon logs',
+      logs_refresh:'Refresh',
+      logs_copy:'Copy all',
+      logs_filter_ble:'Device/BLE only',
+      // Serial log viewer
+      serial_title:'Device serial log (USB)',
+      serial_start:'Start monitoring',
+      serial_stop:'Stop monitoring',
+      serial_clear:'Clear',
       },
   ru:{usage:'Использование',anim:'Claude',cycle:'Цикл',refresh:'↻ Обновить данные',wpre:'Н',
       nextview:'Сменить вид',nextanim:'Сменить анимацию',boot1:'Сменить вид',boot2:'Случайная эмоция',debug_off:'🐞 Отладка',debug_on:'🐞 Отладка ВКЛ',reboot:'Перезагрузка',reboot_confirm:'Перезагрузить устройство? BLE-связь разорвётся и переподключится.',diagnose:'Диагностика',
@@ -1575,6 +1634,7 @@ const I18N={
       auth_token_saved:'✓ Сохранено — применяется в течение 5 с',
       auth_token_error:'✕ ',
       auth_alt:'',
+      auth_server_label:'Ответ Anthropic:',
       // Item 4 — mockup card
       mockup_title:'Предпросмотр устройства',
       mockup_previewing:'Просмотр:',
@@ -1609,6 +1669,22 @@ const I18N={
       unsaved_apply:'Применить',
       unsaved_discard:'Отменить',
       unsaved_cancel:'Отмена',
+      // BT permission banner
+      bt_denied_title:'Нет доступа к Bluetooth',
+      bt_denied_body:'macOS запретил ClauLi доступ к Bluetooth. Системные настройки → Конфиденциальность и безопасность → Bluetooth — включите переключатель для ClauLi (или Терминала, если запускаете из консоли), затем перезапустите.',
+      bt_off_title:'Bluetooth выключен',
+      bt_off_body:'Включите Bluetooth в Пункте управления или Системных настройках. Демон подключится автоматически.',
+      bt_open_settings:'Открыть Системные настройки → Bluetooth',
+      // Daemon log viewer
+      logs_title:'Логи демона',
+      logs_refresh:'Обновить',
+      logs_copy:'Копировать всё',
+      logs_filter_ble:'Только устройство/BLE',
+      // Serial log viewer
+      serial_title:'Серийный лог устройства (USB)',
+      serial_start:'Начать мониторинг',
+      serial_stop:'Остановить',
+      serial_clear:'Очистить',
       }};
 function t(k){return (I18N[curLang]||I18N.en)[k]}
 function applyI18n(){document.querySelectorAll('[data-i18n]').forEach(el=>{el.textContent=t(el.dataset.i18n)});const _wp=document.getElementById('w-pre');if(_wp)_wp.textContent=t('wpre');updateBLE(lastBLE.state,lastBLE.address);if(lastPayload)updateData(lastPayload)}
@@ -2520,6 +2596,29 @@ function updateData(payload){
 // Tracks the last resolved auto-colour so the cache only flushes when the
 // pct actually crosses a threshold (otherwise we'd repaint every minute).
 let _lastFormColorKey = null;
+function updateBtBanner(unavailable, reason){
+  const b = document.getElementById('bt-banner');
+  if (!b) return;
+  if (!unavailable || !reason || reason === '') { b.style.display = 'none'; return; }
+  b.style.display = 'block';
+  const titleEl = document.getElementById('bt-banner-title');
+  const bodyEl  = document.getElementById('bt-banner-body');
+  if (reason === 'denied') {
+    if (titleEl) titleEl.textContent = t('bt_denied_title') || 'Bluetooth access denied';
+    if (bodyEl)  bodyEl.textContent  = t('bt_denied_body')  || 'Enable Bluetooth for ClauLi in System Settings → Privacy & Security → Bluetooth, then relaunch.';
+  } else if (reason === 'off') {
+    if (titleEl) titleEl.textContent = t('bt_off_title') || 'Bluetooth is off';
+    if (bodyEl)  bodyEl.textContent  = t('bt_off_body')  || 'Turn on Bluetooth. The daemon will reconnect automatically.';
+    // No "open settings" button needed for BT-off — hide it
+    const btn = b.querySelector('button');
+    if (btn) btn.style.display = 'none';
+  } else {
+    if (titleEl) titleEl.textContent = 'Bluetooth unavailable';
+    if (bodyEl)  bodyEl.textContent  = 'Bluetooth is unavailable or unsupported on this machine.';
+    const btn = b.querySelector('button');
+    if (btn) btn.style.display = 'none';
+  }
+}
 function updateBLE(state,address){
   lastBLE={state,address};
   const dot=document.getElementById('ble-dot'),txt=document.getElementById('ble-status');
@@ -2530,21 +2629,197 @@ function updateBLE(state,address){
   const mock = document.getElementById('deviceMockup');
   if (mock) mock.classList.toggle('connected', state === 'connected');
 }
-function updateAuth(ok){
+function updateAuth(ok, detail){
   const b = document.getElementById('auth-banner');
   b.style.display = ok ? 'none' : 'block';
+  const d = document.getElementById('auth-banner-detail');
   if (!ok) {
     document.getElementById('auth-banner-title').textContent = t('auth_title');
-    // step strings include <b>/<code> formatting → innerHTML
-    document.getElementById('auth-banner-s1').innerHTML = t('auth_step1');
-    document.getElementById('auth-banner-s2').innerHTML = t('auth_step2');
-    document.getElementById('auth-banner-alt').innerHTML = t('auth_alt');
+    // Show the server's verbatim reason (e.g. a 403 org block) — distinguishes
+    // "token expired" from "OAuth not allowed for this organization".
+    if (d) {
+      if (detail) { d.textContent = t('auth_server_label') + ' ' + detail; d.style.display = 'block'; }
+      else { d.textContent = ''; d.style.display = 'none'; }
+    }
+    // Populate the in-banner re-auth component (A · browser + B · paste).
+    const bb = document.getElementById('auth-banner-reauth');
+    if (bb && !bb.innerHTML.trim() && typeof _reauthHTML === 'function') bb.innerHTML = _reauthHTML('bauth');
   } else {
-    // Clear any stale status when the daemon recovers, so the next outage
-    // starts with a clean banner.
-    const st = document.getElementById('auth-token-status');
-    if (st) st.textContent = '';
+    if (d) { d.textContent = ''; d.style.display = 'none'; }
   }
+}
+
+// ─── System health strip + diagnostics ───────────────────────────────────
+// "What's wrong — daemon / BLE / token / firmware?" Synthesises one row per
+// subsystem from /api/status. Compact dots always visible; click → details.
+let _lastStatus = null;
+function _hl(en, ru){ return (typeof curLang!=='undefined' && curLang==='ru') ? ru : en; }
+function _fmtDur(s){ s=Math.max(0,Math.round(s)); if(s<60)return s+'s'; if(s<3600)return Math.floor(s/60)+'m'; return Math.floor(s/3600)+'h'+Math.floor((s%3600)/60)+'m'; }
+function _fmtAgo(s){ s=Math.max(0,Math.round(s)); return s<60? _hl(s+'s ago', s+' с назад') : Math.floor(s/60)+_hl('m ago',' мин назад'); }
+const _HCOLOR={ok:'var(--ok,#8fa66e)',warn:'var(--warm,#FFB02E)',bad:'var(--hot,#FF4D4D)'};
+function _healthRows(d){
+  const rows=[];
+  if(!d){
+    return [{k:'daemon',lvl:'bad',label:_hl('Daemon','Демон'),
+      msg:_hl('Unreachable — is the daemon running?','Недоступен — демон запущен?'),
+      hint:_hl('Start the ClauLi app / daemon and reload this page.','Запустите приложение ClauLi / демон и обновите страницу.')}];
+  }
+  rows.push({k:'daemon',lvl:'ok',label:_hl('Daemon','Демон'),
+    msg:_hl('Running','Работает')+(d.uptime!=null?(' · '+_fmtDur(d.uptime)):''),hint:''});
+  if(d.ble_unavailable){
+    const r=d.ble_unavailable_reason||'unknown';
+    const m={denied:_hl('Bluetooth access denied by macOS','macOS запретил доступ к Bluetooth'),
+      off:_hl('Bluetooth is turned off','Bluetooth выключен'),
+      unsupported:_hl('Bluetooth unsupported on this Mac','Bluetooth не поддерживается'),
+      unknown:_hl('Bluetooth unavailable','Bluetooth недоступен')}[r]||_hl('Bluetooth unavailable','Bluetooth недоступен');
+    rows.push({k:'ble',lvl:'bad',label:'BLE',msg:m,
+      hint:r==='denied'?_hl('Grant access in System Settings → Privacy → Bluetooth.','Выдайте доступ в Системных настройках → Конфиденциальность → Bluetooth.')
+          :r==='off'?_hl('Turn Bluetooth on in the menu bar.','Включите Bluetooth в строке меню.'):''});
+  } else if(d.ble_connected){
+    rows.push({k:'ble',lvl:'ok',label:'BLE',
+      msg:_hl('Connected to device','Подключено к устройству')+(d.ble_address?(' · '+String(d.ble_address).slice(0,8)+'…'):''),hint:''});
+  } else {
+    rows.push({k:'ble',lvl:'warn',label:'BLE',
+      msg:_hl('Disconnected — scanning…','Отключено — идёт поиск…'),
+      hint:_hl('The daemon rescans and reconnects automatically.','Демон сам пересканирует и переподключается.')});
+  }
+  const src=d.token_source==='pasted'?_hl('pasted token','вставленный токен'):_hl('Keychain login','вход через Keychain');
+  const orgSuf=d.token_org?(' · '+_hl('org','орг')+': '+d.token_org):'';
+  if(d.auth_error){
+    const det=d.auth_detail||'';
+    const isOrg=/organization|not allowed/i.test(det);
+    rows.push({k:'token',lvl:'bad',label:_hl('Token','Токен'),
+      msg:(det||_hl('Authentication failed','Ошибка авторизации'))+' · '+src+orgSuf,
+      hint:isOrg?_hl('Organization blocks OAuth API access — switch to a permitted org on claude.ai and re-auth below, or use another token.','Организация блокирует OAuth для API — переключитесь на разрешённую орг. на claude.ai и авторизуйтесь заново ниже, либо используйте другой токен.')
+                :_hl('Token expired/revoked — get a new one below (Token / re-authenticate).','Токен протух/отозван — получите новый ниже (Токен / повторная авторизация).')});
+  } else {
+    rows.push({k:'token',lvl:'ok',label:_hl('Token','Токен'),
+      msg:_hl('Accepted by API','Принят API')+' · '+src+orgSuf,hint:''});
+  }
+  const pollAge=d.last_poll?(Date.now()/1000-d.last_poll):null;
+  if(d.last_data&&pollAge!=null&&pollAge<Math.max(180,(d.poll_interval||60)*3)){
+    rows.push({k:'data',lvl:'ok',label:_hl('Data','Данные'),msg:_hl('Updated','Обновлено')+' '+_fmtAgo(pollAge),hint:''});
+  } else if(d.auth_error){
+    rows.push({k:'data',lvl:'warn',label:_hl('Data','Данные'),msg:_hl('No data — fix the token','Нет данных — почините токен'),hint:''});
+  } else {
+    rows.push({k:'data',lvl:'warn',label:_hl('Data','Данные'),msg:_hl('Waiting for first usage data…','Ожидание первых данных…'),hint:''});
+  }
+  return rows;
+}
+function updateHealth(d){
+  _lastStatus = (d!==undefined) ? d : _lastStatus;
+  const strip=document.getElementById('health-strip');
+  const det=document.getElementById('health-details');
+  if(!strip) return;
+  const rows=_healthRows(d);
+  strip.innerHTML = rows.map(r=>{const c=_HCOLOR[r.lvl];
+    return `<span style="display:inline-flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:50%;background:${c};box-shadow:0 0 6px ${c}"></span><span style="color:#cfcfcf">${r.label}</span></span>`;
+  }).join('') + `<span style="color:var(--dim);margin-left:auto;font-size:10px">${_hl('details','подробнее')} ▾</span>`;
+  if(det){
+    det.innerHTML = rows.map(r=>{const c=_HCOLOR[r.lvl];
+      return `<div style="margin:3px 0"><span style="color:${c};font-weight:600">●</span> <b style="color:#e8e8e8">${r.label}:</b> <span style="color:#cfcfcf">${r.msg}</span>${r.hint?`<div style="color:var(--dim);font-size:10.5px;margin:1px 0 4px 14px">${r.hint}</div>`:''}</div>`;
+    }).join('');
+  }
+}
+function toggleHealthDetails(){ const d=document.getElementById('health-details'); if(d) d.style.display=(d.style.display==='none'||!d.style.display)?'block':'none'; }
+async function refreshHealth(){
+  try{
+    const d=await fetch('/api/status').then(r=>r.json());
+    _lastStatus=d; updateHealth(d);
+    updateAuth(!d.auth_error,d.auth_detail);
+    updateBtBanner(!!d.ble_unavailable,d.ble_unavailable_reason||'');
+    updateBLE(d.ble_connected?'connected':'disconnected',d.ble_address);
+  }catch(e){ updateHealth(null); }
+}
+
+// ─── Proactive re-auth: OAuth browser link (A) + setup-token paste (B) ────
+// Re-auth UI is rendered into TWO places with identical markup: the settings
+// block (#reauth-body, prefix 'reauth') and the auth-error banner
+// (#auth-banner-reauth, prefix 'bauth'). All element ids are prefix-scoped so
+// the two instances never collide; the handlers take the prefix as an arg.
+function _reauthHTML(p){
+  return `
+    <div style="color:var(--dim);font-size:11px;margin-bottom:10px">${_hl('Get a fresh Claude token — option A (browser) or B (paste).','Получить свежий токен Claude — вариант A (браузер) или B (вставить).')}</div>
+    <div style="font-weight:600;color:#e8e8e8;font-size:11.5px;margin-bottom:5px">${_hl('A · Browser authorization','A · Авторизация в браузере')}</div>
+    <div style="color:var(--dim);font-size:10.5px;margin-bottom:6px">${_hl('The token takes your ACTIVE organization on claude.ai. Have several plans? Switch your workspace on claude.ai first (e.g. to the Team plan), then get the link. The org you landed in is shown after exchange.','Токен берёт АКТИВНУЮ организацию на claude.ai. Несколько планов? Сначала переключите рабочее пространство на claude.ai (например, на Team-план), потом получайте ссылку. Полученная орг. показывается после обмена.')}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px">
+      <button class="btn" id="${p}-getbtn" onclick="requestAuthLink('${p}')">${_hl('Get authorization link','Получить ссылку авторизации')}</button>
+      <a id="${p}-link" href="#" target="_blank" rel="noopener" style="display:none;font-size:11px;color:var(--cyan,#3DE0E0)">${_hl('Open authorization →','Открыть авторизацию →')}</a>
+    </div>
+    <div id="${p}-link-hint" style="display:none;color:var(--dim);font-size:10.5px;margin-bottom:6px">${_hl('Authorize, then paste the code (or the whole callback URL) below — once:','Авторизуйтесь, затем вставьте код (или весь URL callback) ниже — один раз:')}</div>
+    <div style="display:flex;gap:6px;margin-bottom:4px">
+      <input id="${p}-code" type="text" autocomplete="off" spellcheck="false" placeholder="code… / CODE#STATE / URL" style="flex:1;min-width:0;font-family:ui-monospace,Menlo,monospace;font-size:11px;padding:7px 9px;border-radius:6px;border:1px solid rgba(255,255,255,.12);background:#0a0a0a;color:#e8e8e8;outline:none">
+      <button class="btn" id="${p}-xbtn" onclick="exchangeAuthCode('${p}')">${_hl('Exchange','Обменять')}</button>
+    </div>
+    <div id="${p}-code-status" style="font-size:10.5px;color:#888;min-height:14px"></div>
+    <div style="border-top:1px solid rgba(255,255,255,.08);margin:10px 0"></div>
+    <div style="font-weight:600;color:#e8e8e8;font-size:11.5px;margin-bottom:5px">${_hl('B · Paste a long-lived token','B · Вставить долгоживущий токен')}</div>
+    <div style="color:var(--dim);font-size:10.5px;margin-bottom:6px">${_hl('Run <code>claude setup-token</code> in a terminal, paste ONLY the <code>sk-ant-oat01-…</code> line (not the OAuth code):','Запустите <code>claude setup-token</code> в терминале, вставьте ТОЛЬКО строку <code>sk-ant-oat01-…</code> (не OAuth-код):')}</div>
+    <div style="display:flex;gap:6px;margin-bottom:4px">
+      <input id="${p}-token" type="text" autocomplete="off" spellcheck="false" placeholder="sk-ant-oat01-..." style="flex:1;min-width:0;font-family:ui-monospace,Menlo,monospace;font-size:11px;padding:7px 9px;border-radius:6px;border:1px solid rgba(255,255,255,.12);background:#0a0a0a;color:#e8e8e8;outline:none">
+      <button class="btn" onclick="reauthSaveToken('${p}')">${_hl('Save','Сохранить')}</button>
+    </div>
+    <div id="${p}-token-status" style="font-size:10.5px;color:#888;min-height:14px"></div>
+    <div style="color:var(--dim);font-size:10px;margin-top:8px">${_hl('Note: a token for an org that blocks OAuth API access is still rejected (HTTP 403).','Примечание: токен организации, блокирующей OAuth для API, всё равно будет отклонён (HTTP 403).')}</div>`;
+}
+function renderReauth(){
+  const titleEl=document.getElementById('reauth-title');
+  if(titleEl) titleEl.textContent=_hl('Token / re-authenticate','Токен / повторная авторизация');
+  const body=document.getElementById('reauth-body');
+  if(body) body.innerHTML=_reauthHTML('reauth');
+  const banner=document.getElementById('auth-banner-reauth');
+  if(banner) banner.innerHTML=_reauthHTML('bauth');
+}
+async function requestAuthLink(p){
+  p=p||'reauth';
+  const a=document.getElementById(p+'-link'),h=document.getElementById(p+'-link-hint'),s=document.getElementById(p+'-code-status');
+  try{
+    const j=await fetch('/api/oauth-authorize-url').then(r=>r.json());
+    if(j.url){ if(a){a.href=j.url;a.style.display='inline';} if(h)h.style.display='block'; if(s){s.style.color='#888';s.textContent='';} window.open(j.url,'_blank','noopener'); }
+    else if(s){ s.style.color='#FF4D4D'; s.textContent=_hl('Failed to get link','Не удалось получить ссылку'); }
+  }catch(e){ if(s){ s.style.color='#FF4D4D'; s.textContent=_hl('Failed to get link: ','Не удалось получить ссылку: ')+e.message; } }
+}
+async function exchangeAuthCode(p){
+  p=p||'reauth';
+  const inp=document.getElementById(p+'-code'),s=document.getElementById(p+'-code-status'),btn=document.getElementById(p+'-xbtn');
+  const code=(inp.value||'').trim();
+  if(!code){ s.style.color='#FF4D4D'; s.textContent=_hl('Paste the code first','Сначала вставьте код'); return; }
+  s.style.color='#888'; s.textContent='…'; if(btn)btn.disabled=true;
+  try{
+    const r=await fetch('/api/oauth-exchange',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code})});
+    const j=await r.json().catch(()=>({}));
+    if(r.ok){ s.style.color='#8fa66e'; s.textContent=_hl('✓ New token applied','✓ Новый токен применён')+(j.org?(' · '+_hl('org','орг')+': '+j.org):''); inp.value=''; if(btn)btn.disabled=false; setTimeout(refreshHealth,1500); return; }
+    s.style.color='#FF4D4D'; s.textContent='✕ '+(j.error||('HTTP '+r.status));
+    // 429 = IP-level rate limit on the token endpoint. Cool the buttons down so
+    // accidental re-clicks don't keep the limit window alive (cooldown re-enables).
+    if(j.status===429 || /\b429\b|rate.?limit/i.test(j.error||'')){ _reauthCooldown(p,120); return; }
+    if(btn)btn.disabled=false;
+  }catch(e){ s.style.color='#FF4D4D'; s.textContent='✕ '+e.message; if(btn)btn.disabled=false; }
+}
+function _reauthCooldown(p,secs){
+  const xb=document.getElementById(p+'-xbtn'),gb=document.getElementById(p+'-getbtn'),s=document.getElementById(p+'-code-status');
+  let left=secs; if(xb)xb.disabled=true; if(gb)gb.disabled=true;
+  const tick=()=>{
+    if(left<=0){ if(xb)xb.disabled=false; if(gb)gb.disabled=false; if(s){s.style.color='#888';s.textContent=_hl('Cooled down — but the server limit may be longer; try once.','Кулдаун снят — но серверный лимит может быть дольше; попробуйте один раз.');} return; }
+    if(s){ s.style.color='#FFB02E'; s.textContent=_hl('Rate-limited — pausing ','Лимит — пауза ')+left+_hl('s (server limit is ~15–60 min)…',' с (серверный лимит ~15–60 мин)…'); }
+    left--; setTimeout(tick,1000);
+  };
+  tick();
+}
+async function reauthSaveToken(p){
+  p=p||'reauth';
+  const inp=document.getElementById(p+'-token'),s=document.getElementById(p+'-token-status');
+  const tok=(inp.value||'').trim();
+  if(!tok){ s.style.color='#FF4D4D'; s.textContent=_hl('Paste a token first','Сначала вставьте токен'); return; }
+  // Guard: a pasted OAuth code / callback URL is NOT a setup-token — point to A.
+  if(!tok.startsWith('sk-ant-')){ s.style.color='#FF4D4D'; s.textContent=_hl('That looks like an OAuth code — use section A · Exchange, not here.','Похоже на OAuth-код — используйте раздел A · «Обменять», а не это поле.'); return; }
+  s.style.color='#888'; s.textContent='…';
+  try{
+    const r=await fetch('/api/oauth-token',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:tok})});
+    const j=await r.json().catch(()=>({}));
+    if(r.ok){ s.style.color='#8fa66e'; s.textContent=_hl('✓ Saved — applying (≤5s)','✓ Сохранено — применяется (≤5 с)'); inp.value=''; setTimeout(refreshHealth,1500); }
+    else{ s.style.color='#FF4D4D'; s.textContent='✕ '+(j.error||('HTTP '+r.status)); }
+  }catch(e){ s.style.color='#FF4D4D'; s.textContent='✕ '+e.message; }
 }
 function _applyLangUI(l){
   if(l!=='en'&&l!=='ru')l='en';
@@ -2557,6 +2832,10 @@ function _applyLangUI(l){
   if(typeof buildPreviewTiles==='function')buildPreviewTiles();
   if(typeof renderEmo2Stats==='function'&&typeof emo2StatsCfg!=='undefined'&&emo2StatsCfg)renderEmo2Stats(emo2StatsCfg);
   if(typeof _updateStatusInactiveNotes==='function')_updateStatusInactiveNotes();
+  // Re-render the dynamic (non-data-i18n) health strip + re-auth block so a
+  // language switch applies to them instantly too.
+  if(typeof renderReauth==='function')renderReauth();
+  if(typeof updateHealth==='function'&&_lastStatus)updateHealth(_lastStatus);
   // Re-wire apply states after rebuild.
   refreshAllStatusApplyStates();
   refreshStatsBlockApplyStates();
@@ -2568,7 +2847,7 @@ function setLangUI(l){
 function connectWS(){const proto=location.protocol==='https:'?'wss:':'ws:';ws=new WebSocket(`${proto}//${location.host}/api/ws`);ws.onopen=()=>{clearTimeout(reconnectTimer)};ws.onmessage=e=>{try{const msg=JSON.parse(e.data);if(msg.type==='data')updateData(msg.payload);else if(msg.type==='ble'){updateBLE(msg.state,msg.address);if(msg.state==='connected'){
   // WS reconnect: refresh server snapshots only; don't clobber staged edits.
   loadEmo2Config(); loadEmo2Stats();
-}}else if(msg.type==='lang')_applyLangUI(msg.lang);else if(msg.type==='orient')applyOrientFromDaemon(msg.value);else if(msg.type==='character')applyCharFromDaemon(msg.value);else if(msg.type==='auth')updateAuth(msg.ok);else if(msg.type==='ota')updateOTA(msg);else if(msg.type==='emo2_state')updateEmo2State(msg.state)}catch{}};ws.onclose=()=>{reconnectTimer=setTimeout(connectWS,3000)};ws.onerror=()=>{ws.close()}}
+}}else if(msg.type==='lang')_applyLangUI(msg.lang);else if(msg.type==='orient')applyOrientFromDaemon(msg.value);else if(msg.type==='character')applyCharFromDaemon(msg.value);else if(msg.type==='auth')updateAuth(msg.ok,msg.detail);else if(msg.type==='ota')updateOTA(msg);else if(msg.type==='emo2_state')updateEmo2State(msg.state)}catch{}};ws.onclose=()=>{reconnectTimer=setTimeout(connectWS,3000)};ws.onerror=()=>{ws.close()}}
 // screenTabs + sendScreen/setSettingsTab removed — the ClauLi configurator is
 // the only settings screen now, so there's no tab to switch or screen to push.
 
@@ -2683,36 +2962,8 @@ function toggleDebugOverlay(){
   const b = document.getElementById('dbgBtn');
   if (b){ b.dataset.i18n = _dbgOn ? 'debug_on' : 'debug_off'; b.textContent = t(b.dataset.i18n); b.classList.toggle('accent', _dbgOn); }
 }
-async function saveOAuthToken(){
-  const inp = document.getElementById('auth-token-input');
-  const st  = document.getElementById('auth-token-status');
-  const btn = document.getElementById('auth-token-save');
-  const tok = (inp.value || '').trim();
-  if (!tok) { st.style.color='#FF4D4D'; st.textContent = t('auth_token_error') + 'empty'; return; }
-  st.style.color = '#888'; st.textContent = '…';
-  btn.disabled = true;
-  try {
-    const r = await fetch('/api/oauth-token', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({token: tok})
-    });
-    const j = await r.json().catch(()=>({}));
-    if (r.ok) {
-      st.style.color = '#8fa66e';
-      st.textContent = t('auth_token_saved');
-      inp.value = '';
-    } else {
-      st.style.color = '#FF4D4D';
-      st.textContent = t('auth_token_error') + (j.error || ('HTTP ' + r.status));
-    }
-  } catch (e) {
-    st.style.color = '#FF4D4D';
-    st.textContent = t('auth_token_error') + e.message;
-  } finally {
-    btn.disabled = false;
-  }
-}
+// (saveOAuthToken removed — the banner now uses the unified re-auth component
+//  reauthSaveToken('bauth'); the old standalone paste handler is obsolete.)
 // Op id → human label (used to be a button row; preview tiles use codes
 // from OP_CODE map defined below). Kept here because i18n keys reference it.
 // SACCADE dropped from the picker (item 8.1) — its ±2 px offset is too
@@ -5650,15 +5901,106 @@ refreshGlobalApplyBar();
 fetch('/api/character').then(r=>r.json()).then(d=>{
   if (d && d.character) applyCharFromDaemon(d.character);
 }).catch(()=>{});
+renderReauth();
 fetch('/api/status').then(r=>r.json()).then(d=>{
   updateBLE(d.ble_connected?'connected':'disconnected',d.ble_address);
   _applyLangUI(d.lang||'en');
-  updateAuth(!d.auth_error);
+  updateAuth(!d.auth_error, d.auth_detail);
+  updateBtBanner(!!d.ble_unavailable, d.ble_unavailable_reason||'');
+  _lastStatus=d; updateHealth(d);
   if(d.last_data)updateData(d.last_data);
   if(d.character) applyCharFromDaemon(d.character);
   // Use _applyLangUI for server-pushed lang (no guard needed — not user-initiated).
-}).catch(()=>{});
+}).catch(()=>{ updateHealth(null); });
+// Keep the health strip live — WS pushes data/ble/auth, but a light poll keeps
+// the per-subsystem summary fresh (uptime, data age, recovery).
+setInterval(refreshHealth, 8000);
 connectWS();
+
+// ─── BT permission helper ─────────────────────────────────────────────────
+function openBtSettings(){
+  fetch('/api/open-bt-settings',{method:'POST'}).catch(()=>{});
+}
+
+// ─── Daemon log viewer ────────────────────────────────────────────────────
+let _logsTimer = null;
+async function refreshLogs(){
+  const d = await fetch('/api/diag').then(r=>r.json()).catch(()=>({log_tail:[]}));
+  const lines = d.log_tail || [];
+  const onlyBle = document.getElementById('logFilterDevice') && document.getElementById('logFilterDevice').checked;
+  const shown = onlyBle
+    ? lines.filter(l=>/BLE:|GATT|disconnect|service.discov|write_ctrl|ConnectError|Connecting|CONNECT #/i.test(l))
+    : lines;
+  const pre = document.getElementById('logPre');
+  if (!pre) return;
+  pre.innerHTML = shown.map(l=>
+    l.replace(/&/g,'&amp;').replace(/</g,'&lt;')
+     .replace(/(error|exception|fail(?!ed_to_cancel)|traceback)/gi,'<span style="color:var(--red)">$1</span>')
+     .replace(/(BLE:|GATT|disconnect|service discov|CONNECT #|Connecting)/gi,'<span style="color:var(--cyan)">$1</span>')
+  ).join('\n');
+  pre.scrollTop = pre.scrollHeight;
+}
+function copyLogs(){
+  const pre = document.getElementById('logPre');
+  if (pre) navigator.clipboard.writeText(pre.innerText||'').catch(()=>{});
+}
+(function(){
+  const lb = document.getElementById('logsBlock');
+  if (!lb) return;
+  lb.addEventListener('toggle', e=>{
+    if (e.target.open){ refreshLogs(); _logsTimer = setInterval(refreshLogs, 5000); }
+    else { clearInterval(_logsTimer); _logsTimer = null; }
+  });
+})();
+
+// ─── ESP serial log viewer ────────────────────────────────────────────────
+let _serialActive = false, _serialTimer = null;
+async function toggleSerial(){
+  const btn = document.getElementById('serialToggleBtn');
+  if (!_serialActive){
+    const r = await fetch('/api/serial-start',{method:'POST'}).then(r=>r.json()).catch(()=>({ok:false}));
+    if (!r.ok && r.reason){
+      const pre = document.getElementById('serialPre');
+      if (pre) pre.textContent = 'Error: ' + r.reason;
+      return;
+    }
+    _serialActive = true;
+    if (btn) btn.setAttribute('data-i18n','serial_stop'), btn.textContent = t('serial_stop')||'Stop monitoring';
+    _serialTimer = setInterval(pollSerial, 2000);
+    pollSerial();
+  } else {
+    await fetch('/api/serial-stop',{method:'POST'}).catch(()=>{});
+    _serialActive = false;
+    if (btn) btn.setAttribute('data-i18n','serial_start'), btn.textContent = t('serial_start')||'Start monitoring';
+    clearInterval(_serialTimer); _serialTimer = null;
+  }
+}
+async function pollSerial(){
+  const d = await fetch('/api/serial-log').then(r=>r.json()).catch(()=>null);
+  if (!d) return;
+  const portLbl = document.getElementById('serialPortLabel');
+  if (portLbl) portLbl.textContent = 'Port: ' + (d.port || '—');
+  // Sync button state if server says monitor stopped (e.g. port closed)
+  if (_serialActive && !d.active){
+    _serialActive = false;
+    clearInterval(_serialTimer); _serialTimer = null;
+    const btn = document.getElementById('serialToggleBtn');
+    if (btn) btn.setAttribute('data-i18n','serial_start'), btn.textContent = t('serial_start')||'Start monitoring';
+  }
+  const pre = document.getElementById('serialPre');
+  if (!pre) return;
+  const wasAtBottom = pre.scrollHeight - pre.scrollTop - pre.clientHeight < 40;
+  pre.innerHTML = (d.lines||[]).map(l=>
+    l.replace(/&/g,'&amp;').replace(/</g,'&lt;')
+     .replace(/(E \(\d+\)|panic|abort called|Guru Meditation|task.*WDT|assert failed)/gi,'<span style="color:var(--red)">$1</span>')
+     .replace(/(I \(\d+\)|W \(\d+\))/g,'<span style="color:var(--dim)">$1</span>')
+  ).join('\n');
+  if (wasAtBottom) pre.scrollTop = pre.scrollHeight;
+}
+function clearSerial(){
+  const pre = document.getElementById('serialPre');
+  if (pre) pre.innerHTML = '';
+}
 </script>
 </body>
 </html>

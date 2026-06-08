@@ -56,6 +56,9 @@ OPTIONS = {
         # reason=531 and never reconnects). Copy anyio + sniffio whole so the
         # backend ships. (sniffio is anyio's async-lib detector.)
         "anyio", "sniffio",
+        # Optional serial monitor (pyserial) — bundled so the web dashboard
+        # serial-log feature works in the .app without a separate pip install.
+        "serial",
     ],
     "includes": [
         # Stdlib modules py2app's static analysis sometimes misses
