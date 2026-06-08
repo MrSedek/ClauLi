@@ -2955,6 +2955,20 @@ def build_emo2_cfg_blob(state: "DaemonState") -> dict:
     consumes. Daemon converts string names → name-list indices to keep
     the payload small (fits the 512-byte RX buffer)."""
     states_out = {}
+    # Global layout colour — per-state "auto" INHERITS this. The per-state
+    # layout-colour UI was retired, so the global "Layout colour" picker is the
+    # only control. Firmware applies the per-state layout_color LAST (on the
+    # forced state re-entry, AFTER the global cfg["layout_color"] parse), and a
+    # per-state "auto" decodes to "force gradient" (override 0xFF) — which
+    # clobbered the user's global pick on every connected-state (re)entry
+    # ("applies then snaps back to auto"). Resolving "auto" → the global value
+    # here makes connected/connecting adopt the global pick (and reset cleanly
+    # when leaving a fixed error colour), while fixed per-state picks
+    # (ble_off=amber / token_expired=red) still win.
+    _stats0 = state.emo2_stats if isinstance(state.emo2_stats, dict) else {}
+    global_lc = _stats0.get("layout_color")
+    if not (isinstance(global_lc, str) and is_color_value(global_lc)):
+        global_lc = "auto"
     for sid, sc in (state.emo2_config or {}).items():
         if not isinstance(sc, dict):
             continue
@@ -2984,7 +2998,9 @@ def build_emo2_cfg_blob(state: "DaemonState") -> dict:
         # placement the user actually set in the layout editor (hud_ribbon→top).
         # Dropping them makes the per-layout value authoritative + applied, and
         # matches what the web displays. (layout_color stays per-state.)
-        if "layout_color" in sc:   out["layout_color"]   = sc["layout_color"]
+        if "layout_color" in sc:
+            _lc_state = sc["layout_color"]
+            out["layout_color"] = global_lc if _lc_state == "auto" else _lc_state
         states_out[sid] = out
     stats = state.emo2_stats or {}
     # Build a derived text_mode-per-layout dict from the new source+format pair

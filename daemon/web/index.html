@@ -2737,9 +2737,14 @@ async function refreshHealth(){
 // block (#reauth-body, prefix 'reauth') and the auth-error banner
 // (#auth-banner-reauth, prefix 'bauth'). All element ids are prefix-scoped so
 // the two instances never collide; the handlers take the prefix as an arg.
-function _reauthHTML(p){
+// Browser-based OAuth exchange (Section A) is rate-limited & unreliable in
+// practice; the supported path is `claude login` (CLI) → daemon reads the
+// macOS Keychain login. Flip this to true to restore the in-web OAuth flow —
+// its source is preserved in _reauthSectionBrowser() + requestAuthLink/
+// exchangeAuthCode/_reauthCooldown below.
+const OAUTH_BROWSER_ENABLED = false;
+function _reauthSectionBrowser(p){
   return `
-    <div style="color:var(--dim);font-size:11px;margin-bottom:10px">${_hl('Get a fresh Claude token — option A (browser) or B (paste).','Получить свежий токен Claude — вариант A (браузер) или B (вставить).')}</div>
     <div style="font-weight:600;color:#e8e8e8;font-size:11.5px;margin-bottom:5px">${_hl('A · Browser authorization','A · Авторизация в браузере')}</div>
     <div style="color:var(--dim);font-size:10.5px;margin-bottom:6px">${_hl('The token takes your ACTIVE organization on claude.ai. Have several plans? Switch your workspace on claude.ai first (e.g. to the Team plan), then get the link. The org you landed in is shown after exchange.','Токен берёт АКТИВНУЮ организацию на claude.ai. Несколько планов? Сначала переключите рабочее пространство на claude.ai (например, на Team-план), потом получайте ссылку. Полученная орг. показывается после обмена.')}</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px">
@@ -2751,10 +2756,26 @@ function _reauthHTML(p){
       <input id="${p}-code" type="text" autocomplete="off" spellcheck="false" placeholder="code… / CODE#STATE / URL" style="flex:1;min-width:0;font-family:ui-monospace,Menlo,monospace;font-size:11px;padding:7px 9px;border-radius:6px;border:1px solid rgba(255,255,255,.12);background:#0a0a0a;color:#e8e8e8;outline:none">
       <button class="btn" id="${p}-xbtn" onclick="exchangeAuthCode('${p}')">${_hl('Exchange','Обменять')}</button>
     </div>
-    <div id="${p}-code-status" style="font-size:10.5px;color:#888;min-height:14px"></div>
+    <div id="${p}-code-status" style="font-size:10.5px;color:#888;min-height:14px"></div>`;
+}
+function _reauthSectionCli(p){
+  return `
+    <div style="font-weight:600;color:#e8e8e8;font-size:11.5px;margin-bottom:5px">${_hl('A · Sign in via the Claude CLI (recommended)','A · Вход через Claude CLI (рекомендуется)')}</div>
+    <div style="color:var(--dim);font-size:10.5px;margin-bottom:6px">${_hl('In a terminal run <code>claude</code> (or <code>claude login</code>) and sign in to the organization you want (e.g. your Team plan). The daemon then uses that login from the macOS Keychain automatically — nothing to copy or paste.','В терминале запустите <code>claude</code> (или <code>claude login</code>) и войдите в нужную организацию (например, Team-план). Демон сам возьмёт этот вход из Keychain — копировать/вставлять ничего не нужно.')}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:4px">
+      <button class="btn" onclick="useKeychainLogin('${p}')">${_hl('Use my Claude Code login','Использовать вход Claude Code')}</button>
+    </div>
+    <div id="${p}-cli-status" style="font-size:10.5px;color:#888;min-height:14px"></div>
+    <div style="color:var(--dim);font-size:10px;margin-top:2px">${_hl('Already signed in? The daemon picks it up within ~60s. The button switches to the Keychain login now and clears any pasted token.','Уже вошли? Демон подхватит за ~60 с. Кнопка переключает на вход из Keychain сразу и сбрасывает вставленный токен.')}</div>`;
+}
+function _reauthHTML(p){
+  return `
+    <div style="color:var(--dim);font-size:11px;margin-bottom:10px">${_hl('Re-authenticate the daemon — A (recommended) or B (paste a token).','Авторизовать демон заново — A (рекомендуется) или B (вставить токен).')}</div>`
+    + (OAUTH_BROWSER_ENABLED ? _reauthSectionBrowser(p) : _reauthSectionCli(p))
+    + `
     <div style="border-top:1px solid rgba(255,255,255,.08);margin:10px 0"></div>
     <div style="font-weight:600;color:#e8e8e8;font-size:11.5px;margin-bottom:5px">${_hl('B · Paste a long-lived token','B · Вставить долгоживущий токен')}</div>
-    <div style="color:var(--dim);font-size:10.5px;margin-bottom:6px">${_hl('Run <code>claude setup-token</code> in a terminal, paste ONLY the <code>sk-ant-oat01-…</code> line (not the OAuth code):','Запустите <code>claude setup-token</code> в терминале, вставьте ТОЛЬКО строку <code>sk-ant-oat01-…</code> (не OAuth-код):')}</div>
+    <div style="color:var(--dim);font-size:10.5px;margin-bottom:6px">${_hl('Headless/no Keychain? Run <code>claude setup-token</code> in a terminal, paste ONLY the <code>sk-ant-oat01-…</code> line:','Без Keychain (headless)? Запустите <code>claude setup-token</code> в терминале, вставьте ТОЛЬКО строку <code>sk-ant-oat01-…</code>:')}</div>
     <div style="display:flex;gap:6px;margin-bottom:4px">
       <input id="${p}-token" type="text" autocomplete="off" spellcheck="false" placeholder="sk-ant-oat01-..." style="flex:1;min-width:0;font-family:ui-monospace,Menlo,monospace;font-size:11px;padding:7px 9px;border-radius:6px;border:1px solid rgba(255,255,255,.12);background:#0a0a0a;color:#e8e8e8;outline:none">
       <button class="btn" onclick="reauthSaveToken('${p}')">${_hl('Save','Сохранить')}</button>
@@ -2769,6 +2790,18 @@ function renderReauth(){
   if(body) body.innerHTML=_reauthHTML('reauth');
   const banner=document.getElementById('auth-banner-reauth');
   if(banner) banner.innerHTML=_reauthHTML('bauth');
+}
+async function useKeychainLogin(p){
+  p=p||'reauth';
+  const s=document.getElementById(p+'-cli-status');
+  if(s){ s.style.color='#888'; s.textContent='…'; }
+  try{
+    const r=await fetch('/api/oauth-token',{method:'DELETE'});   // clear pasted token → fall back to Keychain (claude login)
+    const j=await r.json().catch(()=>({}));
+    if(r.ok && s){ s.style.color='#8fa66e'; s.textContent=_hl('✓ Switched to Claude Code (Keychain) login — checking…','✓ Переключено на вход Claude Code (Keychain) — проверяю…'); }
+    else if(s){ s.style.color='#FF4D4D'; s.textContent='✕ '+(j.error||('HTTP '+r.status)); }
+    setTimeout(refreshHealth,2500);   // health strip then shows org / accepted / 403
+  }catch(e){ if(s){ s.style.color='#FF4D4D'; s.textContent='✕ '+e.message; } }
 }
 async function requestAuthLink(p){
   p=p||'reauth';
