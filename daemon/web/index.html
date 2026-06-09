@@ -2758,30 +2758,28 @@ function _reauthSectionBrowser(p){
     </div>
     <div id="${p}-code-status" style="font-size:10.5px;color:#888;min-height:14px"></div>`;
 }
-function _reauthSectionCli(p){
-  return `
-    <div style="font-weight:600;color:#e8e8e8;font-size:11.5px;margin-bottom:5px">${_hl('A · Sign in via the Claude CLI (recommended)','A · Вход через Claude CLI (рекомендуется)')}</div>
-    <div style="color:var(--dim);font-size:10.5px;margin-bottom:6px">${_hl('In a terminal run <code>claude</code> (or <code>claude login</code>) and sign in to the organization you want (e.g. your Team plan). The daemon then uses that login from the macOS Keychain automatically — nothing to copy or paste.','В терминале запустите <code>claude</code> (или <code>claude login</code>) и войдите в нужную организацию (например, Team-план). Демон сам возьмёт этот вход из Keychain — копировать/вставлять ничего не нужно.')}</div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:4px">
-      <button class="btn" onclick="useKeychainLogin('${p}')">${_hl('Use my Claude Code login','Использовать вход Claude Code')}</button>
-    </div>
-    <div id="${p}-cli-status" style="font-size:10.5px;color:#888;min-height:14px"></div>
-    <div style="color:var(--dim);font-size:10px;margin-top:2px">${_hl('Already signed in? The daemon picks it up within ~60s. The button switches to the Keychain login now and clears any pasted token.','Уже вошли? Демон подхватит за ~60 с. Кнопка переключает на вход из Keychain сразу и сбрасывает вставленный токен.')}</div>`;
-}
+
 function _reauthHTML(p){
   return `
-    <div style="color:var(--dim);font-size:11px;margin-bottom:10px">${_hl('Re-authenticate the daemon — A (recommended) or B (paste a token).','Авторизовать демон заново — A (рекомендуется) или B (вставить токен).')}</div>`
-    + (OAUTH_BROWSER_ENABLED ? _reauthSectionBrowser(p) : _reauthSectionCli(p))
-    + `
-    <div style="border-top:1px solid rgba(255,255,255,.08);margin:10px 0"></div>
-    <div style="font-weight:600;color:#e8e8e8;font-size:11.5px;margin-bottom:5px">${_hl('B · Paste a long-lived token','B · Вставить долгоживущий токен')}</div>
-    <div style="color:var(--dim);font-size:10.5px;margin-bottom:6px">${_hl('Headless/no Keychain? Run <code>claude setup-token</code> in a terminal, paste ONLY the <code>sk-ant-oat01-…</code> line:','Без Keychain (headless)? Запустите <code>claude setup-token</code> в терминале, вставьте ТОЛЬКО строку <code>sk-ant-oat01-…</code>:')}</div>
+    <div style="color:var(--dim);font-size:11px;margin-bottom:10px">${_hl('Re-authenticate the daemon — choose an option below.','Авторизовать демон заново — выберите вариант ниже.')}</div>
+    <div style="font-weight:600;color:#e8e8e8;font-size:11.5px;margin-bottom:3px">${_hl('A · Long-lived token <span style="font-weight:400;color:#8fa66e;font-size:10px;letter-spacing:.3px">(recommended)</span>','A · Долгоживущий токен <span style="font-weight:400;color:#8fa66e;font-size:10px;letter-spacing:.3px">(рекомендуется)</span>')}</div>
+    <div style="color:var(--dim);font-size:10.5px;margin-bottom:6px">${_hl('Run <code>claude setup-token</code> in a terminal — it opens a browser, you sign in to the org you want (e.g. Team plan), and it prints a <code>sk-ant-oat01-…</code> token. This token is valid for <b style="color:#cfcfcf">1 year</b> and survives daemon restarts without re-login.','Запустите <code>claude setup-token</code> в терминале — откроется браузер, войдите в нужную орг. (например, Team-план), команда напечатает токен <code>sk-ant-oat01-…</code>. Токен действует <b style="color:#cfcfcf">1 год</b> и переживает рестарты демона без повторного входа.')}</div>
     <div style="display:flex;gap:6px;margin-bottom:4px">
       <input id="${p}-token" type="text" autocomplete="off" spellcheck="false" placeholder="sk-ant-oat01-..." style="flex:1;min-width:0;font-family:ui-monospace,Menlo,monospace;font-size:11px;padding:7px 9px;border-radius:6px;border:1px solid rgba(255,255,255,.12);background:#0a0a0a;color:#e8e8e8;outline:none">
       <button class="btn" onclick="reauthSaveToken('${p}')">${_hl('Save','Сохранить')}</button>
     </div>
     <div id="${p}-token-status" style="font-size:10.5px;color:#888;min-height:14px"></div>
-    <div style="color:var(--dim);font-size:10px;margin-top:8px">${_hl('Note: a token for an org that blocks OAuth API access is still rejected (HTTP 403).','Примечание: токен организации, блокирующей OAuth для API, всё равно будет отклонён (HTTP 403).')}</div>`;
+    <div style="border-top:1px solid rgba(255,255,255,.08);margin:10px 0"></div>
+    <div style="font-weight:600;color:#e8e8e8;font-size:11.5px;margin-bottom:3px">${_hl('B · Claude Code login (Keychain)','B · Вход Claude Code (Keychain)')}</div>
+    <div style="color:var(--dim);font-size:10.5px;margin-bottom:6px">${_hl('Run <code>claude login</code> in a terminal and sign in. The daemon reads the session from the macOS Keychain automatically. Session tokens last <b style="color:#cfcfcf">~8 hours</b> and are refreshed while Claude Code is running.','Запустите <code>claude login</code> в терминале и войдите. Демон берёт сессию из Keychain автоматически. Сессионные токены живут <b style="color:#cfcfcf">~8 часов</b>, обновляются пока работает Claude Code.')}</div>`
+    + (OAUTH_BROWSER_ENABLED ? _reauthSectionBrowser(p) : `
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:4px">
+      <button class="btn" onclick="useKeychainLogin('${p}')">${_hl('Use my Claude Code login','Использовать вход Claude Code')}</button>
+    </div>
+    <div id="${p}-cli-status" style="font-size:10.5px;color:#888;min-height:14px"></div>
+    <div style="color:var(--dim);font-size:10px;margin-top:2px">${_hl('Already signed in? The button clears any pasted token and switches the daemon to the Keychain session now.','Уже вошли? Кнопка сбрасывает вставленный токен и переключает демон на сессию из Keychain прямо сейчас.')}</div>`)
+    + `
+    <div style="color:var(--dim);font-size:10px;margin-top:10px">${_hl('Note: a token for an org that blocks OAuth API access is still rejected (HTTP 403).','Примечание: токен организации, блокирующей OAuth для API, всё равно будет отклонён (HTTP 403).')}</div>`;
 }
 function renderReauth(){
   const titleEl=document.getElementById('reauth-title');

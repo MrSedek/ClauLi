@@ -75,7 +75,7 @@ jobs:
 
   # ───────────────────────────────────────────────────────────────────────
   macos:
-    name: macOS bundle
+    name: macOS bundle + DMG installer
     runs-on: macos-14            # arm64 runner
     steps:
       - uses: actions/checkout@v4
@@ -91,20 +91,32 @@ jobs:
           pip install -r requirements.txt
           pip install py2app
 
+      - name: Inject version from git tag into setup_macos.py
+        env:
+          TAG_VERSION: ${{ github.ref_name }}
+        run: |
+          VERSION="${TAG_VERSION#v}"   # strip leading 'v' (v0.9.0 → 0.9.0)
+          python3 scripts/set_version.py daemon/setup_macos.py "$VERSION"
+          echo "Building version $VERSION"
+
       - name: Build .app
         run: |
           cd daemon
           python setup_macos.py py2app
 
-      - name: Zip the bundle
+      - name: Make install.command executable
+        run: chmod +x daemon/installer/install.command
+
+      - name: Build DMG installer
         run: |
-          cd daemon/dist
-          ditto -c -k --sequesterRsrc --keepParent ClauLi.app ClauLi-macOS.zip
+          chmod +x scripts/build_dmg.sh
+          VERSION="${GITHUB_REF_NAME#v}"
+          ./scripts/build_dmg.sh "$VERSION"
 
       - uses: actions/upload-artifact@v4
         with:
           name: macos
-          path: daemon/dist/ClauLi-macOS.zip
+          path: daemon/dist/ClauLi-macOS.dmg
 
   # ───────────────────────────────────────────────────────────────────────
   linux:
@@ -214,7 +226,7 @@ jobs:
             - **Wireless update** (`firmware.bin`) — open the device web UI → *Firmware OTA* and upload it. No cable.
 
             ### Desktop app (daemon)
-            - **macOS** (`ClauLi-macOS.zip`) — unzip, drag `ClauLi.app` to `/Applications`. On first launch Right-click → Open to bypass Gatekeeper (no code-signing).
+            - **macOS** (`ClauLi-macOS.dmg`) — open the DMG, then either drag `ClauLi.app` to the `Applications` folder **or** double-click **Install ClauLi** for a one-click install (copies to `/Applications`, requests Bluetooth permission, no cable). First launch: Right-click → Open to bypass Gatekeeper (no code-signing yet).
             - **Linux** (`clauli-linux-x86_64.tar.gz`) — `tar xzf`, run `./clauli/clauli --tray`.
             - **Windows** (`ClauLi-windows-x86_64.zip`) — unzip, run `clauli.exe --tray`. Click *More info → Run anyway* on SmartScreen prompt.
 
