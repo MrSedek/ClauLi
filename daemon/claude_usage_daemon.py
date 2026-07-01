@@ -350,6 +350,17 @@ BT_RETRY_S = 30.0
 STALE_LINK_S = 15.0
 HTTP_PORT = 8765
 
+# --- macOS sleep/wake recovery -------------------------------------------
+# After the Mac sleeps + wakes, CoreBluetooth (a process-global CBCentralManager
+# shared by every BleakScanner/BleakClient in this process) can wedge: scans
+# return nothing and connects fail, and NO fresh Bleak object clears it — only a
+# fresh process does. So we detect the resume, force a clean reconnect, and if
+# that fails within a grace window we re-exec ourselves (the automatic version
+# of the user's manual "restart the app").
+WAKE_TICK_S  = 5.0    # wake-watchdog poll cadence
+WAKE_SKEW_S  = 20.0   # (wall - monotonic) elapsed beyond this ⇒ process was suspended
+WAKE_GRACE_S = 45.0   # allow in-process reconnect this long post-wake before re-exec
+
 LANG_FILE = Path.home() / ".config" / "claude-usage-monitor" / "lang"
 # Last web-chosen display orientation. Mirrors LANG_FILE (host-side memory of a
 # device-NVS-owned setting) so a page reload restores the right aspect.
@@ -734,6 +745,10 @@ class DaemonState:
     # web WS broadcast of the ACTIVE-tab indicator.
     emo2_stats: dict = field(default_factory=lambda: dict(DEFAULT_EMO2_STATS))
     session: Optional["Session"] = None     # live BLE session (None when disconnected)
+    # Set by the wake-watchdog when it detects a sleep/resume; the outer scan
+    # loop watches it to collapse any pending reconnect backoff and rescan at
+    # once (see _wake_watchdog / _backoff_wait).
+    wake_event: asyncio.Event = field(default_factory=asyncio.Event)
     ota_in_progress: bool = False           # one OTA at a time
     # Serialised cfg blob of the LAST successful full-config push. Lets a
     # reconnect skip re-pushing an unchanged ~1 KB config (the device restores
@@ -3398,6 +3413,92 @@ async def cli_mode(args: argparse.Namespace) -> None:
 
 
 # ---------------------------------------------------------------------------
+# macOS sleep/wake recovery
+# ---------------------------------------------------------------------------
+
+def _restart_process(reason: str) -> None:
+    """Re-exec this process to obtain a fresh CoreBluetooth stack.
+
+    macOS keeps one process-global CBCentralManager; after a sleep/wake it can
+    wedge such that no new BleakScanner/BleakClient can scan or connect. The
+    only reliable reset is a new process. os.execv preserves argv, so this
+    works for every launch path: the double-clicked .app (macos_entry appends
+    --tray), a launchd LaunchAgent, or daemon.sh foreground. The listening
+    socket on HTTP_PORT is CLOEXEC (Python default) so it closes on exec, and
+    aiohttp's TCPSite binds with reuse_address → the new process rebinds cleanly.
+    """
+    log(f"RESTART: {reason} — re-exec to get a fresh CoreBluetooth stack")
+    try:
+        sys.stdout.flush()
+        sys.stderr.flush()
+    except Exception:
+        pass
+    os.execv(sys.executable, [sys.executable, *sys.argv])
+
+
+async def _backoff_wait(stop_event: asyncio.Event,
+                        wake_event: asyncio.Event,
+                        backoff: float) -> bool:
+    """Sleep up to `backoff`s, waking early on stop OR a sleep/resume signal.
+
+    Returns True if a wake was signalled (the caller should reset backoff and
+    rescan immediately) — this is what lets a resume interrupt an in-progress
+    60 s backoff so in-process recovery gets a fair chance inside WAKE_GRACE_S
+    before the watchdog escalates to a full restart.
+    """
+    waiters = {asyncio.ensure_future(stop_event.wait()),
+               asyncio.ensure_future(wake_event.wait())}
+    try:
+        await asyncio.wait(waiters, timeout=backoff,
+                           return_when=asyncio.FIRST_COMPLETED)
+    finally:
+        for w in waiters:
+            w.cancel()
+    if wake_event.is_set():
+        wake_event.clear()
+        return True
+    return False
+
+
+async def _wake_watchdog(state: "DaemonState", stop_event: asyncio.Event) -> None:
+    """Detect a macOS sleep/resume and drive BLE recovery.
+
+    Suspend is detected by the divergence between the wall clock (advances
+    during system sleep) and the monotonic clock (frozen during sleep) — no
+    NSWorkspace/Cocoa main-thread run loop needed, so it works from this
+    background daemon thread and in foreground daemon.sh mode alike. On resume:
+    force-drop any live-but-dead link so the outer loop rescans at once, then
+    give in-process recovery WAKE_GRACE_S; if the link is still down by then
+    (CoreBluetooth wedged), re-exec the process.
+    """
+    while not stop_event.is_set():
+        w0, m0 = time.time(), time.monotonic()
+        try:
+            await asyncio.wait_for(stop_event.wait(), timeout=WAKE_TICK_S)
+        except asyncio.TimeoutError:
+            pass
+        if stop_event.is_set():
+            return
+        skew = (time.time() - w0) - (time.monotonic() - m0)
+        if skew < WAKE_SKEW_S:
+            continue
+        log(f"WAKE: system resumed after ~{skew:.0f}s suspend — forcing BLE recovery")
+        sess = state.session
+        if sess is not None:
+            await sess._drop_for_reconnect("post-wake forced reconnect")
+        state.wake_event.set()          # collapse any pending outer-loop backoff
+        deadline = time.monotonic() + WAKE_GRACE_S
+        while time.monotonic() < deadline:
+            if stop_event.is_set():
+                return
+            if state.ble_connected:
+                break                   # recovered in-process → no restart
+            await asyncio.sleep(1.0)
+        else:
+            _restart_process("post-wake BLE reconnect failed (CoreBluetooth wedged)")
+
+
+# ---------------------------------------------------------------------------
 # Main loop
 # ---------------------------------------------------------------------------
 
@@ -3497,6 +3598,10 @@ async def daemon_main(
     # instead of crashing with a traceback the way an unguarded scan would.
     await _bluetooth_preflight(state, lang)
 
+    # Recover from macOS sleep/wake: detect the resume, force a reconnect, and
+    # re-exec the process if CoreBluetooth wedged (see _wake_watchdog).
+    loop.create_task(_wake_watchdog(state, stop_event))
+
     backoff = 1
     try:
         while not stop_event.is_set():
@@ -3526,11 +3631,10 @@ async def daemon_main(
                 log("Bluetooth access restored")
             if device is None:
                 log(f"Device not found, retrying in {backoff}s...")
-                try:
-                    await asyncio.wait_for(stop_event.wait(), timeout=backoff)
-                except asyncio.TimeoutError:
-                    pass
-                backoff = min(backoff * 2, 60)
+                if await _backoff_wait(stop_event, state.wake_event, backoff):
+                    backoff = 1
+                else:
+                    backoff = min(backoff * 2, 60)
                 continue
 
             # Re-create client if needed
@@ -3538,20 +3642,18 @@ async def daemon_main(
                 state.api_client = _create_anthropic_client()
             if state.api_client is None:
                 log("No API credentials, waiting...")
-                try:
-                    await asyncio.wait_for(stop_event.wait(), timeout=backoff)
-                except asyncio.TimeoutError:
-                    pass
-                backoff = min(backoff * 2, 60)
+                if await _backoff_wait(stop_event, state.wake_event, backoff):
+                    backoff = 1
+                else:
+                    backoff = min(backoff * 2, 60)
                 continue
 
             ok = await connect_and_run(device, stop_event, state)
             if not ok:
-                try:
-                    await asyncio.wait_for(stop_event.wait(), timeout=backoff)
-                except asyncio.TimeoutError:
-                    pass
-                backoff = min(backoff * 2, 60)
+                if await _backoff_wait(stop_event, state.wake_event, backoff):
+                    backoff = 1
+                else:
+                    backoff = min(backoff * 2, 60)
             else:
                 backoff = 1
     finally:

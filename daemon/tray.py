@@ -223,6 +223,43 @@ def _run_tray_macos(port: int, on_quit: Callable[[], None]) -> None:
     with open(icon_path, "wb") as f:
         f.write(_build_icon_bytes(size=44, template=True))
 
+    # macOS 26 (Tahoe) regressed third-party menu-bar items: the NSStatusItem
+    # is created but the system frequently fails to render it (widely reported:
+    # Maccy, Stats, Ice, AeroSpace…). Two mitigations that help on our side:
+    #   1. Give the status item a STABLE autosaveName so macOS tracks its
+    #      visibility under that key instead of an ephemeral "Item-N" that
+    #      defaults to hidden. We hook rumps' initializeStatusBar so the name is
+    #      set the instant the item is created — before runEventLoop() reads the
+    #      visibility prefs (doing it in the first timer tick is too late).
+    #   2. Pre-stamp Visible=1 under that name in Control Center's prefs.
+    # If the icon still doesn't show it's the OS bug — `killall ControlCenter`
+    # (or Dock) re-renders the bar. See _macos_menubar_refresh_hint().
+    _AUTOSAVE_NAME = "com.sedek.clauli"
+    try:
+        import subprocess as _sp
+        _sp.run(
+            ["defaults", "write", "com.apple.controlcenter",
+             f"NSStatusItem Visible {_AUTOSAVE_NAME}", "-int", "1"],
+            check=False, capture_output=True,
+        )
+    except Exception:
+        pass
+    try:
+        import rumps.rumps as _rr
+        _orig_init_sb = _rr.NSApp.initializeStatusBar
+
+        def _patched_init_sb(self):
+            _orig_init_sb(self)
+            try:
+                self.nsstatusitem.setAutosaveName_(_AUTOSAVE_NAME)
+                self.nsstatusitem.setVisible_(True)
+            except Exception:
+                pass
+
+        _rr.NSApp.initializeStatusBar = _patched_init_sb
+    except Exception:
+        pass
+
     class ClauliTray(rumps.App):
         def __init__(self):
             super().__init__(

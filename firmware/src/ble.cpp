@@ -311,7 +311,14 @@ class RxCallbacks : public NimBLECharacteristicCallbacks {
 // if we have none yet.
 class ReqCallbacks : public NimBLECharacteristicCallbacks {
     void onSubscribe(NimBLECharacteristic* chr, NimBLEConnInfo& info, uint16_t subValue) override {
-        last_activity_ms = millis();
+        // NOTE: intentionally do NOT bump last_activity_ms here. A subscribe is
+        // not proof of a live daemon — when macOS wakes from sleep it re-subscribes
+        // on its cached link with no daemon behind it, and bumping the liveness
+        // timer there defeated LINK_DEAD_MS: the device stayed CONNECTED to a dead
+        // peer, never re-advertised, and needed a manual power-cycle. Real liveness
+        // = RX payload / CTRL writes (a live daemon writes a keep-alive every 3s),
+        // which onWrite tracks. onConnect already seeds last_activity_ms so a fresh
+        // link isn't seen as stale before the first write arrives.
         if (subValue != 0 && !has_received_data) {
             ble_request_refresh();
         }
